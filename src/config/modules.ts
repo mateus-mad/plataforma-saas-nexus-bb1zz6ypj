@@ -19,7 +19,6 @@ import {
   Activity,
   Clock,
   CheckSquare,
-  ShoppingBag,
 } from 'lucide-react'
 
 export const ACTIVE_MODULES = [
@@ -304,10 +303,5 @@ export const MENU_CATEGORIES = [
         description: 'Colaboração remota',
       },
     ],
-  },
-  {
-    name: 'Loja de Módulos',
-    icon: ShoppingBag,
-    path: '/app/loja',
   },
 ]

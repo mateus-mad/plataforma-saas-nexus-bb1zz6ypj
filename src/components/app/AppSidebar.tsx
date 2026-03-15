@@ -211,12 +211,17 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-colors rounded-lg"
+              className={cn(
+                'transition-colors rounded-lg',
+                location.pathname === '/app/configuracoes'
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50',
+              )}
             >
-              <a href="#">
+              <Link to="/app/configuracoes">
                 <Settings className="w-4 h-4" />
                 <span>Configurações</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

@@ -11,7 +11,7 @@ import LandingPage from '@/pages/public/LandingPage'
 import Dashboard from '@/pages/app/Dashboard'
 import Contacts from '@/pages/app/Contacts'
 import Financial from '@/pages/app/Financial'
-import Marketplace from '@/pages/app/Marketplace'
+import Settings from '@/pages/app/Settings'
 import ComingSoon from '@/pages/app/ComingSoon'
 import NotFound from '@/pages/NotFound'
 
@@ -30,7 +30,7 @@ const App = () => (
             <Route path="/app" element={<Dashboard />} />
             <Route path="/app/contatos" element={<Contacts />} />
             <Route path="/app/financeiro" element={<Financial />} />
-            <Route path="/app/loja" element={<Marketplace />} />
+            <Route path="/app/configuracoes" element={<Settings />} />
             <Route path="/app/em-breve" element={<ComingSoon />} />
           </Route>
 

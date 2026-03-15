@@ -1,38 +1,63 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { db } from '@/lib/database'
 
 type ModuleStore = {
+  isReady: boolean
   contractedModules: string[]
-  contractModule: (name: string) => void
-  removeModule: (name: string) => void
+  contractModule: (name: string) => Promise<void>
+  removeModule: (name: string) => Promise<void>
+  lastRoute: string
+  setLastRoute: (route: string) => Promise<void>
 }
 
 const ModuleContext = createContext<ModuleStore | null>(null)
 
 export const ModuleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [contractedModules, setContractedModules] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('nexus_contracted_modules')
-      return saved ? JSON.parse(saved) : ['Contatos', 'Financeiro']
-    } catch {
-      return ['Contatos', 'Financeiro']
-    }
-  })
+  const [isReady, setIsReady] = useState(false)
+  const [contractedModules, setContractedModules] = useState<string[]>([])
+  const [lastRoute, setLastRouteState] = useState('/app')
 
   useEffect(() => {
-    localStorage.setItem('nexus_contracted_modules', JSON.stringify(contractedModules))
-  }, [contractedModules])
+    const initDb = async () => {
+      const modules = await db.get('contracted_modules')
+      if (modules && modules.length > 0) {
+        setContractedModules(modules)
+      } else {
+        const defaultModules = ['Contatos', 'Financeiro']
+        setContractedModules(defaultModules)
+        await db.set('contracted_modules', defaultModules)
+      }
 
-  const contractModule = (name: string) => {
-    setContractedModules((prev) => [...new Set([...prev, name])])
+      const route = await db.get('last_route')
+      if (route) setLastRouteState(route)
+
+      setIsReady(true)
+    }
+    initDb()
+  }, [])
+
+  const contractModule = async (name: string) => {
+    const newModules = [...new Set([...contractedModules, name])]
+    setContractedModules(newModules)
+    await db.set('contracted_modules', newModules)
   }
 
-  const removeModule = (name: string) => {
-    setContractedModules((prev) => prev.filter((m) => m !== name))
+  const removeModule = async (name: string) => {
+    const newModules = contractedModules.filter((m) => m !== name)
+    setContractedModules(newModules)
+    await db.set('contracted_modules', newModules)
+  }
+
+  const setLastRoute = async (route: string) => {
+    setLastRouteState(route)
+    await db.set('last_route', route)
   }
 
   return React.createElement(
     ModuleContext.Provider,
-    { value: { contractedModules, contractModule, removeModule } },
+    {
+      value: { isReady, contractedModules, contractModule, removeModule, lastRoute, setLastRoute },
+    },
     children,
   )
 }

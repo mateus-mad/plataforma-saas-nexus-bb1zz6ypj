@@ -3,15 +3,17 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Hexagon, Layers } from 'lucide-react'
 import { UPCOMING_MODULES } from '@/config/modules'
+import { db } from '@/lib/database'
 
 export default function PublicLayout() {
   const [lastRoute, setLastRoute] = useState('/app')
 
   useEffect(() => {
-    const route = localStorage.getItem('nexus_last_route')
-    if (route && route.startsWith('/app')) {
-      setLastRoute(route)
-    }
+    db.get('last_route').then((route) => {
+      if (route && route.startsWith('/app')) {
+        setLastRoute(route)
+      }
+    })
   }, [])
 
   return (

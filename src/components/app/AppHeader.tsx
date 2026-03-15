@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Bell, Search, Hexagon } from 'lucide-react'
+import { Bell, Search, Hexagon, Zap } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -23,7 +23,7 @@ const PATH_MAP: Record<string, string> = {
   '/app': 'Dashboard',
   '/app/contatos': 'Contatos',
   '/app/financeiro': 'Financeiro',
-  '/app/loja': 'Loja de Módulos',
+  '/app/configuracoes': 'Configurações',
   '/app/em-breve': 'Módulo em Desenvolvimento',
 }
 
@@ -94,7 +94,12 @@ export function AppHeader() {
           />
         </div>
 
-        <button className="relative p-2 text-slate-500 hover:bg-slate-100 hover:text-primary rounded-full transition-colors">
+        {/* Quick Action Button */}
+        <button className="relative p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-full transition-all border border-primary/20 hover:border-primary/40 shadow-[0_0_10px_rgba(59,130,246,0.1)] group">
+          <Zap className="w-4 h-4 text-primary drop-shadow-[0_0_5px_rgba(59,130,246,0.5)] group-hover:scale-110 transition-transform" />
+        </button>
+
+        <button className="relative p-2 text-slate-500 hover:bg-slate-100 hover:text-primary rounded-full transition-colors border border-transparent">
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border-2 border-white shadow-sm"></span>
         </button>
@@ -122,7 +127,9 @@ export function AppHeader() {
             <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem className="cursor-pointer">Meu Perfil</DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">Faturamento</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">Configurações</DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/app/configuracoes">Configurações</Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer">
               Sair da Plataforma
