@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Hexagon, Settings, HelpCircle, LogOut, ChevronRight } from 'lucide-react'
 import { MENU_CATEGORIES } from '@/config/modules'
+import useModuleStore from '@/stores/useModuleStore'
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +20,17 @@ import { cn } from '@/lib/utils'
 export function AppSidebar() {
   const location = useLocation()
   const currentFullPath = decodeURIComponent(location.pathname + location.search)
+  const { contractedModules } = useModuleStore()
+
+  const visibleCategories = MENU_CATEGORIES.map((category) => {
+    if (category.path) return category
+
+    if (category.items) {
+      const visibleItems = category.items.filter((item) => contractedModules.includes(item.name))
+      return { ...category, items: visibleItems }
+    }
+    return category
+  }).filter((category) => category.path || (category.items && category.items.length > 0))
 
   return (
     <Sidebar className="border-r border-slate-800/60 bg-[#0A0F1C]" variant="sidebar">
@@ -37,7 +49,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
-              {MENU_CATEGORIES.map((category) => {
+              {visibleCategories.map((category) => {
                 const isActive = category.path
                   ? currentFullPath === decodeURIComponent(category.path) ||
                     location.pathname === category.path
@@ -117,7 +129,7 @@ export function AppSidebar() {
                             </div>
                           </div>
                           <div className="p-2 flex flex-col gap-1">
-                            {category.items.map((item) => {
+                            {category.items?.map((item) => {
                               const isSubActive = currentFullPath === decodeURIComponent(item.path)
                               return (
                                 <Link

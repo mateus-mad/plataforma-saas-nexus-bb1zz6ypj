@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Bell, Search, Hexagon } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,7 @@ const PATH_MAP: Record<string, string> = {
   '/app': 'Dashboard',
   '/app/contatos': 'Contatos',
   '/app/financeiro': 'Financeiro',
+  '/app/loja': 'Loja de Módulos',
   '/app/em-breve': 'Módulo em Desenvolvimento',
 }
 
@@ -37,19 +38,19 @@ export function AppHeader() {
 
         <div className="flex items-center gap-3 sm:gap-4 border-l border-slate-200 pl-3 sm:pl-4 h-8">
           {/* Nexus ERP Logo */}
-          <div className="flex items-center gap-2 group cursor-pointer">
+          <Link to="/app" className="flex items-center gap-2 group cursor-pointer">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-colors group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]">
               <Hexagon className="w-4 h-4 text-primary" />
             </div>
             <span className="font-bold text-slate-800 hidden lg:inline-block tracking-tight">
               Nexus<span className="text-primary font-normal">ERP</span>
             </span>
-          </div>
+          </Link>
 
           <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
           {/* User Company Logo */}
-          <div className="flex items-center gap-2 group cursor-pointer">
+          <Link to="/app" className="flex items-center gap-2 group cursor-pointer">
             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200 overflow-hidden group-hover:border-primary/30 transition-colors">
               <img
                 src="https://img.usecurling.com/i?q=acme&color=blue&shape=outline"
@@ -65,7 +66,7 @@ export function AppHeader() {
                 Acme Corp
               </span>
             </div>
-          </div>
+          </Link>
         </div>
 
         <div className="hidden xl:flex h-6 w-px bg-slate-200 mx-2"></div>

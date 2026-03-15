@@ -1,9 +1,18 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app/AppSidebar'
 import { AppHeader } from '@/components/app/AppHeader'
 
 export default function AppLayout() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/app')) {
+      localStorage.setItem('nexus_last_route', location.pathname + location.search)
+    }
+  }, [location])
+
   return (
     <SidebarProvider>
       <AppSidebar />

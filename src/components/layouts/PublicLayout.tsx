@@ -1,9 +1,19 @@
 import { Link, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Hexagon, Layers } from 'lucide-react'
 import { UPCOMING_MODULES } from '@/config/modules'
 
 export default function PublicLayout() {
+  const [lastRoute, setLastRoute] = useState('/app')
+
+  useEffect(() => {
+    const route = localStorage.getItem('nexus_last_route')
+    if (route && route.startsWith('/app')) {
+      setLastRoute(route)
+    }
+  }, [])
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
       <header className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
@@ -31,7 +41,7 @@ export default function PublicLayout() {
               asChild
               className="hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(59,130,246,0.3)] border border-primary/50 text-white font-medium"
             >
-              <Link to="/app">Acessar Plataforma</Link>
+              <Link to={lastRoute}>Acessar Plataforma</Link>
             </Button>
           </div>
         </div>
@@ -58,7 +68,7 @@ export default function PublicLayout() {
             <h4 className="text-white font-semibold mb-4">Módulos Base</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/app" className="hover:text-primary transition-colors">
+                <Link to={lastRoute} className="hover:text-primary transition-colors">
                   Dashboard Intelligence
                 </Link>
               </li>
