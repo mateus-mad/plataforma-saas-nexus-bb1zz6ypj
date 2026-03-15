@@ -1,14 +1,17 @@
-/* Main App Component - Handles routing (using react-router-dom), query client and other providers - use this file to add all routes */
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import Index from './pages/Index'
-import NotFound from './pages/NotFound'
-import Layout from './components/Layout'
 
-// ONLY IMPORT AND RENDER WORKING PAGES, NEVER ADD PLACEHOLDER COMPONENTS OR PAGES IN THIS FILE
-// AVOID REMOVING ANY CONTEXT PROVIDERS FROM THIS FILE (e.g. TooltipProvider, Toaster, Sonner)
+import PublicLayout from '@/components/layouts/PublicLayout'
+import AppLayout from '@/components/layouts/AppLayout'
+
+import LandingPage from '@/pages/public/LandingPage'
+import Dashboard from '@/pages/app/Dashboard'
+import Contacts from '@/pages/app/Contacts'
+import Financial from '@/pages/app/Financial'
+import ComingSoon from '@/pages/app/ComingSoon'
+import NotFound from '@/pages/NotFound'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -16,10 +19,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES MUST BE ADDED HERE */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<LandingPage />} />
         </Route>
+
+        <Route element={<AppLayout />}>
+          <Route path="/app" element={<Dashboard />} />
+          <Route path="/app/contatos" element={<Contacts />} />
+          <Route path="/app/financeiro" element={<Financial />} />
+          <Route path="/app/em-breve" element={<ComingSoon />} />
+        </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>

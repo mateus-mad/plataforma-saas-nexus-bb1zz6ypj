@@ -1,0 +1,48 @@
+import {
+  LayoutDashboard,
+  Users,
+  CircleDollarSign,
+  UserPlus,
+  Truck,
+  Wrench,
+  Briefcase,
+  Sun,
+  HardHat,
+  CheckSquare,
+  FileText,
+  Clock,
+  Package,
+  ShoppingCart,
+  FileSignature,
+  LifeBuoy,
+  Megaphone,
+  TrendingUp,
+  Map,
+  PieChart,
+} from 'lucide-react'
+
+export const ACTIVE_MODULES = [
+  { name: 'Dashboard', path: '/app', icon: LayoutDashboard },
+  { name: 'Contatos', path: '/app/contatos', icon: Users },
+  { name: 'Financeiro', path: '/app/financeiro', icon: CircleDollarSign },
+]
+
+export const UPCOMING_MODULES = [
+  { name: 'RH & Folha', icon: UserPlus },
+  { name: 'Frota', icon: Truck },
+  { name: 'Equipamentos', icon: Wrench },
+  { name: 'CRM', icon: Briefcase },
+  { name: 'Energia Solar', icon: Sun },
+  { name: 'Gestão de Obras', icon: HardHat },
+  { name: 'Tarefas & Automação', icon: CheckSquare },
+  { name: 'Documentos', icon: FileText },
+  { name: 'Controle de Ponto', icon: Clock },
+  { name: 'Estoque', icon: Package },
+  { name: 'Compras', icon: ShoppingCart },
+  { name: 'Contratos', icon: FileSignature },
+  { name: 'Helpdesk', icon: LifeBuoy },
+  { name: 'Marketing', icon: Megaphone },
+  { name: 'Vendas B2B', icon: TrendingUp },
+  { name: 'Logística', icon: Map },
+  { name: 'BI & Analytics', icon: PieChart },
+]
