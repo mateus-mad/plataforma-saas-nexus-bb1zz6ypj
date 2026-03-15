@@ -36,14 +36,14 @@
 
     --radius: 0.5rem;
 
-    /* Deep Navy Sidebar */
-    --sidebar-background: 222.2 47.4% 11.2%; /* #0F172A */
+    /* Deep Navy Sidebar - Even Darker for Futuristic Feel */
+    --sidebar-background: 222.2 47.4% 7%; /* #0A0F1C */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 221.2 83.2% 53.3%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent: 217.2 32.6% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-border: 217.2 32.6% 12%;
     --sidebar-ring: 221.2 83.2% 53.3%;
 
     --chart-1: 221.2 83.2% 53.3%;
@@ -122,5 +122,20 @@
   }
   .animate-slide-up {
     animation: slide-up 0.6s ease-out forwards;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 }
