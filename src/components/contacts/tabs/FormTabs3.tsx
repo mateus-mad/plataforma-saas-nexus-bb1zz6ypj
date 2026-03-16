@@ -1,6 +1,13 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Info } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Info, HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type Props = { data: any; onChange: (f: string, v: string) => void }
@@ -12,7 +19,7 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger type="button" tabIndex={-1}>
-            <Info className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500 transition-colors" />
+            <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500 transition-colors" />
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-[250px] text-xs font-normal">
             {t}
@@ -26,10 +33,19 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
 export function BenefitsTab({ data, onChange }: Props) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-2">
-        Pacote de Benefícios Concedidos
+      <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex gap-3 text-sm">
+        <Info className="w-5 h-5 text-emerald-500 shrink-0" />
+        <p className="text-emerald-800 leading-relaxed">
+          <span className="font-semibold">Pacote de Benefícios:</span> Preencha as informações dos
+          benefícios concedidos. Valores informados aqui não alteram a folha automaticamente, servem
+          para composição de ficha.
+        </p>
+      </div>
+
+      <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-2 mt-4">
+        Saúde e Bem-Estar
       </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="space-y-1.5">
           <LabelT l="Plano de Saúde" t="Operadora e tipo de plano (ex: SulAmérica Exato)" />
           <Input
@@ -46,8 +62,14 @@ export function BenefitsTab({ data, onChange }: Props) {
             placeholder="Ex: Amil Dental..."
           />
         </div>
+      </div>
+
+      <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-2 mt-6">
+        Alimentação e Transporte
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-1.5">
-          <LabelT l="Vale Refeição (VR)" t="Valor ou operadora do VR" />
+          <LabelT l="Vale Refeição (VR)" t="Valor concedido por dia/mês" />
           <Input
             value={data.vr || ''}
             onChange={(e) => onChange('vr', e.target.value)}
@@ -62,7 +84,7 @@ export function BenefitsTab({ data, onChange }: Props) {
             placeholder="R$ / mês"
           />
         </div>
-        <div className="space-y-1.5 md:col-span-2">
+        <div className="space-y-1.5">
           <LabelT l="Vale Transporte (VT)" t="Rotas ou valor creditado" />
           <Input
             value={data.vt || ''}
@@ -90,19 +112,30 @@ export function SalaryTab({ data, onChange }: Props) {
               <Input
                 value={data.base || ''}
                 onChange={(e) => onChange('base', e.target.value)}
-                className="pl-9 font-semibold text-blue-700"
+                className="pl-9 font-semibold text-blue-700 bg-blue-50/30 border-blue-200"
+                placeholder="0,00"
               />
             </div>
           </div>
           <div className="space-y-1.5">
             <LabelT l="Forma de Pagamento" t="Ex: Mensal, Quinzenal, Semanal" req />
-            <Input value={data.forma || ''} onChange={(e) => onChange('forma', e.target.value)} />
+            <Select value={data.forma || 'Mensal'} onValueChange={(v) => onChange('forma', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mensal">Mensal</SelectItem>
+                <SelectItem value="Quinzenal">Quinzenal</SelectItem>
+                <SelectItem value="Semanal">Semanal</SelectItem>
+                <SelectItem value="Horista">Horista</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
 
-      <div className="bg-slate-50 p-5 rounded-xl border border-slate-100">
-        <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-200/60 pb-2 mb-5">
+      <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-200/80 pb-2 mb-5">
           Dados Bancários (Conta Salário/Corrente)
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -112,6 +145,7 @@ export function SalaryTab({ data, onChange }: Props) {
               value={data.banco || ''}
               onChange={(e) => onChange('banco', e.target.value)}
               className="bg-white"
+              placeholder="Ex: Itaú, Bradesco"
             />
           </div>
           <div className="space-y-1.5">
@@ -120,6 +154,7 @@ export function SalaryTab({ data, onChange }: Props) {
               value={data.agConta || ''}
               onChange={(e) => onChange('agConta', e.target.value)}
               className="bg-white"
+              placeholder="0000"
             />
           </div>
           <div className="space-y-1.5">
@@ -128,6 +163,7 @@ export function SalaryTab({ data, onChange }: Props) {
               value={data.conta || ''}
               onChange={(e) => onChange('conta', e.target.value)}
               className="bg-white"
+              placeholder="00000-0"
             />
           </div>
           <div className="space-y-1.5">
@@ -136,7 +172,7 @@ export function SalaryTab({ data, onChange }: Props) {
               value={data.pix || ''}
               onChange={(e) => onChange('pix', e.target.value)}
               className="bg-white"
-              placeholder="CPF/CNPJ, Email, Telefone..."
+              placeholder="CPF/CNPJ, Email, Tel..."
             />
           </div>
         </div>

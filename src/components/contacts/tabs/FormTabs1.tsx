@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 
@@ -37,42 +37,53 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
 export function DocsTab({ data, onChange }: Props) {
   const [ocrLoading, setOcrLoading] = useState(false)
   const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleOcrSimulate = () => {
-    setOcrLoading(true)
-    setTimeout(() => {
-      onChange('docType', 'RG')
-      onChange('cpf', '123.456.789-00')
-      onChange('docIssueDate', '2020-05-15')
-      setOcrLoading(false)
-      toast({
-        title: 'Documento Processado',
-        description: 'Dados extraídos com sucesso via OCR.',
-      })
-    }, 1500)
+  const handleOcrSimulate = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      setOcrLoading(true)
+      setTimeout(() => {
+        onChange('docType', 'RG')
+        onChange('cpf', '123.456.789-00')
+        onChange('docIssueDate', '2020-05-15')
+        setOcrLoading(false)
+        toast({
+          title: 'Documento Processado',
+          description: 'Dados extraídos com sucesso via Inteligência Artificial (OCR).',
+        })
+      }, 1500)
+    }
   }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center">
+      <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50/50 transition-colors">
         <div className="bg-blue-100 p-3 rounded-full mb-3">
           <UploadCloud className="w-6 h-6 text-blue-600" />
         </div>
-        <h4 className="font-semibold text-slate-800 mb-1">Upload Automático (OCR)</h4>
+        <h4 className="font-semibold text-slate-800 mb-1">Upload Automático de Documento (OCR)</h4>
         <p className="text-xs text-slate-500 mb-4 max-w-md">
-          Faça upload da foto do RG, CNH ou CTPS para preencher os campos automaticamente.
+          Faça upload da foto do RG, CNH ou CTPS para preencher os campos automaticamente com a
+          nossa inteligência artificial.
         </p>
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*,.pdf"
+          onChange={handleOcrSimulate}
+        />
         <Button
-          onClick={handleOcrSimulate}
+          onClick={() => fileInputRef.current?.click()}
           disabled={ocrLoading}
           variant="outline"
           className="bg-white"
         >
-          {ocrLoading ? 'Lendo Documento...' : 'Simular Leitura de Documento'}
+          {ocrLoading ? 'Analisando Documento...' : 'Anexar Documento para Leitura'}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div>
           <LabelT l="Tipo de Documento" t="Selecione o documento principal" />
           <Select value={data.docType} onValueChange={(v) => onChange('docType', v)}>
@@ -95,11 +106,20 @@ export function DocsTab({ data, onChange }: Props) {
           />
         </div>
         <div>
-          <LabelT l="CPF" t="Apenas números, obrigatório para FGTS e seguro" req />
+          <LabelT l="CPF" t="Apenas números, obrigatório para eSocial" req />
           <Input
             value={data.cpf || ''}
             onChange={(e) => onChange('cpf', e.target.value)}
             placeholder="000.000.000-00"
+            className="font-mono"
+          />
+        </div>
+        <div>
+          <LabelT l="PIS/PASEP" t="Número de Inscrição" req />
+          <Input
+            value={data.pis || ''}
+            onChange={(e) => onChange('pis', e.target.value)}
+            placeholder="000.00000.00-0"
             className="font-mono"
           />
         </div>
@@ -201,7 +221,7 @@ export function DocsTab({ data, onChange }: Props) {
             className="data-[state=checked]:bg-blue-600"
           />
           <Label className="text-slate-800 font-semibold cursor-pointer">
-            Colaborador é motorista
+            Colaborador necessita de CNH (Motorista)
           </Label>
         </div>
         {data.isDriver && (
@@ -364,7 +384,7 @@ export function AddressTab({ data, onChange }: Props) {
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
-          <LabelT l="Estado" t="Unidade Federativa" req />
+          <LabelT l="Estado (UF)" t="Unidade Federativa" req />
           <Select value={data.estado} onValueChange={(v) => onChange('estado', v)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />

@@ -11,6 +11,7 @@ import PublicLayout from '@/components/layouts/PublicLayout'
 import AppLayout from '@/components/layouts/AppLayout'
 
 import LandingPage from '@/pages/public/LandingPage'
+import Onboarding from '@/pages/public/Onboarding'
 import Dashboard from '@/pages/app/Dashboard'
 import Contacts from '@/pages/app/Contacts'
 import Financial from '@/pages/app/Financial'
@@ -41,6 +42,9 @@ const App = () => (
                 <Route element={<PublicLayout />}>
                   <Route path="/" element={<LandingPage />} />
                 </Route>
+
+                {/* Rota pública de admissão (fora do layout principal) */}
+                <Route path="/onboarding/:token" element={<Onboarding />} />
 
                 <Route element={<AppLayout />}>
                   <Route path="/app" element={<Dashboard />} />

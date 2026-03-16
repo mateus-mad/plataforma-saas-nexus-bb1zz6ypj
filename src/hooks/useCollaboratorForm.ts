@@ -20,6 +20,7 @@ export function useCollaboratorForm() {
       docType: '',
       docIssueDate: '',
       cpf: '044.763.243-47',
+      pis: '',
       ctpsNum: '',
       ctpsSeries: '',
       ctpsUf: '',

@@ -23,7 +23,7 @@ import {
   Share2,
 } from 'lucide-react'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void }
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; onEdit?: () => void }
 
 const STATS = [
   { val: 'R$ 3.500,00', lbl: 'Salário Base', icon: DollarSign, c: 'text-blue-600' },
@@ -49,21 +49,37 @@ const Section = ({ t, icon: Icon, children }: any) => (
   </div>
 )
 
-export default function CollaboratorProfileModal({ open, onOpenChange }: Props) {
+export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }: Props) {
   const { toast } = useToast()
 
   const printDoc = () => {
     toast({
       title: 'Gerando PDF',
-      description: 'O documento está sendo preparado para impressão/PDF.',
+      description: 'O arquivo está sendo preparado e o download iniciará em breve.',
     })
-    setTimeout(() => window.print(), 500)
+    setTimeout(() => {
+      const blob = new Blob(['Simulação de Documento Completo - Ficha de Registro de Empregado'], {
+        type: 'application/pdf',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'Ficha_Colaborador_Mateus_Amorim.pdf'
+      document.body.appendChild(a)
+      a.click()
+      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast({
+        title: 'Download Concluído',
+        description: 'A ficha do colaborador foi exportada.',
+      })
+    }, 1500)
   }
 
   const shareProfile = () => {
     toast({
       title: 'Link Gerado',
-      description: 'Link do PDF copiado para a área de transferência.',
+      description: 'Link do perfil copiado para a área de transferência.',
     })
     navigator.clipboard.writeText(window.location.origin + '/share/colaborador/123')
   }
@@ -88,7 +104,7 @@ export default function CollaboratorProfileModal({ open, onOpenChange }: Props) 
                   <DialogTitle className="text-2xl font-bold text-slate-800">
                     Mateus amorim dias
                   </DialogTitle>
-                  <Badge className="bg-blue-500 text-white hover:bg-blue-600 border-none shadow-sm flex items-center gap-1">
+                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-sm flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Ativo
                   </Badge>
                   <Badge
@@ -127,9 +143,12 @@ export default function CollaboratorProfileModal({ open, onOpenChange }: Props) 
               onClick={printDoc}
               className="border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              <Printer className="w-4 h-4 mr-2" /> Gerar PDF
+              <Printer className="w-4 h-4 mr-2" /> Exportar PDF
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20">
+            <Button
+              onClick={onEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20"
+            >
               <Edit className="w-4 h-4 mr-2" /> Editar
             </Button>
           </div>

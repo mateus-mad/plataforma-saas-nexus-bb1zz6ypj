@@ -170,16 +170,18 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
                         )}
                         {mockStatus === 'Ativo' ? 'Demitir' : 'Readmitir'}
                       </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setActiveItem(it)
-                          setDeleteOpen(true)
-                        }}
-                        className="w-full justify-start text-sm h-9 text-rose-700 hover:text-white hover:bg-rose-600 mt-1"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Excluir Registro
-                      </Button>
+                      <div className="px-2 py-1 mt-1 bg-rose-50/50 rounded-md">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setActiveItem(it)
+                            setDeleteOpen(true)
+                          }}
+                          className="w-full justify-start text-xs h-8 text-rose-700 hover:text-white hover:bg-rose-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir Registro
+                        </Button>
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -220,7 +222,7 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
             </AlertDialogTitle>
             <AlertDialogDescription>
               Para excluir os registros de <b>{activeItem?.name}</b>, confirme sua senha de
-              administrador. Esta ação não pode ser desfeita.
+              administrador. Esta ação não pode ser desfeita. (Use <b>admin123</b>)
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="my-4 space-y-2">
@@ -229,7 +231,7 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Digite sua senha (admin123)"
+              placeholder="Digite sua senha"
               className="focus-visible:ring-rose-500"
             />
           </div>

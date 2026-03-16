@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Info } from 'lucide-react'
+import { Info, HeartPulse } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type Props = { data: any; onChange: (f: string, v: string) => void }
@@ -67,9 +67,10 @@ export function ContactTab({ data, onChange }: Props) {
         </div>
       </div>
 
-      <div className="bg-rose-50/50 p-5 rounded-xl border border-rose-100">
-        <h4 className="text-sm font-semibold text-rose-800 border-b border-rose-200/60 pb-2 mb-5">
-          Contato de Emergência
+      <div className="bg-rose-50/30 p-6 rounded-2xl border border-rose-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500"></div>
+        <h4 className="text-sm font-bold text-rose-800 flex items-center gap-2 mb-4">
+          <HeartPulse className="w-5 h-5" /> Contato de Emergência
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
@@ -77,7 +78,8 @@ export function ContactTab({ data, onChange }: Props) {
             <Input
               value={data.emergNome || ''}
               onChange={(e) => onChange('emergNome', e.target.value)}
-              className="bg-white"
+              className="bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm"
+              placeholder="Ex: Maria Silva"
             />
           </div>
           <div className="space-y-1.5">
@@ -86,7 +88,7 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.emergTel || ''}
               onChange={(e) => onChange('emergTel', e.target.value)}
               placeholder="(00) 00000-0000"
-              className="bg-white"
+              className="bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm"
             />
           </div>
           <div className="space-y-1.5">
@@ -95,7 +97,7 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.emergRel || ''}
               onChange={(e) => onChange('emergRel', e.target.value)}
               placeholder="Ex: Mãe"
-              className="bg-white"
+              className="bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm"
             />
           </div>
         </div>
@@ -112,20 +114,29 @@ export function WorkTab({ data, onChange }: Props) {
       </h4>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-1.5">
-          <LabelT l="Matrícula (ID)" t="Código de identificação interno" req />
+          <LabelT l="Matrícula (ID Interno)" t="Código de identificação interno da empresa" req />
           <Input
             value={data.matricula || ''}
             onChange={(e) => onChange('matricula', e.target.value)}
-            className="bg-slate-50"
+            className="bg-slate-50 font-mono"
+            placeholder="COL0001"
           />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Departamento" t="Setor de alocação do colaborador" req />
-          <Input value={data.depto || ''} onChange={(e) => onChange('depto', e.target.value)} />
+          <Input
+            value={data.depto || ''}
+            onChange={(e) => onChange('depto', e.target.value)}
+            placeholder="Ex: Engenharia"
+          />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="Cargo" t="Função exercida (deve coincidir com CBO)" req />
-          <Input value={data.cargo || ''} onChange={(e) => onChange('cargo', e.target.value)} />
+          <LabelT l="Cargo (CBO)" t="Função exercida (deve coincidir com CBO)" req />
+          <Input
+            value={data.cargo || ''}
+            onChange={(e) => onChange('cargo', e.target.value)}
+            placeholder="Ex: Engenheiro Civil"
+          />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Data de Admissão" t="Data de início no sistema/contrato" req />
@@ -137,11 +148,19 @@ export function WorkTab({ data, onChange }: Props) {
         </div>
         <div className="space-y-1.5">
           <LabelT l="Tipo de Contrato" t="Ex: CLT Mensalista, PJ, Horista" req />
-          <Input value={data.tipo || ''} onChange={(e) => onChange('tipo', e.target.value)} />
+          <Input
+            value={data.tipo || ''}
+            onChange={(e) => onChange('tipo', e.target.value)}
+            placeholder="Ex: CLT"
+          />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Jornada (Turno)" t="Carga horária semanal ou turno" req />
-          <Input value={data.jornada || ''} onChange={(e) => onChange('jornada', e.target.value)} />
+          <Input
+            value={data.jornada || ''}
+            onChange={(e) => onChange('jornada', e.target.value)}
+            placeholder="Ex: 44h semanais"
+          />
         </div>
       </div>
     </div>

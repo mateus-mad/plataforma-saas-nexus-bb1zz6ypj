@@ -25,7 +25,7 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
 )
 
 export default function PersonalInfoTab({ data, onChange }: Props) {
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(data.foto || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,12 +33,12 @@ export default function PersonalInfoTab({ data, onChange }: Props) {
     if (file) {
       const url = URL.createObjectURL(file)
       setPhotoPreview(url)
-      onChange('foto', url)
+      onChange('foto', url) // Saving standard file/url in the form data
     }
   }
 
   const defaultPhoto =
-    data.name.toLowerCase() === 'mateus amorim dias'
+    data.name.toLowerCase() === 'mateus amorim dias' && !photoPreview
       ? 'https://img.usecurling.com/ppl/medium?gender=male&seed=1'
       : null
 
@@ -52,6 +52,7 @@ export default function PersonalInfoTab({ data, onChange }: Props) {
     ['Cidade Nasc.', 'cidade', 'Cidade onde nasceu', true],
     ['UF Nasc.', 'uf', 'Estado onde nasceu', true],
     ['Tipo Sanguíneo', 'sangue', 'Fator RH e tipo (ex: O+, A-)', false],
+    ['Data Nascimento', 'nascimento', 'Data de nascimento', true],
   ] as const
 
   return (
@@ -81,7 +82,7 @@ export default function PersonalInfoTab({ data, onChange }: Props) {
               )}
               <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white gap-1">
                 <Camera className="w-6 h-6" />
-                <span className="text-[10px] font-medium">Trocar Foto</span>
+                <span className="text-[10px] font-medium text-center px-2">Alterar Foto</span>
               </div>
             </div>
             <input
@@ -100,7 +101,7 @@ export default function PersonalInfoTab({ data, onChange }: Props) {
           <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
             <LabelT l="Nome Completo" t="Nome oficial conforme documento civil" req />
             <Input
-              value={data.name}
+              value={data.name || ''}
               onChange={(e) => onChange('name', e.target.value)}
               className="shadow-sm font-medium border-slate-300"
             />
@@ -109,6 +110,7 @@ export default function PersonalInfoTab({ data, onChange }: Props) {
             <div key={field} className="space-y-1.5">
               <LabelT l={label} t={tooltip} req={req} />
               <Input
+                type={field === 'nascimento' ? 'date' : 'text'}
                 value={data[field] || ''}
                 onChange={(e) => onChange(field, e.target.value)}
                 className="shadow-sm"

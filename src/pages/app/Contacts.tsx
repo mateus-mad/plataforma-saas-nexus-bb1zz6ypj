@@ -32,11 +32,13 @@ export default function Contacts() {
   const handleCloseModal = () => setModalState((prev) => ({ ...prev, isOpen: false }))
 
   const generateOnboardingLink = () => {
+    const token = Math.random().toString(36).substring(2, 10)
+    const link = `${window.location.origin}/onboarding/token_${token}`
+    navigator.clipboard.writeText(link)
     toast({
-      title: 'Link Gerado',
-      description: 'Link seguro copiado para a área de transferência. Ele expirará após 1 uso.',
+      title: 'Link Gerado e Copiado',
+      description: 'Link seguro de uso único copiado para a área de transferência.',
     })
-    navigator.clipboard.writeText(window.location.origin + '/onboarding/tmp_xyz987')
   }
 
   return (
@@ -63,7 +65,7 @@ export default function Contacts() {
             onClick={generateOnboardingLink}
             className="hidden lg:flex border-slate-200 text-slate-600 bg-white hover:bg-slate-50 shadow-sm"
           >
-            <LinkIcon className="w-4 h-4 mr-2" /> Gerar Link de Admissão
+            <LinkIcon className="w-4 h-4 mr-2" /> Link de Admissão
           </Button>
           <Button
             variant="outline"
@@ -130,6 +132,7 @@ export default function Contacts() {
       <CollaboratorProfileModal
         open={modalState.isOpen && modalState.type === 'profile'}
         onOpenChange={(open) => !open && handleCloseModal()}
+        onEdit={() => handleOpenModal('edit')}
       />
       <AIEngineModal open={aiOpen} onOpenChange={setAiOpen} />
     </div>

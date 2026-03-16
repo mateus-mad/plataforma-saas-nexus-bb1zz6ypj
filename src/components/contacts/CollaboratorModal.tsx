@@ -69,7 +69,7 @@ export default function CollaboratorModal({
   }
 
   const handleSave = () => {
-    toast({ title: 'Atualizado', description: 'Dados do colaborador foram atualizados.' })
+    toast({ title: 'Atualizado', description: 'Dados do colaborador foram salvos com sucesso.' })
     onOpenChange(false)
   }
 
@@ -96,7 +96,7 @@ export default function CollaboratorModal({
                 <User className="w-5 h-5 text-slate-500" /> Editar Colaborador
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Preencha os dados do colaborador. Campos com * são obrigatórios.
+                Gerencie todos os dados da ficha funcional.
               </DialogDescription>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -105,7 +105,7 @@ export default function CollaboratorModal({
                 size="sm"
                 onClick={handleToggleStatus}
                 className={cn(
-                  'h-9 hidden sm:flex transition-all',
+                  'h-9 hidden sm:flex transition-all font-semibold',
                   isActiveEmpl
                     ? 'border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700'
                     : 'bg-emerald-600 hover:bg-emerald-700 text-white',
@@ -113,66 +113,58 @@ export default function CollaboratorModal({
               >
                 {isActiveEmpl ? (
                   <>
-                    <UserMinus className="w-4 h-4 mr-2" /> Demitir
+                    <UserMinus className="w-4 h-4 mr-2" /> Demitir Colaborador
                   </>
                 ) : (
                   <>
-                    <UserCheck className="w-4 h-4 mr-2" /> Readmitir
+                    <UserCheck className="w-4 h-4 mr-2" /> Readmitir Colaborador
                   </>
                 )}
               </Button>
-              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full">
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100">
                 <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
                 <Progress
                   value={globalProgress}
-                  className="w-24 h-1.5 bg-slate-100 [&>div]:bg-blue-600"
+                  className="w-24 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
                 />
                 <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 mt-6 custom-scrollbar px-1">
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 mt-6 px-1 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center justify-between min-w-[120px] px-3 py-2 rounded-xl text-sm font-semibold transition-all relative overflow-hidden shrink-0 border border-transparent',
+                  'flex flex-col min-w-[110px] px-3 py-2 rounded-lg text-sm font-semibold transition-all shrink-0 border border-transparent shadow-sm',
                   activeTab === tab.id
-                    ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20 ring-4 ring-blue-50'
-                    : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200',
+                    ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-100'
+                    : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-slate-200',
                 )}
               >
-                <div className="flex items-center gap-2 z-10 relative">
-                  <tab.icon
-                    className={cn(
-                      'w-4 h-4',
-                      activeTab === tab.id ? 'text-white' : 'text-slate-400',
-                    )}
-                  />
-                  <span>{tab.label}</span>
+                <div className="flex items-center justify-between w-full mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <tab.icon
+                      className={cn(
+                        'w-4 h-4',
+                        activeTab === tab.id ? 'text-blue-600' : 'text-slate-400',
+                      )}
+                    />
+                    <span>{tab.label}</span>
+                  </div>
                 </div>
                 {tab.prog !== null && (
-                  <span
-                    className={cn(
-                      'text-[10px] px-1.5 py-0.5 rounded-md ml-2 z-10 relative',
-                      activeTab === tab.id
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-100 text-slate-500',
-                    )}
-                  >
-                    {tab.prog}%
-                  </span>
-                )}
-                {tab.prog !== null && (
-                  <div
-                    className={cn(
-                      'absolute bottom-0 left-0 h-[3px] transition-all duration-500',
-                      activeTab === tab.id ? 'bg-white/40' : getProgressColor(tab.prog),
-                    )}
-                    style={{ width: `${tab.prog}%` }}
-                  />
+                  <div className="w-full flex items-center gap-2 mt-1">
+                    <div className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full', getProgressColor(tab.prog))}
+                        style={{ width: `${tab.prog}%` }}
+                      />
+                    </div>
+                    <span className="text-[9px] text-slate-400 font-bold">{tab.prog}%</span>
+                  </div>
                 )}
               </button>
             ))}
@@ -236,7 +228,7 @@ export default function CollaboratorModal({
               onClick={handleSave}
               className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
             >
-              Atualizar
+              Salvar Dados
             </Button>
           </div>
         </div>
