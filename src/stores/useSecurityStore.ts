@@ -84,7 +84,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsUnlocked(true)
         return true
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Unlock failed', e)
+    }
     return false
   }
 
@@ -112,7 +114,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsUnlocked(true)
         return true
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Recovery failed', e)
+    }
     return false
   }
 
