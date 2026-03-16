@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Lock, ShieldCheck, ArrowRight, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ export default function LockScreen() {
   const [newPassword, setNewPassword] = useState('')
   const { unlock, recover, loginAsManager } = useSecurityStore()
   const { toast } = useToast()
+  const navigate = useNavigate()
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,9 +64,7 @@ export default function LockScreen() {
     if (file) {
       const reader = new FileReader()
       reader.onload = (ev) => {
-        if (ev.target?.result) {
-          setRecoverSecret(ev.target.result.toString())
-        }
+        if (ev.target?.result) setRecoverSecret(ev.target.result.toString())
       }
       reader.readAsText(file)
     }
@@ -107,7 +107,10 @@ export default function LockScreen() {
             <Button
               type="button"
               variant="outline"
-              onClick={loginAsManager}
+              onClick={() => {
+                loginAsManager()
+                navigate('/app/manager')
+              }}
               className="w-full h-12 text-base font-medium border-purple-900/50 bg-purple-950/20 text-purple-400 hover:bg-purple-900/40 hover:text-purple-300 hover:border-purple-800 transition-colors"
             >
               <ShieldAlert className="w-4 h-4 mr-2" /> Entrar como SaaS Manager
@@ -141,7 +144,7 @@ export default function LockScreen() {
           <Tabs defaultValue="seed" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="seed">Seed Phrase</TabsTrigger>
-              <TabsTrigger value="key">Emergency Key (Arquivo)</TabsTrigger>
+              <TabsTrigger value="key">Emergency Key</TabsTrigger>
             </TabsList>
 
             <form onSubmit={handleRecover} className="mt-6 space-y-4">
@@ -165,9 +168,6 @@ export default function LockScreen() {
                     onChange={handleFileUpload}
                     className="cursor-pointer file:text-primary file:bg-primary/10 file:border-0 file:rounded file:px-2 file:py-1 file:mr-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Selecione o arquivo baixado durante a ativação.
-                  </p>
                 </div>
               </TabsContent>
 

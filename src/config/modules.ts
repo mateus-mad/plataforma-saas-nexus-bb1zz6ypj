@@ -19,6 +19,16 @@ import {
   Activity,
   Clock,
   CheckSquare,
+  Headphones,
+  Ticket,
+  Bug,
+  Lightbulb,
+  MessageSquare,
+  MessageCircle,
+  ShieldAlert,
+  Key,
+  CreditCard,
+  Settings,
 } from 'lucide-react'
 
 export const ACTIVE_MODULES = [
@@ -26,21 +36,19 @@ export const ACTIVE_MODULES = [
     name: 'Dashboard',
     path: '/app',
     icon: LayoutDashboard,
-    description:
-      'Central de inteligência para monitoramento em tempo real e tomada de decisão baseada em dados.',
+    description: 'Central de inteligência para monitoramento em tempo real.',
   },
   {
     name: 'Contatos',
     path: '/app/contatos',
     icon: Users,
-    description: 'Sistema de gestão centralizada para clientes, parceiros e stakeholders.',
+    description: 'Gestão centralizada para clientes e parceiros.',
   },
   {
     name: 'Financeiro',
     path: '/app/financeiro',
     icon: CircleDollarSign,
-    description:
-      'Módulo robusto de controle financeiro para gestão de fluxo de caixa, despesas e sustentabilidade econômica.',
+    description: 'Controle financeiro para gestão de fluxo de caixa.',
   },
 ]
 
@@ -129,6 +137,70 @@ export const UPCOMING_MODULES = [
     name: 'Sistema de Automação de Tarefas',
     icon: CheckSquare,
     description: 'Workflows automatizados para processos rotineiros.',
+  },
+]
+
+export const MANAGER_MENU_CATEGORIES = [
+  {
+    name: 'Visão Geral',
+    icon: LayoutDashboard,
+    path: '/app/manager',
+  },
+  {
+    name: 'Suporte & Operações',
+    icon: Headphones,
+    items: [
+      { name: 'Tickets', path: '/app/manager/tickets', icon: Ticket, description: 'Atendimento' },
+      { name: 'Bugs', path: '/app/manager/bugs', icon: Bug, description: 'Problemas' },
+      {
+        name: 'Sugestões',
+        path: '/app/manager/feedback',
+        icon: Lightbulb,
+        description: 'Feedback dos usuários',
+      },
+    ],
+  },
+  {
+    name: 'Comunicação',
+    icon: MessageSquare,
+    items: [
+      {
+        name: 'Chat Interno',
+        path: '/app/manager/internal-chat',
+        icon: Users,
+        description: 'Equipe de Dev/Suporte',
+      },
+      {
+        name: 'Chat Clientes',
+        path: '/app/manager/support-chat',
+        icon: MessageCircle,
+        description: 'Comunicação Externa',
+      },
+    ],
+  },
+  {
+    name: 'Administrativo',
+    icon: ShieldAlert,
+    items: [
+      {
+        name: 'Licenças',
+        path: '/app/manager/licenses',
+        icon: Key,
+        description: 'Controle de acessos',
+      },
+      {
+        name: 'Pagamentos',
+        path: '/app/manager/payments',
+        icon: CreditCard,
+        description: 'Histórico financeiro',
+      },
+      {
+        name: 'Preços & Módulos',
+        path: '/app/manager/pricing',
+        icon: Settings,
+        description: 'Precificação do ERP',
+      },
+    ],
   },
 ]
 

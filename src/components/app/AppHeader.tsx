@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Search, Hexagon, Check, ChevronDown, ShieldAlert, Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -28,10 +28,20 @@ const PATH_MAP: Record<string, string> = {
   '/app/financeiro': 'Financeiro',
   '/app/configuracoes': 'Configurações',
   '/app/em-breve': 'Módulo em Desenvolvimento',
+  '/app/manager': 'SaaS Dashboard',
+  '/app/manager/tickets': 'Tickets de Suporte',
+  '/app/manager/bugs': 'Gestão de Bugs',
+  '/app/manager/internal-chat': 'Chat Interno',
+  '/app/manager/feedback': 'Sugestões',
+  '/app/manager/support-chat': 'Chat Clientes',
+  '/app/manager/licenses': 'Licenças',
+  '/app/manager/payments': 'Pagamentos',
+  '/app/manager/pricing': 'Preços de Módulos',
 }
 
 export function AppHeader() {
   const location = useLocation()
+  const navigate = useNavigate()
   const pathName = PATH_MAP[location.pathname] || 'Visão Geral'
   const { currentTenant, tenants, switchTenant } = useTenantStore()
   const { isAdminMode, loginAsManager, switchToClientMode, isSetup, lock } = useSecurityStore()
@@ -40,7 +50,10 @@ export function AppHeader() {
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] sticky top-0 z-50 transition-all">
       <div className="flex items-center gap-3 sm:gap-4 flex-1">
         <div className="flex items-center gap-3 sm:gap-4 h-8">
-          <Link to="/app" className="flex items-center gap-2 group cursor-pointer">
+          <Link
+            to={isAdminMode ? '/app/manager' : '/app'}
+            className="flex items-center gap-2 group cursor-pointer"
+          >
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${isAdminMode ? 'bg-purple-100 border-purple-200 text-purple-600 group-hover:bg-purple-200 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]' : 'bg-primary/10 border-primary/20 text-primary group-hover:bg-primary/20 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]'}`}
             >
@@ -51,14 +64,14 @@ export function AppHeader() {
               <span
                 className={isAdminMode ? 'text-purple-600 font-normal' : 'text-primary font-normal'}
               >
-                ERP
+                {isAdminMode ? 'Manager' : 'ERP'}
               </span>
             </span>
           </Link>
 
           {isAdminMode ? (
             <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200 shadow-none h-6 px-2 text-[10px] uppercase tracking-wider hidden sm:flex">
-              SaaS Manager
+              SaaS Admin
             </Badge>
           ) : (
             <Badge
@@ -110,10 +123,14 @@ export function AppHeader() {
                   {t.id === currentTenant?.id && <Check className="w-4 h-4 text-primary" />}
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild className="cursor-pointer text-primary py-2">
-                <Link to="/app/configuracoes?tab=tenants">Gerenciar Empresas (Multi-CNPJ)</Link>
-              </DropdownMenuItem>
+              {!isAdminMode && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer text-primary py-2">
+                    <Link to="/app/configuracoes?tab=tenants">Gerenciar Empresas</Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -123,11 +140,15 @@ export function AppHeader() {
         <Breadcrumb className="hidden xl:block">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <span className="text-muted-foreground">App</span>
+              <span className="text-muted-foreground">{isAdminMode ? 'Manager' : 'App'}</span>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage className="font-medium text-primary">{pathName}</BreadcrumbPage>
+              <BreadcrumbPage
+                className={isAdminMode ? 'font-medium text-purple-600' : 'font-medium text-primary'}
+              >
+                {pathName}
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -183,22 +204,26 @@ export function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-slate-100" />
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link to="/app/configuracoes?tab=security">Segurança Zero-Knowledge</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link to="/app/configuracoes">Configurações</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem
-              onClick={isAdminMode ? switchToClientMode : loginAsManager}
-              className={`cursor-pointer font-medium ${isAdminMode ? 'text-slate-700' : 'text-purple-600 focus:text-purple-700 focus:bg-purple-50'}`}
+              onClick={() => {
+                if (isAdminMode) {
+                  switchToClientMode()
+                  navigate('/app')
+                } else {
+                  loginAsManager()
+                  navigate('/app/manager')
+                }
+              }}
+              className={`cursor-pointer font-medium ${isAdminMode ? 'text-slate-700 focus:bg-slate-100' : 'text-purple-600 focus:text-purple-700 focus:bg-purple-50'}`}
             >
               <ShieldAlert className="w-4 h-4 mr-2" />
               {isAdminMode ? 'Alternar para Visão Cliente' : 'Alternar para SaaS Manager'}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-slate-100" />
-            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer">
+            <DropdownMenuItem
+              className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer"
+              onClick={() => navigate('/')}
+            >
               Sair da Plataforma
             </DropdownMenuItem>
           </DropdownMenuContent>

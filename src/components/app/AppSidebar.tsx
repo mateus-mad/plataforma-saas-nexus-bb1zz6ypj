@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Hexagon, Settings, HelpCircle, LogOut, ChevronRight } from 'lucide-react'
-import { MENU_CATEGORIES } from '@/config/modules'
+import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES } from '@/config/modules'
 import useModuleStore from '@/stores/useModuleStore'
+import useSecurityStore from '@/stores/useSecurityStore'
 import {
   Sidebar,
   SidebarContent,
@@ -22,40 +23,69 @@ export function AppSidebar() {
   const location = useLocation()
   const currentFullPath = decodeURIComponent(location.pathname + location.search)
   const { contractedModules } = useModuleStore()
+  const { isAdminMode } = useSecurityStore()
   const { toggleSidebar } = useSidebar()
 
-  const visibleCategories = MENU_CATEGORIES.map((category) => {
-    if (category.path) return category
+  const categoriesToRender = isAdminMode ? MANAGER_MENU_CATEGORIES : MENU_CATEGORIES
 
-    if (category.items) {
-      const visibleItems = category.items.filter((item) => contractedModules.includes(item.name))
-      return { ...category, items: visibleItems }
-    }
-    return category
-  }).filter((category) => category.path || (category.items && category.items.length > 0))
+  const visibleCategories = categoriesToRender
+    .map((category) => {
+      if (category.path || isAdminMode) return category
+
+      if (category.items) {
+        const visibleItems = category.items.filter((item) => contractedModules.includes(item.name))
+        return { ...category, items: visibleItems }
+      }
+      return category
+    })
+    .filter((category) => category.path || (category.items && category.items.length > 0))
 
   return (
     <Sidebar
-      className="border-r border-slate-800/60 bg-[#0A0F1C]"
+      className={cn('border-r border-slate-800/60', isAdminMode ? 'bg-[#1E1033]' : 'bg-[#0A0F1C]')}
       variant="sidebar"
       collapsible="icon"
     >
       <SidebarHeader
-        className="p-4 border-b border-slate-800/60 bg-[#0A0F1C]/80 backdrop-blur-md cursor-pointer hover:bg-slate-800/40 transition-colors group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center"
+        className={cn(
+          'p-4 border-b cursor-pointer transition-colors group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center',
+          isAdminMode
+            ? 'border-purple-900/40 bg-[#1E1033]/80 hover:bg-purple-900/30'
+            : 'border-slate-800/60 bg-[#0A0F1C]/80 hover:bg-slate-800/40',
+        )}
         onClick={toggleSidebar}
         title="Alternar Menu"
       >
         <div className="flex items-center gap-2 px-1 overflow-hidden w-full">
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 shadow-[0_0_10px_rgba(59,130,246,0.2)] shrink-0 transition-transform group-hover:scale-105">
-            <Hexagon className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+          <div
+            className={cn(
+              'relative flex items-center justify-center w-8 h-8 rounded-lg border shrink-0 transition-transform group-hover:scale-105',
+              isAdminMode
+                ? 'bg-purple-500/10 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                : 'bg-primary/10 border-primary/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]',
+            )}
+          >
+            <Hexagon
+              className={cn(
+                'w-5 h-5',
+                isAdminMode
+                  ? 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                  : 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]',
+              )}
+            />
           </div>
           <span className="font-bold text-lg text-slate-100 tracking-wide truncate group-data-[collapsible=icon]:hidden transition-opacity">
-            Nexus<span className="text-primary font-light">ERP</span>
+            Nexus
+            <span className={cn('font-light', isAdminMode ? 'text-purple-400' : 'text-primary')}>
+              {isAdminMode ? 'Manager' : 'ERP'}
+            </span>
           </span>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-[#0A0F1C] pt-4 custom-scrollbar">
+      <SidebarContent
+        className={cn('pt-4 custom-scrollbar', isAdminMode ? 'bg-[#1E1033]' : 'bg-[#0A0F1C]')}
+      >
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
@@ -74,21 +104,36 @@ export function AppSidebar() {
                     className={cn(
                       'relative overflow-hidden transition-all duration-300 h-10 px-3 mx-2 rounded-lg border border-transparent group/cat w-auto group-data-[collapsible=icon]:mx-1',
                       isActive
-                        ? 'bg-primary/10 border-primary/30 text-primary shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]'
-                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 hover:border-slate-700/50',
+                        ? isAdminMode
+                          ? 'bg-purple-500/20 border-purple-500/40 text-purple-300 shadow-[inset_0_0_20px_rgba(168,85,247,0.15)]'
+                          : 'bg-primary/10 border-primary/30 text-primary shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]'
+                        : isAdminMode
+                          ? 'text-purple-200/60 hover:bg-purple-900/40 hover:text-purple-100 hover:border-purple-800/50'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 hover:border-slate-700/50',
                     )}
                   >
                     {category.path ? (
                       <Link to={category.path} className="flex items-center w-full gap-3">
                         {isActive && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)] rounded-r-full" />
+                          <div
+                            className={cn(
+                              'absolute left-0 top-0 bottom-0 w-1 rounded-r-full',
+                              isAdminMode
+                                ? 'bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.8)]'
+                                : 'bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]',
+                            )}
+                          />
                         )}
                         <category.icon
                           className={cn(
                             'w-5 h-5 transition-all duration-300 shrink-0',
                             isActive
-                              ? 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]'
-                              : 'group-hover/cat:text-primary/70',
+                              ? isAdminMode
+                                ? 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                                : 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]'
+                              : isAdminMode
+                                ? 'group-hover/cat:text-purple-300/80'
+                                : 'group-hover/cat:text-primary/70',
                           )}
                         />
                         <span className="flex-1 font-medium tracking-wide truncate group-data-[collapsible=icon]:hidden">
@@ -98,14 +143,25 @@ export function AppSidebar() {
                     ) : (
                       <button className="flex items-center w-full gap-3 cursor-default">
                         {isActive && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)] rounded-r-full" />
+                          <div
+                            className={cn(
+                              'absolute left-0 top-0 bottom-0 w-1 rounded-r-full',
+                              isAdminMode
+                                ? 'bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.8)]'
+                                : 'bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]',
+                            )}
+                          />
                         )}
                         <category.icon
                           className={cn(
                             'w-5 h-5 transition-all duration-300 shrink-0',
                             isActive
-                              ? 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]'
-                              : 'group-hover/cat:text-primary/70',
+                              ? isAdminMode
+                                ? 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                                : 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]'
+                              : isAdminMode
+                                ? 'group-hover/cat:text-purple-300/80'
+                                : 'group-hover/cat:text-primary/70',
                           )}
                         />
                         <span className="flex-1 font-medium tracking-wide text-left truncate group-data-[collapsible=icon]:hidden">
@@ -114,7 +170,10 @@ export function AppSidebar() {
                         <ChevronRight
                           className={cn(
                             'w-4 h-4 transition-transform opacity-50 shrink-0 group-data-[collapsible=icon]:hidden',
-                            isActive && 'text-primary opacity-100',
+                            isActive &&
+                              (isAdminMode
+                                ? 'text-purple-400 opacity-100'
+                                : 'text-primary opacity-100'),
                           )}
                         />
                       </button>
@@ -131,12 +190,29 @@ export function AppSidebar() {
                           side="right"
                           align="start"
                           sideOffset={16}
-                          className="w-72 p-0 bg-[#0F1524]/95 backdrop-blur-xl border-slate-700/50 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_20px_rgba(59,130,246,0.1)] text-slate-200 overflow-hidden rounded-xl z-[100] animate-in slide-in-from-left-2 fade-in duration-200"
+                          className={cn(
+                            'w-72 p-0 backdrop-blur-xl border shadow-xl overflow-hidden rounded-xl z-[100] animate-in slide-in-from-left-2 fade-in duration-200',
+                            isAdminMode
+                              ? 'bg-[#2A1647]/95 border-purple-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_20px_rgba(168,85,247,0.15)] text-purple-100'
+                              : 'bg-[#0F1524]/95 border-slate-700/50 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_20px_rgba(59,130,246,0.1)] text-slate-200',
+                          )}
                         >
-                          <div className="px-4 py-3 border-b border-slate-700/50 bg-slate-800/30">
+                          <div
+                            className={cn(
+                              'px-4 py-3 border-b',
+                              isAdminMode
+                                ? 'border-purple-800/50 bg-purple-950/40'
+                                : 'border-slate-700/50 bg-slate-800/30',
+                            )}
+                          >
                             <div className="flex items-center gap-2">
-                              <category.icon className="w-4 h-4 text-primary" />
-                              <h4 className="font-semibold text-sm text-slate-100 tracking-wide">
+                              <category.icon
+                                className={cn(
+                                  'w-4 h-4',
+                                  isAdminMode ? 'text-purple-400' : 'text-primary',
+                                )}
+                              />
+                              <h4 className="font-semibold text-sm tracking-wide">
                                 {category.name}
                               </h4>
                             </div>
@@ -146,32 +222,49 @@ export function AppSidebar() {
                               const isSubActive = currentFullPath === decodeURIComponent(item.path)
                               return (
                                 <Link
-                                  to={item.path}
                                   key={item.name}
+                                  to={item.path}
                                   className={cn(
                                     'flex items-start gap-3 p-2 rounded-lg transition-all duration-200 group/subitem relative overflow-hidden',
                                     isSubActive
-                                      ? 'bg-primary/10 border border-primary/20'
-                                      : 'hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50',
+                                      ? isAdminMode
+                                        ? 'bg-purple-500/20 border border-purple-500/30'
+                                        : 'bg-primary/10 border border-primary/20'
+                                      : isAdminMode
+                                        ? 'hover:bg-purple-900/50 border border-transparent hover:border-purple-800/50'
+                                        : 'hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50',
                                   )}
                                 >
                                   {isSubActive && (
-                                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary" />
+                                    <div
+                                      className={cn(
+                                        'absolute left-0 top-0 bottom-0 w-[2px]',
+                                        isAdminMode ? 'bg-purple-400' : 'bg-primary',
+                                      )}
+                                    />
                                   )}
                                   <div
                                     className={cn(
                                       'mt-0.5 rounded-md p-1.5 transition-colors',
                                       isSubActive
-                                        ? 'bg-primary/20'
-                                        : 'bg-slate-800/80 group-hover/subitem:bg-slate-700',
+                                        ? isAdminMode
+                                          ? 'bg-purple-500/30'
+                                          : 'bg-primary/20'
+                                        : isAdminMode
+                                          ? 'bg-purple-950/80 group-hover/subitem:bg-purple-900'
+                                          : 'bg-slate-800/80 group-hover/subitem:bg-slate-700',
                                     )}
                                   >
                                     <item.icon
                                       className={cn(
                                         'w-3.5 h-3.5 transition-all',
                                         isSubActive
-                                          ? 'text-primary drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]'
-                                          : 'text-slate-400 group-hover/subitem:text-primary/80',
+                                          ? isAdminMode
+                                            ? 'text-purple-300 drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]'
+                                            : 'text-primary drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]'
+                                          : isAdminMode
+                                            ? 'text-purple-400/60 group-hover/subitem:text-purple-300'
+                                            : 'text-slate-400 group-hover/subitem:text-primary/80',
                                       )}
                                     />
                                   </div>
@@ -181,8 +274,12 @@ export function AppSidebar() {
                                         className={cn(
                                           'text-sm font-medium',
                                           isSubActive
-                                            ? 'text-slate-100'
-                                            : 'text-slate-300 group-hover/subitem:text-slate-100',
+                                            ? isAdminMode
+                                              ? 'text-purple-100'
+                                              : 'text-slate-100'
+                                            : isAdminMode
+                                              ? 'text-purple-200 group-hover/subitem:text-purple-100'
+                                              : 'text-slate-300 group-hover/subitem:text-slate-100',
                                         )}
                                       >
                                         {item.name}
@@ -190,14 +287,26 @@ export function AppSidebar() {
                                       {item.isUpcoming && (
                                         <Badge
                                           variant="outline"
-                                          className="text-[9px] h-4 px-1.5 py-0 border-primary/30 text-primary bg-primary/5 uppercase font-bold tracking-wider"
+                                          className={cn(
+                                            'text-[9px] h-4 px-1.5 py-0 uppercase font-bold tracking-wider',
+                                            isAdminMode
+                                              ? 'border-purple-400/30 text-purple-300 bg-purple-500/10'
+                                              : 'border-primary/30 text-primary bg-primary/5',
+                                          )}
                                         >
                                           Breve
                                         </Badge>
                                       )}
                                     </div>
                                     {item.description && (
-                                      <span className="text-xs text-slate-500 group-hover/subitem:text-slate-400 transition-colors line-clamp-1">
+                                      <span
+                                        className={cn(
+                                          'text-xs transition-colors line-clamp-1',
+                                          isAdminMode
+                                            ? 'text-purple-300/60 group-hover/subitem:text-purple-300/80'
+                                            : 'text-slate-500 group-hover/subitem:text-slate-400',
+                                        )}
+                                      >
                                         {item.description}
                                       </span>
                                     )}
@@ -219,42 +328,44 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-slate-800/60 bg-[#0A0F1C]/80 backdrop-blur-md group-data-[collapsible=icon]:p-2">
+      <SidebarFooter
+        className={cn(
+          'p-4 border-t group-data-[collapsible=icon]:p-2',
+          isAdminMode
+            ? 'border-purple-900/40 bg-[#1E1033]/80'
+            : 'border-slate-800/60 bg-[#0A0F1C]/80',
+        )}
+      >
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Configurações"
-              className={cn(
-                'transition-colors rounded-lg group-data-[collapsible=icon]:mx-1',
-                location.pathname === '/app/configuracoes'
-                  ? 'bg-primary/10 text-primary border border-primary/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50',
-              )}
-            >
-              <Link to="/app/configuracoes">
-                <Settings className="w-4 h-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Configurações</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Suporte e Ajuda"
-              className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-colors rounded-lg group-data-[collapsible=icon]:mx-1"
-            >
-              <a href="#">
-                <HelpCircle className="w-4 h-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Suporte e Ajuda</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {!isAdminMode && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="Configurações"
+                className={cn(
+                  'transition-colors rounded-lg group-data-[collapsible=icon]:mx-1',
+                  location.pathname === '/app/configuracoes'
+                    ? 'bg-primary/10 text-primary border border-primary/30'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50',
+                )}
+              >
+                <Link to="/app/configuracoes">
+                  <Settings className="w-4 h-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">Configurações</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               tooltip="Sair"
-              className="mt-2 text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 border border-transparent transition-all rounded-lg group-data-[collapsible=icon]:mx-1"
+              className={cn(
+                'mt-2 border border-transparent transition-all rounded-lg group-data-[collapsible=icon]:mx-1',
+                isAdminMode
+                  ? 'text-rose-300 hover:text-rose-200 hover:bg-rose-500/20'
+                  : 'text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10',
+              )}
             >
               <Link to="/">
                 <LogOut className="w-4 h-4 shrink-0" />
