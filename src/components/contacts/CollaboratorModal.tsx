@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
 import {
   X,
   Briefcase,
@@ -16,6 +17,7 @@ import {
   FileText,
   MapPin,
   Phone,
+  UserMinus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCollaboratorForm } from '@/hooks/useCollaboratorForm'
@@ -37,6 +39,7 @@ export default function CollaboratorModal({
 }) {
   const [activeTab, setActiveTab] = useState('pessoal')
   const { data, updateData, progress, globalProgress } = useCollaboratorForm()
+  const { toast } = useToast()
 
   const TABS = [
     { id: 'pessoal', label: 'Pessoal', prog: progress.pessoal, icon: User },
@@ -53,9 +56,22 @@ export default function CollaboratorModal({
     { id: 'anexos', label: 'Anexos', prog: null, icon: Paperclip },
   ]
 
+  const handleDismiss = () => {
+    toast({
+      title: 'Processo Iniciado',
+      description: 'O processo de demissão foi iniciado com sucesso.',
+    })
+    onOpenChange(false)
+  }
+
+  const handleSave = () => {
+    toast({ title: 'Atualizado', description: 'Dados do colaborador foram atualizados.' })
+    onOpenChange(false)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1000px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-xl shadow-2xl overflow-hidden [&>button]:hidden">
+      <DialogContent className="max-w-[1050px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-xl shadow-2xl overflow-hidden [&>button]:hidden">
         <div className="p-5 pb-0 bg-white border-b border-slate-200 shrink-0 relative z-10">
           <button
             onClick={() => onOpenChange(false)}
@@ -63,37 +79,47 @@ export default function CollaboratorModal({
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="flex flex-col sm:flex-row justify-between gap-4 pr-12">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pr-12">
             <div>
               <DialogTitle className="text-xl font-bold text-slate-800">
                 Editar Colaborador
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Preencha os dados do colaborador.
+                Gerencie os dados e o ciclo de vida do colaborador.
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
-              <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
-              <Progress
-                value={globalProgress}
-                className="w-24 h-2 bg-slate-200 [&>div]:bg-blue-500 shadow-inner"
-              />
-              <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDismiss}
+                className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 h-9 hidden sm:flex"
+              >
+                <UserMinus className="w-4 h-4 mr-2" /> Demitir Colaborador
+              </Button>
+              <div className="flex items-center gap-3 bg-blue-50/50 px-4 py-1.5 rounded-lg border border-blue-100">
+                <span className="text-xs text-blue-700 font-medium">Preenchimento:</span>
+                <Progress
+                  value={globalProgress}
+                  className="w-20 h-1.5 bg-blue-100 [&>div]:bg-blue-600"
+                />
+                <span className="text-sm font-bold text-blue-800">{globalProgress}%</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-3 mt-5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full custom-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mt-5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full custom-scrollbar">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex flex-col min-w-[110px] px-3 py-2 rounded-lg text-xs font-medium transition-all border shrink-0',
+                  'flex flex-col min-w-[95px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border shrink-0',
                   activeTab === tab.id
-                    ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                    ? 'bg-slate-800 text-white border-slate-800 shadow-md'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50',
                 )}
               >
-                <div className="flex items-center gap-1.5 w-full mb-1.5">
+                <div className="flex items-center gap-1.5 w-full mb-1">
                   <tab.icon
                     className={cn(
                       'w-3.5 h-3.5',
@@ -120,7 +146,7 @@ export default function CollaboratorModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
           <div className="bg-white rounded-xl border border-slate-200/60 p-5 sm:p-6 shadow-sm min-h-full">
             {activeTab === 'pessoal' && (
               <PersonalInfoTab
@@ -161,16 +187,25 @@ export default function CollaboratorModal({
           </div>
         </div>
 
-        <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex justify-end gap-3 shrink-0 z-10">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
+        <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex justify-between items-center shrink-0 z-10">
           <Button
-            onClick={() => onOpenChange(false)}
-            className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm shadow-blue-500/20 px-8"
+            variant="ghost"
+            onClick={handleDismiss}
+            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 sm:hidden"
           >
-            Salvar Alterações
+            <UserMinus className="w-4 h-4 mr-2" /> Demitir
           </Button>
+          <div className="flex justify-end gap-3 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8"
+            >
+              Atualizar
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
