@@ -22,10 +22,9 @@ import {
   Eye,
   Edit2,
   Lock,
-  EyeOff,
   Trash2,
-  AlertTriangle,
   UserMinus,
+  UserCheck,
 } from 'lucide-react'
 
 type Props = {
@@ -38,56 +37,15 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [activeItem, setActiveItem] = useState<any>(null)
-
-  const columns = [
-    {
-      title: 'Ativos',
-      color: 'border-emerald-500',
-      bg: 'bg-emerald-500',
-      items: [
-        {
-          name: 'Mateus amorim dias',
-          role: 'Engenheiro Civil',
-          contract: 'Mensalista',
-          status: 'Ativo',
-          img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=1',
-        },
-        {
-          name: 'Ana Beatriz Souza',
-          role: 'Arquiteta',
-          contract: 'Mensalista',
-          status: 'Ativo',
-          img: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=2',
-        },
-      ],
-    },
-    {
-      title: 'Em Férias',
-      color: 'border-amber-500',
-      bg: 'bg-amber-500',
-      items: [
-        {
-          name: 'Carlos Santos',
-          role: 'Mestre de Obras',
-          contract: 'Horista',
-          status: 'Férias',
-          img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=3',
-        },
-      ],
-    },
-    {
-      title: 'Desligados',
-      color: 'border-rose-500',
-      bg: 'bg-rose-500',
-      items: [],
-    },
-  ]
+  const [isVisible, setIsVisible] = useState(true)
+  const [mockStatus, setMockStatus] = useState('Ativo')
 
   const handleDelete = () => {
     if (password === 'admin123') {
-      toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança.' })
+      toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança do sistema.' })
       setDeleteOpen(false)
       setPassword('')
+      setIsVisible(false) // Simulando a deleção visualmente
     } else {
       toast({
         variant: 'destructive',
@@ -97,9 +55,48 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
     }
   }
 
-  const handleDismiss = () => {
-    toast({ title: 'Aviso', description: 'Processo de demissão iniciado.' })
+  const handleToggleStatus = () => {
+    const isDismissing = mockStatus === 'Ativo'
+    setMockStatus(isDismissing ? 'Desligado' : 'Ativo')
+    toast({
+      title: isDismissing ? 'Processo Iniciado' : 'Readmissão Concluída',
+      description: isDismissing
+        ? 'O processo de demissão foi iniciado com sucesso.'
+        : 'Colaborador reintegrado ao quadro de ativos.',
+    })
   }
+
+  if (!isVisible) {
+    return (
+      <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
+        Nenhum colaborador nesta lista.
+      </div>
+    )
+  }
+
+  const item = {
+    name: 'Mateus amorim dias',
+    role: 'Engenheiro Civil',
+    contract: 'Mensalista',
+    status: mockStatus,
+    img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=1',
+  }
+
+  const columns = [
+    {
+      title: 'Ativos',
+      color: 'border-emerald-500',
+      bg: 'bg-emerald-500',
+      items: mockStatus === 'Ativo' ? [item] : [],
+    },
+    { title: 'Em Férias', color: 'border-amber-500', bg: 'bg-amber-500', items: [] },
+    {
+      title: 'Desligados',
+      color: 'border-rose-500',
+      bg: 'bg-rose-500',
+      items: mockStatus === 'Desligado' ? [item] : [],
+    },
+  ]
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500 items-start">
@@ -119,10 +116,10 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
 
           {col.items.length === 0 ? (
             <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
-              Nenhum colaborador nesta lista.
+              Nenhum colaborador
             </div>
           ) : (
-            col.items.map((item, idx) => (
+            col.items.map((it, idx) => (
               <div
                 key={idx}
                 className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all group relative"
@@ -140,67 +137,74 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
                     </PopoverTrigger>
                     <PopoverContent
                       align="end"
-                      className="w-64 p-0 rounded-xl border-slate-200 shadow-lg overflow-hidden"
+                      className="w-56 p-1 rounded-xl border-slate-200 shadow-lg overflow-hidden bg-white"
                     >
-                      <div className="p-1">
-                        <Button
-                          variant="ghost"
-                          onClick={onProfile}
-                          className="w-full justify-start text-sm h-9 text-slate-600"
-                        >
-                          <Eye className="w-4 h-4 mr-2" /> Ficha Completa
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={onEdit}
-                          className="w-full justify-start text-sm h-9 text-slate-600"
-                        >
-                          <Edit2 className="w-4 h-4 mr-2" /> Editar Dados
-                        </Button>
-                        <div className="h-px bg-slate-100 my-1"></div>
-                        <Button
-                          variant="ghost"
-                          onClick={handleDismiss}
-                          className="w-full justify-start text-sm h-9 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                        >
-                          <UserMinus className="w-4 h-4 mr-2" /> Iniciar Demissão
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setActiveItem(item)
-                            setDeleteOpen(true)
-                          }}
-                          className="w-full justify-start text-sm h-9 text-rose-700 hover:text-white hover:bg-rose-600"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" /> Exclusão Segura
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={onProfile}
+                        className="w-full justify-start text-sm h-9 text-slate-600"
+                      >
+                        <Eye className="w-4 h-4 mr-2" /> Ficha Completa
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={onEdit}
+                        className="w-full justify-start text-sm h-9 text-slate-600"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" /> Editar Dados
+                      </Button>
+                      <div className="h-px bg-slate-100 my-1"></div>
+                      <Button
+                        variant="ghost"
+                        onClick={handleToggleStatus}
+                        className={
+                          mockStatus === 'Ativo'
+                            ? 'w-full justify-start text-sm h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                            : 'w-full justify-start text-sm h-9 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
+                        }
+                      >
+                        {mockStatus === 'Ativo' ? (
+                          <UserMinus className="w-4 h-4 mr-2" />
+                        ) : (
+                          <UserCheck className="w-4 h-4 mr-2" />
+                        )}
+                        {mockStatus === 'Ativo' ? 'Demitir' : 'Readmitir'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setActiveItem(it)
+                          setDeleteOpen(true)
+                        }}
+                        className="w-full justify-start text-sm h-9 text-rose-700 hover:text-white hover:bg-rose-600 mt-1"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Excluir Registro
+                      </Button>
                     </PopoverContent>
                   </Popover>
                 </div>
 
                 <div className="flex gap-3 cursor-pointer" onClick={onProfile}>
                   <Avatar className="w-10 h-10 border border-slate-100 shadow-sm">
-                    <AvatarImage src={item.img} />
+                    <AvatarImage src={it.img} />
                     <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
-                      {item.name[0]}
+                      {it.name[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 pr-6">
                     <p className="font-semibold text-sm text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                      {item.name}
+                      {it.name}
                     </p>
                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 truncate">
-                      <Building2 className="w-3 h-3" /> {item.role}
+                      <Building2 className="w-3 h-3" /> {it.role}
                     </p>
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
                   <Badge variant="outline" className="text-[10px] font-medium bg-slate-50">
-                    {item.contract}
+                    {it.contract}
                   </Badge>
-                  <div className={`w-2 h-2 rounded-full ${col.bg}`} title={item.status} />
+                  <div className={`w-2 h-2 rounded-full ${col.bg}`} title={it.status} />
                 </div>
               </div>
             ))
@@ -225,7 +229,7 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Digite sua senha (admin123)"
               className="focus-visible:ring-rose-500"
             />
           </div>

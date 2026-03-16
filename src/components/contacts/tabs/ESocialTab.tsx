@@ -8,6 +8,25 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
+  <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
+    {l} {req && <span className="text-rose-500">*</span>}
+    {t && (
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger type="button" tabIndex={-1}>
+            <Info className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500 transition-colors" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[250px] text-xs font-normal">
+            {t}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )}
+  </Label>
+)
 
 export default function ESocialTab() {
   return (
@@ -16,21 +35,22 @@ export default function ESocialTab() {
         <Info className="w-5 h-5 shrink-0 mt-0.5 text-blue-500" />
         <p className="leading-relaxed">
           <span className="font-semibold text-blue-900">Dados do eSocial:</span> Informações
-          obrigatórias para o envio de eventos ao eSocial (S-2200, S-2206, etc).
+          obrigatórias para o envio de eventos ao eSocial (S-2200, S-2206, etc). O preenchimento
+          incorreto gera recusa nos lotes.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">
-            Matrícula eSocial <span className="text-rose-500">*</span>
-          </Label>
+          <LabelT
+            l="Matrícula eSocial"
+            t="Código gerado exclusivamente para a plataforma do eSocial"
+            req
+          />
           <Input placeholder="Ex: 000001" className="focus-visible:ring-blue-500 shadow-sm h-10" />
         </div>
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">
-            Categoria do Trabalhador <span className="text-rose-500">*</span>
-          </Label>
+          <LabelT l="Categoria do Trabalhador" t="Classificação tributária" req />
           <Select>
             <SelectTrigger className="shadow-sm h-10">
               <SelectValue placeholder="Selecione" />
@@ -43,13 +63,11 @@ export default function ESocialTab() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">
-            CBO (Cargo) <span className="text-rose-500">*</span>
-          </Label>
+          <LabelT l="CBO (Cargo)" t="Classificação Brasileira de Ocupações" req />
           <Input placeholder="Ex: 2142-05" className="focus-visible:ring-blue-500 shadow-sm h-10" />
         </div>
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">Ocorrência SEFIP</Label>
+          <LabelT l="Ocorrência SEFIP" t="Código de exposição a agentes nocivos" />
           <Select>
             <SelectTrigger className="shadow-sm h-10">
               <SelectValue placeholder="Selecione" />
@@ -63,7 +81,7 @@ export default function ESocialTab() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">Natureza da Atividade</Label>
+          <LabelT l="Natureza da Atividade" t="Classificação da atividade desempenhada" />
           <Select>
             <SelectTrigger className="shadow-sm h-10">
               <SelectValue placeholder="Selecione" />
@@ -75,7 +93,7 @@ export default function ESocialTab() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label className="text-slate-700 font-semibold">Tipo de Admissão</Label>
+          <LabelT l="Tipo de Admissão" t="Origem da contratação" />
           <Select>
             <SelectTrigger className="shadow-sm h-10">
               <SelectValue placeholder="Selecione" />

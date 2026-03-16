@@ -14,15 +14,24 @@ export function useCollaboratorForm() {
       uf: 'SP',
       sangue: 'A+',
       nascimento: '1993-09-20',
+      foto: '',
     },
     docs: {
+      docType: '',
+      docIssueDate: '',
       cpf: '044.763.243-47',
-      rg: '',
+      ctpsNum: '',
+      ctpsSeries: '',
+      ctpsUf: '',
+      ctpsDate: '',
+      titEleitor: '',
+      zonaEleit: '',
+      secaoEleit: '',
+      certReserv: '',
+      isDriver: false,
+      cnhNum: '',
       cnhCat: '',
-      cnhExp: '',
-      pis: '',
-      titulo: '',
-      ctps: '',
+      cnhVal: '',
     },
     endereco: {
       cep: '',
@@ -31,7 +40,7 @@ export function useCollaboratorForm() {
       comp: '',
       bairro: '',
       cidade: '',
-      uf: '',
+      estado: '',
     },
     contato: {
       telPrinc: '',
@@ -44,8 +53,8 @@ export function useCollaboratorForm() {
     },
     trabalho: {
       matricula: 'COL0001',
-      cargo: 'Engenheiro Civil',
       depto: 'engenharia',
+      cargo: 'Engenheiro Civil',
       admissao: '2026-02-07',
       tipo: 'Mensalista',
       jornada: '44h',
@@ -69,7 +78,7 @@ export function useCollaboratorForm() {
     ferias: { inicio: '2026-02-07', fim: '2027-02-06', direito: '30', tirados: '0', prox: '' },
   })
 
-  const updateData = (section: keyof typeof data, field: string, value: string) => {
+  const updateData = (section: keyof typeof data, field: string, value: any) => {
     setData((prev) => ({
       ...prev,
       [section]: { ...prev[section], [field]: value },
@@ -79,7 +88,10 @@ export function useCollaboratorForm() {
   const getProgress = (section: keyof typeof data) => {
     const fields = Object.values(data[section])
     if (!fields.length) return 0
-    const filled = fields.filter((v) => String(v).trim() !== '').length
+    const filled = fields.filter((v) => {
+      if (typeof v === 'boolean') return true
+      return String(v).trim() !== ''
+    }).length
     return Math.round((filled / fields.length) * 100)
   }
 
@@ -95,11 +107,14 @@ export function useCollaboratorForm() {
     ferias: getProgress('ferias'),
   }
 
-  const totalFields = Object.values(data).reduce((acc, sec) => acc + Object.keys(sec).length, 0)
-  const totalFilled = Object.values(data).reduce(
-    (acc, sec) => acc + Object.values(sec).filter((v) => String(v).trim() !== '').length,
-    0,
-  )
+  let totalFields = 0
+  let totalFilled = 0
+  Object.values(data).forEach((sec) => {
+    Object.values(sec).forEach((v) => {
+      totalFields++
+      if (typeof v === 'boolean' || String(v).trim() !== '') totalFilled++
+    })
+  })
   const globalProgress = Math.round((totalFilled / totalFields) * 100)
 
   return { data, updateData, progress, globalProgress }

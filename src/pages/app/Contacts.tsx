@@ -1,13 +1,22 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Plus, Search, Users, LayoutGrid, List as ListIcon } from 'lucide-react'
+import {
+  ArrowLeft,
+  Plus,
+  Search,
+  Users,
+  LayoutGrid,
+  List as ListIcon,
+  Link as LinkIcon,
+} from 'lucide-react'
 import CollaboratorList from '@/components/contacts/CollaboratorList'
 import CollaboratorKanban from '@/components/contacts/CollaboratorKanban'
 import CollaboratorModal from '@/components/contacts/CollaboratorModal'
 import CollaboratorProfileModal from '@/components/contacts/CollaboratorProfileModal'
 import AIEngineModal from '@/components/contacts/AIEngineModal'
 import { Link } from 'react-router-dom'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Contacts() {
   const [modalState, setModalState] = useState<{
@@ -16,10 +25,19 @@ export default function Contacts() {
   }>({ isOpen: false, type: 'new' })
   const [view, setView] = useState<'lista' | 'kanban'>('lista')
   const [aiOpen, setAiOpen] = useState(false)
+  const { toast } = useToast()
 
   const handleOpenModal = (type: 'edit' | 'new' | 'profile') =>
     setModalState({ isOpen: true, type })
   const handleCloseModal = () => setModalState((prev) => ({ ...prev, isOpen: false }))
+
+  const generateOnboardingLink = () => {
+    toast({
+      title: 'Link Gerado',
+      description: 'Link seguro copiado para a área de transferência. Ele expirará após 1 uso.',
+    })
+    navigator.clipboard.writeText(window.location.origin + '/onboarding/tmp_xyz987')
+  }
 
   return (
     <div className="space-y-6 animate-fade-in flex flex-col min-h-[calc(100vh-8rem)]">
@@ -40,6 +58,13 @@ export default function Contacts() {
           </h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={generateOnboardingLink}
+            className="hidden lg:flex border-slate-200 text-slate-600 bg-white hover:bg-slate-50 shadow-sm"
+          >
+            <LinkIcon className="w-4 h-4 mr-2" /> Gerar Link de Admissão
+          </Button>
           <Button
             variant="outline"
             onClick={() => setAiOpen(true)}

@@ -18,6 +18,7 @@ import {
   MapPin,
   Phone,
   UserMinus,
+  UserCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCollaboratorForm } from '@/hooks/useCollaboratorForm'
@@ -38,6 +39,7 @@ export default function CollaboratorModal({
   onOpenChange: (o: boolean) => void
 }) {
   const [activeTab, setActiveTab] = useState('pessoal')
+  const [isActiveEmpl, setIsActiveEmpl] = useState(true)
   const { data, updateData, progress, globalProgress } = useCollaboratorForm()
   const { toast } = useToast()
 
@@ -56,12 +58,14 @@ export default function CollaboratorModal({
     { id: 'anexos', label: 'Anexos', prog: null, icon: Paperclip },
   ]
 
-  const handleDismiss = () => {
+  const handleToggleStatus = () => {
+    setIsActiveEmpl(!isActiveEmpl)
     toast({
-      title: 'Processo Iniciado',
-      description: 'O processo de demissão foi iniciado com sucesso.',
+      title: isActiveEmpl ? 'Processo de Demissão' : 'Readmissão Concluída',
+      description: isActiveEmpl
+        ? 'O processo de demissão foi iniciado com sucesso.'
+        : 'Colaborador reintegrado ao quadro de ativos.',
     })
-    onOpenChange(false)
   }
 
   const handleSave = () => {
@@ -69,9 +73,16 @@ export default function CollaboratorModal({
     onOpenChange(false)
   }
 
+  const getProgressColor = (prog: number | null) => {
+    if (prog === null) return 'bg-slate-200'
+    if (prog === 100) return 'bg-emerald-500'
+    if (prog > 50) return 'bg-amber-400'
+    return 'bg-blue-500'
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1050px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-xl shadow-2xl overflow-hidden [&>button]:hidden">
+      <DialogContent className="max-w-[1100px] h-[95vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-2xl shadow-2xl overflow-hidden [&>button]:hidden">
         <div className="p-5 pb-0 bg-white border-b border-slate-200 shrink-0 relative z-10">
           <button
             onClick={() => onOpenChange(false)}
@@ -81,73 +92,95 @@ export default function CollaboratorModal({
           </button>
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pr-12">
             <div>
-              <DialogTitle className="text-xl font-bold text-slate-800">
-                Editar Colaborador
+              <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <User className="w-5 h-5 text-slate-500" /> Editar Colaborador
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Gerencie os dados e o ciclo de vida do colaborador.
+                Preencha os dados do colaborador. Campos com * são obrigatórios.
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button
-                variant="outline"
+                variant={isActiveEmpl ? 'outline' : 'default'}
                 size="sm"
-                onClick={handleDismiss}
-                className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 h-9 hidden sm:flex"
+                onClick={handleToggleStatus}
+                className={cn(
+                  'h-9 hidden sm:flex transition-all',
+                  isActiveEmpl
+                    ? 'border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                )}
               >
-                <UserMinus className="w-4 h-4 mr-2" /> Demitir Colaborador
+                {isActiveEmpl ? (
+                  <>
+                    <UserMinus className="w-4 h-4 mr-2" /> Demitir
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="w-4 h-4 mr-2" /> Readmitir
+                  </>
+                )}
               </Button>
-              <div className="flex items-center gap-3 bg-blue-50/50 px-4 py-1.5 rounded-lg border border-blue-100">
-                <span className="text-xs text-blue-700 font-medium">Preenchimento:</span>
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full">
+                <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
                 <Progress
                   value={globalProgress}
-                  className="w-20 h-1.5 bg-blue-100 [&>div]:bg-blue-600"
+                  className="w-24 h-1.5 bg-slate-100 [&>div]:bg-blue-600"
                 />
-                <span className="text-sm font-bold text-blue-800">{globalProgress}%</span>
+                <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mt-5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full custom-scrollbar">
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mt-6 custom-scrollbar px-1">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex flex-col min-w-[95px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border shrink-0',
+                  'flex items-center justify-between min-w-[120px] px-3 py-2 rounded-xl text-sm font-semibold transition-all relative overflow-hidden shrink-0 border border-transparent',
                   activeTab === tab.id
-                    ? 'bg-slate-800 text-white border-slate-800 shadow-md'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50',
+                    ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20 ring-4 ring-blue-50'
+                    : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200',
                 )}
               >
-                <div className="flex items-center gap-1.5 w-full mb-1">
+                <div className="flex items-center gap-2 z-10 relative">
                   <tab.icon
                     className={cn(
-                      'w-3.5 h-3.5',
-                      activeTab === tab.id ? 'text-white/80' : 'text-slate-400',
+                      'w-4 h-4',
+                      activeTab === tab.id ? 'text-white' : 'text-slate-400',
                     )}
                   />
                   <span>{tab.label}</span>
                 </div>
                 {tab.prog !== null && (
-                  <div className="w-full">
-                    <Progress
-                      value={tab.prog}
-                      className={cn(
-                        'h-1',
-                        activeTab === tab.id
-                          ? 'bg-white/30 [&>div]:bg-white'
-                          : 'bg-slate-100 [&>div]:bg-blue-500',
-                      )}
-                    />
-                  </div>
+                  <span
+                    className={cn(
+                      'text-[10px] px-1.5 py-0.5 rounded-md ml-2 z-10 relative',
+                      activeTab === tab.id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-500',
+                    )}
+                  >
+                    {tab.prog}%
+                  </span>
+                )}
+                {tab.prog !== null && (
+                  <div
+                    className={cn(
+                      'absolute bottom-0 left-0 h-[3px] transition-all duration-500',
+                      activeTab === tab.id ? 'bg-white/40' : getProgressColor(tab.prog),
+                    )}
+                    style={{ width: `${tab.prog}%` }}
+                  />
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5 sm:p-6 shadow-sm min-h-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm min-h-full">
             {activeTab === 'pessoal' && (
               <PersonalInfoTab
                 data={data.pessoal}
@@ -188,20 +221,20 @@ export default function CollaboratorModal({
         </div>
 
         <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex justify-between items-center shrink-0 z-10">
-          <Button
-            variant="ghost"
-            onClick={handleDismiss}
-            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 sm:hidden"
-          >
-            <UserMinus className="w-4 h-4 mr-2" /> Demitir
-          </Button>
+          <p className="text-xs text-slate-500">
+            <span className="text-rose-500 font-bold">*</span> Campos obrigatórios
+          </p>
           <div className="flex justify-end gap-3 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="font-semibold text-slate-600"
+            >
               Cancelar
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
             >
               Atualizar
             </Button>

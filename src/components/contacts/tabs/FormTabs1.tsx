@@ -1,44 +1,283 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Search } from 'lucide-react'
+import { Search, Info, UploadCloud, CheckCircle2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
 
-type Props = { data: any; onChange: (f: string, v: string) => void }
+type Props = { data: any; onChange: (f: string, v: any) => void }
+
+const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
+  <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-xs sm:text-sm">
+    {l} {req && <span className="text-rose-500">*</span>}
+    {t && (
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger type="button" tabIndex={-1}>
+            <Info className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500 transition-colors" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[250px] text-xs font-normal">
+            {t}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )}
+  </Label>
+)
 
 export function DocsTab({ data, onChange }: Props) {
-  const fields = [
-    ['CPF', 'cpf', 'text'],
-    ['RG', 'rg', 'text'],
-    ['PIS/PASEP', 'pis', 'text'],
-    ['CTPS', 'ctps', 'text'],
-    ['Título de Eleitor', 'titulo', 'text'],
-    ['CNH Categoria', 'cnhCat', 'text'],
-    ['CNH Validade', 'cnhExp', 'date'],
-  ]
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const { toast } = useToast()
+
+  const handleOcrSimulate = () => {
+    setOcrLoading(true)
+    setTimeout(() => {
+      onChange('docType', 'RG')
+      onChange('cpf', '123.456.789-00')
+      onChange('docIssueDate', '2020-05-15')
+      setOcrLoading(false)
+      toast({
+        title: 'Documento Processado',
+        description: 'Dados extraídos com sucesso via OCR.',
+      })
+    }, 1500)
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="col-span-full mb-2">
-        <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2">
-          Documentação Legal
-        </h4>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+      <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center">
+        <div className="bg-blue-100 p-3 rounded-full mb-3">
+          <UploadCloud className="w-6 h-6 text-blue-600" />
+        </div>
+        <h4 className="font-semibold text-slate-800 mb-1">Upload Automático (OCR)</h4>
+        <p className="text-xs text-slate-500 mb-4 max-w-md">
+          Faça upload da foto do RG, CNH ou CTPS para preencher os campos automaticamente.
+        </p>
+        <Button
+          onClick={handleOcrSimulate}
+          disabled={ocrLoading}
+          variant="outline"
+          className="bg-white"
+        >
+          {ocrLoading ? 'Lendo Documento...' : 'Simular Leitura de Documento'}
+        </Button>
       </div>
-      {fields.map(([label, field, type]) => (
-        <div key={field} className="space-y-1.5">
-          <Label className="text-slate-700 font-semibold">{label}</Label>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <LabelT l="Tipo de Documento" t="Selecione o documento principal" />
+          <Select value={data.docType} onValueChange={(v) => onChange('docType', v)}>
+            <SelectTrigger className="bg-slate-50">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="RG">RG</SelectItem>
+              <SelectItem value="RNE">RNE</SelectItem>
+              <SelectItem value="Passaporte">Passaporte</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <LabelT l="Data de Emissão" t="Data que consta no documento" />
           <Input
-            type={type}
-            value={data[field] || ''}
-            onChange={(e) => onChange(field, e.target.value)}
-            className="shadow-sm border-slate-200 focus-visible:ring-blue-500 bg-white"
-            placeholder={`Inserir ${label}`}
+            type="date"
+            value={data.docIssueDate || ''}
+            onChange={(e) => onChange('docIssueDate', e.target.value)}
           />
         </div>
-      ))}
+        <div>
+          <LabelT l="CPF" t="Apenas números, obrigatório para FGTS e seguro" req />
+          <Input
+            value={data.cpf || ''}
+            onChange={(e) => onChange('cpf', e.target.value)}
+            placeholder="000.000.000-00"
+            className="font-mono"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
+          <h4 className="font-semibold text-slate-800 text-sm">CTPS - Carteira de Trabalho</h4>
+          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+            Obrigatório para CLT
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div>
+            <LabelT l="Número da CTPS" t="Número de registro da carteira" />
+            <Input
+              value={data.ctpsNum || ''}
+              onChange={(e) => onChange('ctpsNum', e.target.value)}
+              placeholder="Número"
+            />
+          </div>
+          <div>
+            <LabelT l="Série" t="Série do documento" />
+            <Input
+              value={data.ctpsSeries || ''}
+              onChange={(e) => onChange('ctpsSeries', e.target.value)}
+              placeholder="Série"
+            />
+          </div>
+          <div>
+            <LabelT l="UF da CTPS" t="Estado de emissão" />
+            <Select value={data.ctpsUf} onValueChange={(v) => onChange('ctpsUf', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SP">SP</SelectItem>
+                <SelectItem value="RJ">RJ</SelectItem>
+                <SelectItem value="MG">MG</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <LabelT l="Data de Emissão" t="Data de expedição da CTPS" />
+            <Input
+              type="date"
+              value={data.ctpsDate || ''}
+              onChange={(e) => onChange('ctpsDate', e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2">
+          Outros Documentos
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div>
+            <LabelT l="Título de Eleitor" t="Número de inscrição eleitoral" />
+            <Input
+              value={data.titEleitor || ''}
+              onChange={(e) => onChange('titEleitor', e.target.value)}
+              placeholder="Número"
+            />
+          </div>
+          <div>
+            <LabelT l="Zona Eleitoral" t="Zona de votação" />
+            <Input
+              value={data.zonaEleit || ''}
+              onChange={(e) => onChange('zonaEleit', e.target.value)}
+              placeholder="Zona"
+            />
+          </div>
+          <div>
+            <LabelT l="Seção Eleitoral" t="Seção de votação" />
+            <Input
+              value={data.secaoEleit || ''}
+              onChange={(e) => onChange('secaoEleit', e.target.value)}
+              placeholder="Seção"
+            />
+          </div>
+          <div>
+            <LabelT l="Certificado de Reservista" t="Para homens maiores de 18 anos" />
+            <Input
+              value={data.certReserv || ''}
+              onChange={(e) => onChange('certReserv', e.target.value)}
+              placeholder="Número"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={data.isDriver}
+            onCheckedChange={(v) => onChange('isDriver', v)}
+            className="data-[state=checked]:bg-blue-600"
+          />
+          <Label className="text-slate-800 font-semibold cursor-pointer">
+            Colaborador é motorista
+          </Label>
+        </div>
+        {data.isDriver && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 animate-in fade-in slide-in-from-top-2">
+            <div>
+              <LabelT l="Número da CNH" t="Número de registro da CNH" req />
+              <Input
+                value={data.cnhNum || ''}
+                onChange={(e) => onChange('cnhNum', e.target.value)}
+                placeholder="Número"
+                className="bg-white"
+              />
+            </div>
+            <div>
+              <LabelT l="Categoria" t="Categoria de habilitação (Ex: AB, C, D)" req />
+              <Select value={data.cnhCat} onValueChange={(v) => onChange('cnhCat', v)}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="AB">AB</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                  <SelectItem value="E">E</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <LabelT l="Validade" t="Data de vencimento da CNH" req />
+              <Input
+                type="date"
+                value={data.cnhVal || ''}
+                onChange={(e) => onChange('cnhVal', e.target.value)}
+                className="bg-white"
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 export function AddressTab({ data, onChange }: Props) {
+  const STATES = [
+    'AC',
+    'AL',
+    'AP',
+    'AM',
+    'BA',
+    'CE',
+    'DF',
+    'ES',
+    'GO',
+    'MA',
+    'MT',
+    'MS',
+    'MG',
+    'PA',
+    'PB',
+    'PR',
+    'PE',
+    'PI',
+    'RJ',
+    'RN',
+    'RS',
+    'RO',
+    'RR',
+    'SC',
+    'SP',
+    'SE',
+    'TO',
+  ]
+
   const onCepBlur = async (e: any) => {
     const cep = e.target.value.replace(/\D/g, '')
     if (cep.length === 8) {
@@ -49,7 +288,7 @@ export function AddressTab({ data, onChange }: Props) {
           onChange('logradouro', d.logradouro)
           onChange('bairro', d.bairro)
           onChange('cidade', d.localidade)
-          onChange('uf', d.uf)
+          onChange('estado', d.uf)
         }
       } catch (err) {
         console.error('Failed to fetch CEP')
@@ -58,72 +297,87 @@ export function AddressTab({ data, onChange }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-6 gap-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="space-y-1.5 md:col-span-2 relative">
-        <Label className="text-slate-700 font-semibold">CEP</Label>
-        <div className="relative">
-          <Input
-            value={data.cep || ''}
-            onChange={(e) => onChange('cep', e.target.value)}
-            onBlur={onCepBlur}
-            placeholder="00000-000"
-            className="shadow-sm border-slate-200 focus-visible:ring-blue-500 pl-9"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+      <div className="bg-blue-50/80 border border-blue-200 text-blue-800 p-3.5 rounded-xl flex gap-3 items-center text-sm shadow-sm">
+        <Info className="w-5 h-5 text-blue-500 shrink-0" />
+        <p className="leading-relaxed">
+          <span className="font-semibold">Endereço:</span> Digite o CEP para preenchimento
+          automático do endereço via ViaCEP.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="CEP" t="Digite apenas os números" req />
+          <div className="relative">
+            <Input
+              value={data.cep || ''}
+              onChange={(e) => onChange('cep', e.target.value)}
+              onBlur={onCepBlur}
+              placeholder="00000-000"
+              className="pl-10"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          </div>
+          <p className="text-[10px] text-slate-400 ml-1">Formato: 00000-000</p>
         </div>
-        <p className="text-[10px] text-slate-500 absolute -bottom-4">Preenchimento automático</p>
-      </div>
-      <div className="space-y-1.5 md:col-span-4">
-        <Label className="text-slate-700 font-semibold">Logradouro</Label>
-        <Input
-          value={data.logradouro || ''}
-          onChange={(e) => onChange('logradouro', e.target.value)}
-          className="shadow-sm border-slate-200 focus-visible:ring-blue-500"
-        />
-      </div>
+        <div className="space-y-1.5 md:col-span-4">
+          <LabelT l="Logradouro" t="Rua, Avenida, Praça, etc." req />
+          <Input
+            value={data.logradouro || ''}
+            onChange={(e) => onChange('logradouro', e.target.value)}
+            placeholder="Rua, Avenida, etc."
+          />
+        </div>
 
-      <div className="space-y-1.5 md:col-span-2">
-        <Label className="text-slate-700 font-semibold">Número</Label>
-        <Input
-          value={data.numero || ''}
-          onChange={(e) => onChange('numero', e.target.value)}
-          className="shadow-sm border-slate-200 focus-visible:ring-blue-500"
-        />
-      </div>
-      <div className="space-y-1.5 md:col-span-4">
-        <Label className="text-slate-700 font-semibold">Complemento</Label>
-        <Input
-          value={data.comp || ''}
-          onChange={(e) => onChange('comp', e.target.value)}
-          className="shadow-sm border-slate-200 focus-visible:ring-blue-500"
-          placeholder="Apto, Bloco, etc."
-        />
-      </div>
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="Número" t="Número da residência (Use 'SN' se não houver)" req />
+          <Input
+            value={data.numero || ''}
+            onChange={(e) => onChange('numero', e.target.value)}
+            placeholder="Nº"
+          />
+        </div>
+        <div className="space-y-1.5 md:col-span-4">
+          <LabelT l="Complemento" t="Apto, Bloco, Fundos, etc." />
+          <Input
+            value={data.comp || ''}
+            onChange={(e) => onChange('comp', e.target.value)}
+            placeholder="Apto, Bloco, etc."
+          />
+        </div>
 
-      <div className="space-y-1.5 md:col-span-2">
-        <Label className="text-slate-700 font-semibold">Bairro</Label>
-        <Input
-          value={data.bairro || ''}
-          onChange={(e) => onChange('bairro', e.target.value)}
-          className="shadow-sm border-slate-200 focus-visible:ring-blue-500"
-        />
-      </div>
-      <div className="space-y-1.5 md:col-span-3">
-        <Label className="text-slate-700 font-semibold">Cidade</Label>
-        <Input
-          value={data.cidade || ''}
-          onChange={(e) => onChange('cidade', e.target.value)}
-          className="shadow-sm border-slate-200 focus-visible:ring-blue-500"
-        />
-      </div>
-      <div className="space-y-1.5 md:col-span-1">
-        <Label className="text-slate-700 font-semibold">UF</Label>
-        <Input
-          value={data.uf || ''}
-          onChange={(e) => onChange('uf', e.target.value)}
-          className="shadow-sm border-slate-200 focus-visible:ring-blue-500 uppercase"
-          maxLength={2}
-        />
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="Bairro" t="Bairro ou distrito" req />
+          <Input
+            value={data.bairro || ''}
+            onChange={(e) => onChange('bairro', e.target.value)}
+            placeholder="Bairro"
+          />
+        </div>
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="Cidade" t="Município" req />
+          <Input
+            value={data.cidade || ''}
+            onChange={(e) => onChange('cidade', e.target.value)}
+            placeholder="Cidade"
+          />
+        </div>
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="Estado" t="Unidade Federativa" req />
+          <Select value={data.estado} onValueChange={(v) => onChange('estado', v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   )

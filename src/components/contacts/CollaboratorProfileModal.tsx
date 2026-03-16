@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Building,
   Hash,
+  Share2,
 } from 'lucide-react'
 
 type Props = { open: boolean; onOpenChange: (open: boolean) => void }
@@ -50,9 +51,21 @@ const Section = ({ t, icon: Icon, children }: any) => (
 
 export default function CollaboratorProfileModal({ open, onOpenChange }: Props) {
   const { toast } = useToast()
+
   const printDoc = () => {
-    toast({ title: 'Gerando PDF', description: 'O documento está sendo preparado para impressão.' })
+    toast({
+      title: 'Gerando PDF',
+      description: 'O documento está sendo preparado para impressão/PDF.',
+    })
     setTimeout(() => window.print(), 500)
+  }
+
+  const shareProfile = () => {
+    toast({
+      title: 'Link Gerado',
+      description: 'Link do PDF copiado para a área de transferência.',
+    })
+    navigator.clipboard.writeText(window.location.origin + '/share/colaborador/123')
   }
 
   return (
@@ -102,10 +115,19 @@ export default function CollaboratorProfileModal({ open, onOpenChange }: Props) 
           <div className="flex items-center gap-2 w-full md:w-auto mt-4 md:mt-0 justify-end md:absolute md:top-6 md:right-6">
             <Button
               variant="outline"
+              size="icon"
+              onClick={shareProfile}
+              className="border-slate-200 text-slate-600 hover:bg-slate-50"
+              title="Compartilhar"
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
               onClick={printDoc}
               className="border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              <Printer className="w-4 h-4 mr-2" /> Imprimir
+              <Printer className="w-4 h-4 mr-2" /> Gerar PDF
             </Button>
             <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20">
               <Edit className="w-4 h-4 mr-2" /> Editar
@@ -200,7 +222,7 @@ export default function CollaboratorProfileModal({ open, onOpenChange }: Props) 
               </div>
             </div>
             <p className="text-[10px] text-slate-400 mt-2">
-              * Valores calculados com base nas tabelas INSS/IRRF 2024/2025 (vigência: Janeiro/2024)
+              * Valores calculados com base nas tabelas INSS/IRRF vigentes
             </p>
           </Section>
         </div>

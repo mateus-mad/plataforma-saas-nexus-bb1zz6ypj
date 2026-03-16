@@ -35,6 +35,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
   const { toast } = useToast()
 
   const collaborator = {
@@ -52,10 +53,11 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
 
   const handleDelete = () => {
     if (password === 'admin123') {
-      toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança.' })
+      toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança do sistema.' })
       setDeleteOpen(false)
       setPassword('')
       setPopoverOpen(false)
+      setIsVisible(false) // Simulando a deleção
     } else {
       toast({
         variant: 'destructive',
@@ -64,6 +66,8 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
       })
     }
   }
+
+  if (!isVisible) return null
 
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -166,7 +170,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
             >
               <div className="p-4 border-b border-amber-100">
                 <h4 className="font-semibold text-amber-800 flex items-center gap-2 mb-2 text-base">
-                  <Lock className="w-4 h-4 text-amber-600" /> Dados Sensíveis - {collaborator.name}
+                  <Lock className="w-4 h-4 text-amber-600" /> Ações Sensíveis
                 </h4>
                 <p className="text-xs text-amber-700/80 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" /> Acesso
@@ -189,7 +193,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
                   onClick={() => setDeleteOpen(true)}
                   className="w-full justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-100/50 h-9 text-sm"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                  <Trash2 className="w-4 h-4 mr-2" /> Exclusão Definitiva
                 </Button>
               </div>
             </PopoverContent>
@@ -214,7 +218,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Digite sua senha (admin123)"
               className="focus-visible:ring-rose-500"
             />
           </div>
