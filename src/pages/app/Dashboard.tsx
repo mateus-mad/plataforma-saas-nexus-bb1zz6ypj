@@ -136,11 +136,11 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               <Badge variant="outline" className="text-[10px]">
                 Módulo em Breve
               </Badge>
-            </p>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -150,11 +150,11 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">7</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               <Badge variant="outline" className="text-[10px]">
                 Módulo em Breve
               </Badge>
-            </p>
+            </div>
           </CardContent>
         </Card>
       </div>
