@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Bell, Search, Hexagon, Zap, Check, ChevronDown } from 'lucide-react'
+import { Bell, Search, Hexagon, Zap, Check, ChevronDown, ShieldAlert, Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -17,7 +17,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import useTenantStore from '@/stores/useTenantStore'
+import useSecurityStore from '@/stores/useSecurityStore'
 
 const PATH_MAP: Record<string, string> = {
   '/app': 'Dashboard',
@@ -31,6 +33,7 @@ export function AppHeader() {
   const location = useLocation()
   const pathName = PATH_MAP[location.pathname] || 'Visão Geral'
   const { currentTenant, tenants, switchTenant } = useTenantStore()
+  const { isAdminMode, toggleAdminMode, isSetup, lock } = useSecurityStore()
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] sticky top-0 z-50 transition-all">
@@ -110,7 +113,39 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-end">
-        <div className="relative w-full max-w-[280px] hidden md:flex group">
+        {isSetup && (
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleAdminMode}
+                  className={`p-2 rounded-full border transition-colors ${isAdminMode ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'}`}
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isAdminMode ? 'Modo Admin Ativo (Vendo Hashes)' : 'Simular Visão de Admin'}
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={lock}
+                  className="p-2 rounded-full bg-slate-100 border border-slate-200 text-slate-500 hover:bg-rose-100 hover:text-rose-600 hover:border-rose-200 transition-colors"
+                >
+                  <Lock className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Bloquear Cofre</TooltipContent>
+            </Tooltip>
+          </div>
+        )}
+
+        <div className="hidden md:flex h-6 w-px bg-slate-200"></div>
+
+        <div className="relative w-full max-w-[280px] hidden lg:flex group">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input
             type="search"
@@ -118,29 +153,6 @@ export function AppHeader() {
             className="w-full bg-slate-100/50 border-slate-200 pl-9 rounded-full focus-visible:ring-primary/30 focus-visible:border-primary/50 focus-visible:bg-white transition-all shadow-none h-9"
           />
         </div>
-
-        <Link
-          to="/app/configuracoes?tab=modules"
-          className="relative p-2 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 rounded-full transition-all border border-primary/20 hover:border-primary/40 shadow-[0_0_10px_rgba(59,130,246,0.1)] group"
-          title="Loja de Módulos"
-        >
-          <Zap className="w-4 h-4 text-primary drop-shadow-[0_0_5px_rgba(59,130,246,0.5)] group-hover:scale-110 transition-transform" />
-        </Link>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="relative p-2 text-slate-500 hover:bg-slate-100 hover:text-primary rounded-full transition-colors border border-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border-2 border-white shadow-sm"></span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 rounded-xl z-[60]" sideOffset={8}>
-            <div className="px-2 py-1.5 pb-2 border-b border-slate-100 mb-1">
-              <h4 className="font-semibold text-sm text-slate-800">Notificações</h4>
-            </div>
-            <div className="p-4 text-center text-sm text-slate-500">Nenhuma nova notificação</div>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -161,7 +173,7 @@ export function AppHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link to="/app/configuracoes?tab=billing">Faturamento e Licenças</Link>
+              <Link to="/app/configuracoes?tab=security">Segurança Zero-Knowledge</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link to="/app/configuracoes">Configurações</Link>

@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, CircleDollarSign, CheckSquare, Briefcase } from 'lucide-react'
+import { Users, CircleDollarSign, CheckSquare, Briefcase, Lock } from 'lucide-react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
+import useSecurityStore from '@/stores/useSecurityStore'
 
 const REVENUE_DATA = [
   { date: '01/05', income: 4000, expense: 2400 },
@@ -21,7 +23,7 @@ const chartConfig = {
   expense: { label: 'Saídas', color: 'hsl(var(--chart-3))' },
 }
 
-const ACTIVITIES = [
+const INITIAL_ACTIVITIES = [
   { id: 1, text: 'Novo contato "João Silva" adicionado.', time: 'Há 2 horas', type: 'contact' },
   { id: 2, text: 'Pagamento de R$ 5.400,00 recebido.', time: 'Há 4 horas', type: 'finance' },
   { id: 3, text: 'Nota fiscal #459 emitida.', time: 'Ontem', type: 'finance' },
@@ -29,11 +31,60 @@ const ACTIVITIES = [
 ]
 
 export default function Dashboard() {
+  const { isSetup, isAdminMode, encrypt, decrypt } = useSecurityStore()
+  const [activities, setActivities] = useState<any[]>([])
+
+  useEffect(() => {
+    const loadActivities = async () => {
+      if (!isSetup) {
+        setActivities(INITIAL_ACTIVITIES)
+        return
+      }
+
+      // Simulate getting encrypted activities and decrypting them for display
+      const encryptedMocks = await Promise.all(
+        INITIAL_ACTIVITIES.map(async (act) => ({
+          ...act,
+          text: await encrypt(act.text),
+        })),
+      )
+
+      if (isAdminMode) {
+        setActivities(
+          encryptedMocks.map((act) => ({
+            ...act,
+            text: act.text?.substring(0, 25) + '...',
+          })),
+        )
+      } else {
+        setActivities(
+          await Promise.all(
+            encryptedMocks.map(async (act) => ({
+              ...act,
+              text: await decrypt(act.text),
+            })),
+          ),
+        )
+      }
+    }
+    loadActivities()
+  }, [isSetup, isAdminMode, encrypt, decrypt])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            Dashboard
+            {isSetup && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50 text-emerald-600 border-emerald-200 ml-2"
+              >
+                <Lock className="w-3 h-3 mr-1" /> E2E
+              </Badge>
+            )}
+          </h2>
           <p className="text-muted-foreground">
             Bem-vindo de volta. Aqui está o resumo da sua empresa.
           </p>
@@ -152,7 +203,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {ACTIVITIES.map((activity) => (
+              {activities.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-4">
                   <div
                     className={`mt-0.5 rounded-full p-2 ${activity.type === 'contact' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}
@@ -164,7 +215,11 @@ export default function Dashboard() {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{activity.text}</p>
+                    <p
+                      className={`text-sm font-medium leading-none ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
+                    >
+                      {activity.text}
+                    </p>
                     <p className="text-xs text-muted-foreground">{activity.time}</p>
                   </div>
                 </div>

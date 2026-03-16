@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -28,23 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
-import { Filter, Plus, MoreHorizontal, Mail, Phone } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Filter, Plus, MoreHorizontal, Mail, Phone, Lock } from 'lucide-react'
+import useSecurityStore from '@/stores/useSecurityStore'
+import { db } from '@/lib/database'
 
 const MOCK_CONTACTS = [
   {
@@ -83,34 +70,92 @@ const MOCK_CONTACTS = [
     status: 'Ativo',
     avatar: '4',
   },
-  {
-    id: '5',
-    name: 'Roberto Almeida',
-    email: 'roberto@almeidasa.com.br',
-    phone: '(51) 95544-3322',
-    category: 'Cliente',
-    status: 'Ativo',
-    avatar: '5',
-  },
 ]
 
 export default function Contacts() {
-  const [contacts, setContacts] = useState(MOCK_CONTACTS)
+  const [contactsDB, setContactsDB] = useState<any[]>([])
+  const [displayContacts, setDisplayContacts] = useState<any[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { isSetup, isAdminMode, encrypt, decrypt } = useSecurityStore()
 
-  const handleAddContact = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    const loadDB = async () => {
+      let data = (await db.get('contacts_v2')) as any[]
+      if (!data) {
+        if (isSetup) {
+          data = await Promise.all(
+            MOCK_CONTACTS.map(async (c) => ({
+              ...c,
+              name: await encrypt(c.name),
+              email: await encrypt(c.email),
+              phone: await encrypt(c.phone),
+            })),
+          )
+        } else {
+          data = MOCK_CONTACTS
+        }
+        await db.set('contacts_v2', data)
+      }
+      setContactsDB(data)
+    }
+    loadDB()
+  }, [isSetup, encrypt])
+
+  useEffect(() => {
+    const computeDisplay = async () => {
+      if (!isSetup) {
+        setDisplayContacts(contactsDB)
+      } else if (isAdminMode) {
+        setDisplayContacts(
+          contactsDB.map((c) => ({
+            ...c,
+            name: c.name?.substring(0, 20) + '...',
+            email: '*** Encrypted ***',
+            phone: c.phone?.substring(0, 10) + '...',
+          })),
+        )
+      } else {
+        const dec = await Promise.all(
+          contactsDB.map(async (c) => ({
+            ...c,
+            name: await decrypt(c.name),
+            email: await decrypt(c.email),
+            phone: await decrypt(c.phone),
+          })),
+        )
+        setDisplayContacts(dec)
+      }
+    }
+    if (contactsDB.length > 0) computeDisplay()
+  }, [contactsDB, isSetup, isAdminMode, decrypt])
+
+  const handleAddContact = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+
+    let name = formData.get('name') as string
+    let email = formData.get('email') as string
+    let phone = formData.get('phone') as string
+
+    if (isSetup) {
+      name = await encrypt(name)
+      email = await encrypt(email)
+      phone = await encrypt(phone)
+    }
+
     const newContact = {
       id: Math.random().toString(),
-      name: formData.get('name') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
+      name,
+      email,
+      phone,
       category: (formData.get('category') as string) || 'Cliente',
       status: 'Ativo',
       avatar: Math.floor(Math.random() * 10).toString(),
     }
-    setContacts([newContact, ...contacts])
+
+    const newDB = [newContact, ...contactsDB]
+    setContactsDB(newDB)
+    await db.set('contacts_v2', newDB)
     setIsDialogOpen(false)
   }
 
@@ -118,7 +163,17 @@ export default function Contacts() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Contatos</h2>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            Contatos
+            {isSetup && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50 text-emerald-600 border-emerald-200 ml-2"
+              >
+                <Lock className="w-3 h-3 mr-1" /> E2E
+              </Badge>
+            )}
+          </h2>
           <p className="text-muted-foreground">Gerencie seus clientes, fornecedores e parceiros.</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -131,7 +186,6 @@ export default function Contacts() {
             <SheetContent>
               <SheetHeader>
                 <SheetTitle>Filtros Avançados</SheetTitle>
-                <SheetDescription>Refine a lista de contatos.</SheetDescription>
               </SheetHeader>
               <div className="py-6 space-y-4">
                 <div className="space-y-2">
@@ -143,20 +197,6 @@ export default function Contacts() {
                     <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="cliente">Cliente</SelectItem>
-                      <SelectItem value="fornecedor">Fornecedor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="ativo">Ativo</SelectItem>
-                      <SelectItem value="inativo">Inativo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -174,7 +214,11 @@ export default function Contacts() {
               <form onSubmit={handleAddContact}>
                 <DialogHeader>
                   <DialogTitle>Adicionar Novo Contato</DialogTitle>
-                  <DialogDescription>Insira as informações do novo contato.</DialogDescription>
+                  <DialogDescription>
+                    {isSetup
+                      ? 'As informações serão criptografadas antes de salvar.'
+                      : 'Insira as informações.'}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
@@ -199,7 +243,6 @@ export default function Contacts() {
                         <SelectContent>
                           <SelectItem value="Cliente">Cliente</SelectItem>
                           <SelectItem value="Fornecedor">Fornecedor</SelectItem>
-                          <SelectItem value="Parceiro">Parceiro</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -229,7 +272,7 @@ export default function Contacts() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {contacts.map((contact) => (
+            {displayContacts.map((contact) => (
               <TableRow key={contact.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -237,13 +280,19 @@ export default function Contacts() {
                       <AvatarImage
                         src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${contact.avatar}`}
                       />
-                      <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{isAdminMode ? '?' : contact.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{contact.name}</span>
+                    <span
+                      className={`font-medium ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
+                    >
+                      {contact.name}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col space-y-1 text-sm text-muted-foreground">
+                  <div
+                    className={`flex flex-col space-y-1 ${isAdminMode ? 'font-mono text-[10px] text-slate-400' : 'text-sm text-muted-foreground'}`}
+                  >
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {contact.email}
                     </span>
@@ -268,21 +317,9 @@ export default function Contacts() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Abrir menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
-                      <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

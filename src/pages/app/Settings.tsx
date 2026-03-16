@@ -1,11 +1,19 @@
 import { useSearchParams } from 'react-router-dom'
-import { Settings as SettingsIcon, ShoppingBag, CreditCard, Building2, Users } from 'lucide-react'
+import {
+  Settings as SettingsIcon,
+  ShoppingBag,
+  CreditCard,
+  Building2,
+  Users,
+  Shield,
+} from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import ModulesTab from '@/components/settings/ModulesTab'
 import BillingTab from '@/components/settings/BillingTab'
 import TenantsTab from '@/components/settings/TenantsTab'
 import UsersTab from '@/components/settings/UsersTab'
+import SecurityTab from '@/components/settings/SecurityTab'
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -30,39 +38,43 @@ export default function Settings() {
       </div>
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-3xl mb-8">
-          <TabsTrigger value="modules" className="data-[state=active]:text-primary group">
-            <ShoppingBag className="w-4 h-4 mr-2 group-data-[state=active]:text-primary" />
-            Loja de Módulos
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 max-w-4xl mb-8 h-auto p-1">
+          <TabsTrigger value="modules" className="data-[state=active]:text-primary group py-2">
+            <ShoppingBag className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+            Loja
           </TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:text-primary group">
-            <CreditCard className="w-4 h-4 mr-2 group-data-[state=active]:text-primary" />
-            Faturamento
+          <TabsTrigger value="billing" className="data-[state=active]:text-primary group py-2">
+            <CreditCard className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+            Fatura
           </TabsTrigger>
-          <TabsTrigger value="tenants" className="data-[state=active]:text-primary group">
-            <Building2 className="w-4 h-4 mr-2 group-data-[state=active]:text-primary" />
-            Empresas (CNPJ)
+          <TabsTrigger value="tenants" className="data-[state=active]:text-primary group py-2">
+            <Building2 className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+            Empresas
           </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:text-primary group">
-            <Users className="w-4 h-4 mr-2 group-data-[state=active]:text-primary" />
+          <TabsTrigger value="users" className="data-[state=active]:text-primary group py-2">
+            <Users className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Usuários
+          </TabsTrigger>
+          <TabsTrigger value="security" className="data-[state=active]:text-primary group py-2">
+            <Shield className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+            Segurança
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="modules" className="mt-0 outline-none">
           <ModulesTab />
         </TabsContent>
-
         <TabsContent value="billing" className="mt-0 outline-none">
           <BillingTab />
         </TabsContent>
-
         <TabsContent value="tenants" className="mt-0 outline-none">
           <TenantsTab />
         </TabsContent>
-
         <TabsContent value="users" className="mt-0 outline-none">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="security" className="mt-0 outline-none">
+          <SecurityTab />
         </TabsContent>
       </Tabs>
     </div>

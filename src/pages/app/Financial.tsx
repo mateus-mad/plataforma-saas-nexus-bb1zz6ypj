@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -9,9 +10,29 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowDownRight, ArrowUpRight, Plus, Wallet } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ArrowDownRight, ArrowUpRight, Plus, Wallet, Lock } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import useSecurityStore from '@/stores/useSecurityStore'
+import { db } from '@/lib/database'
 
 const MOCK_TRANSACTIONS = [
   {
@@ -65,21 +86,154 @@ const MONTHLY_DATA = [
 ]
 
 const chartConfig = {
-  income: { label: 'Receitas', color: 'hsl(var(--chart-2))' }, // Emerald
-  expense: { label: 'Despesas', color: 'hsl(var(--chart-3))' }, // Rose
+  income: { label: 'Receitas', color: 'hsl(var(--chart-2))' },
+  expense: { label: 'Despesas', color: 'hsl(var(--chart-3))' },
 }
 
 export default function Financial() {
+  const [txDB, setTxDB] = useState<any[]>([])
+  const [displayTx, setDisplayTx] = useState<any[]>([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { isSetup, isAdminMode, encrypt, decrypt } = useSecurityStore()
+
+  useEffect(() => {
+    const loadDB = async () => {
+      let data = (await db.get('financial_v2')) as any[]
+      if (!data) {
+        if (isSetup) {
+          data = await Promise.all(
+            MOCK_TRANSACTIONS.map(async (tx) => ({
+              ...tx,
+              description: await encrypt(tx.description),
+            })),
+          )
+        } else {
+          data = MOCK_TRANSACTIONS
+        }
+        await db.set('financial_v2', data)
+      }
+      setTxDB(data)
+    }
+    loadDB()
+  }, [isSetup, encrypt])
+
+  useEffect(() => {
+    const computeDisplay = async () => {
+      if (!isSetup) {
+        setDisplayTx(txDB)
+      } else if (isAdminMode) {
+        setDisplayTx(
+          txDB.map((tx) => ({
+            ...tx,
+            description: tx.description?.substring(0, 15) + '...',
+          })),
+        )
+      } else {
+        const dec = await Promise.all(
+          txDB.map(async (tx) => ({
+            ...tx,
+            description: await decrypt(tx.description),
+          })),
+        )
+        setDisplayTx(dec)
+      }
+    }
+    if (txDB.length > 0) computeDisplay()
+  }, [txDB, isSetup, isAdminMode, decrypt])
+
+  const handleAddTx = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    let description = formData.get('description') as string
+    const amount = parseFloat(formData.get('amount') as string)
+    const type = formData.get('type') as string
+
+    if (isSetup) {
+      description = await encrypt(description)
+    }
+
+    const newTx = {
+      id: Math.random().toString(),
+      date: 'Hoje',
+      description,
+      category: 'Diversos',
+      amount,
+      type,
+    }
+
+    const newDB = [newTx, ...txDB]
+    setTxDB(newDB)
+    await db.set('financial_v2', newDB)
+    setIsDialogOpen(false)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Financeiro</h2>
+          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            Financeiro
+            {isSetup && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50 text-emerald-600 border-emerald-200 ml-2"
+              >
+                <Lock className="w-3 h-3 mr-1" /> E2E
+              </Badge>
+            )}
+          </h2>
           <p className="text-muted-foreground">Acompanhe receitas, despesas e saldo atual.</p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" /> Nova Transação
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" /> Nova Transação
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleAddTx}>
+              <DialogHeader>
+                <DialogTitle>Registrar Transação</DialogTitle>
+                <DialogDescription>
+                  {isSetup
+                    ? 'A descrição será criptografada e salva com segurança.'
+                    : 'Insira os dados da transação.'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label>Descrição</Label>
+                  <Input name="description" required placeholder="Ex: Venda de Licença" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <Input name="amount" type="number" step="0.01" required placeholder="0.00" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select name="type" defaultValue="income">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="income">Receita</SelectItem>
+                        <SelectItem value="expense">Despesa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">Salvar</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -168,11 +322,15 @@ export default function Financial() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOCK_TRANSACTIONS.map((tx) => (
+                {displayTx.map((tx) => (
                   <TableRow key={tx.id}>
                     <TableCell className="text-muted-foreground">{tx.date}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{tx.description}</div>
+                      <div
+                        className={`font-medium ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
+                      >
+                        {tx.description}
+                      </div>
                       <div className="text-xs text-muted-foreground">{tx.category}</div>
                     </TableCell>
                     <TableCell className="text-right font-medium">

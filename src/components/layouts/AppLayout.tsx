@@ -4,18 +4,20 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app/AppSidebar'
 import { AppHeader } from '@/components/app/AppHeader'
 import useModuleStore from '@/stores/useModuleStore'
+import useSecurityStore from '@/stores/useSecurityStore'
+import LockScreen from '@/components/security/LockScreen'
 import { Hexagon } from 'lucide-react'
 
 export default function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isReady, lastRoute, setLastRoute } = useModuleStore()
+  const { isSetup, isUnlocked } = useSecurityStore()
   const hasRestored = useRef(false)
 
   useEffect(() => {
     if (!isReady) return
 
-    // Restore the route upon login/refresh only if visiting the base /app path
     if (!hasRestored.current && location.pathname === '/app' && lastRoute && lastRoute !== '/app') {
       hasRestored.current = true
       navigate(lastRoute, { replace: true })
@@ -24,7 +26,6 @@ export default function AppLayout() {
 
     hasRestored.current = true
 
-    // Persist session path dynamically
     if (location.pathname.startsWith('/app')) {
       setLastRoute(location.pathname + location.search)
     }
@@ -41,6 +42,10 @@ export default function AppLayout() {
         </p>
       </div>
     )
+  }
+
+  if (isSetup && !isUnlocked) {
+    return <LockScreen />
   }
 
   return (
