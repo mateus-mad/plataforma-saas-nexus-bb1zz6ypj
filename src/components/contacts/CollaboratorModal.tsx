@@ -1,11 +1,5 @@
 import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,10 +13,26 @@ import {
   Building2,
   History,
   Paperclip,
+  User,
+  FileText,
+  MapPin,
+  Phone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import PersonalInfoTab from './tabs/PersonalInfoTab'
 import HistoryTab from './tabs/HistoryTab'
+import ESocialTab from './tabs/ESocialTab'
+import AttachmentsTab from './tabs/AttachmentsTab'
+import {
+  DocsTab,
+  AddressTab,
+  ContactTab,
+  WorkTab,
+  SalaryTab,
+  BenefitsTab,
+  ChargesTab,
+  VacationTab,
+} from './tabs/BasicTabs'
 
 export default function CollaboratorModal({
   open,
@@ -31,13 +41,17 @@ export default function CollaboratorModal({
   open: boolean
   onOpenChange: (o: boolean) => void
 }) {
-  const [activeTab, setActiveTab] = useState('historico')
-  const [name, setName] = useState('')
+  const [activeTab, setActiveTab] = useState('pessoal')
+  const [name, setName] = useState('Mateus amorim dias')
   const [nacionalidade, setNacionalidade] = useState('Brasileira')
 
   const globalProgress = 45
 
   const TABS = [
+    { id: 'pessoal', label: 'Pessoal', progress: 100, icon: User, color: 'emerald' },
+    { id: 'docs', label: 'Docs', progress: 80, icon: FileText, color: 'emerald' },
+    { id: 'endereco', label: 'Endereço', progress: 100, icon: MapPin, color: 'emerald' },
+    { id: 'contato', label: 'Contato', progress: 100, icon: Phone, color: 'emerald' },
     { id: 'trabalho', label: 'Trabalho', progress: 88, icon: Briefcase, color: 'emerald' },
     { id: 'salario', label: 'Salário', progress: 50, icon: DollarSign, color: 'amber' },
     { id: 'beneficios', label: 'Benefícios', progress: 100, icon: Heart, color: 'emerald' },
@@ -50,7 +64,7 @@ export default function CollaboratorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-xl shadow-2xl overflow-hidden [&>button]:hidden sm:rounded-xl">
+      <DialogContent className="max-w-[1000px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-xl shadow-2xl overflow-hidden [&>button]:hidden sm:rounded-xl">
         <div className="p-6 pb-0 bg-white border-b border-slate-200 shrink-0 relative z-10">
           <button
             onClick={() => onOpenChange(false)}
@@ -77,58 +91,62 @@ export default function CollaboratorModal({
                 value={globalProgress}
                 className="w-32 h-2.5 bg-slate-200 [&>div]:bg-blue-500 shadow-inner"
               />
-              <span className="text-sm font-bold text-slate-700 w-8">{globalProgress}%</span>
+              <span className="text-sm font-bold text-slate-700 w-[100px]">
+                {globalProgress}% Preenchido
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-4 mt-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex items-center gap-3 overflow-x-auto pb-4 mt-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap border select-none',
+                  'flex flex-col min-w-[140px] px-4 py-3 rounded-xl text-sm font-medium transition-all border select-none shrink-0',
                   activeTab === tab.id
-                    ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/20 transform scale-[1.02]'
+                    ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/20'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300',
                 )}
               >
-                <tab.icon
-                  className={cn(
-                    'w-4 h-4',
-                    activeTab === tab.id ? 'text-white/80' : 'text-slate-400',
-                  )}
-                />
-                {tab.label}
-                {tab.progress !== null && tab.progress < 100 && (
-                  <span
-                    className={cn(
-                      'text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-colors ml-1',
-                      activeTab === tab.id
-                        ? 'bg-white/20 text-white'
-                        : tab.color === 'emerald'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : tab.color === 'amber'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-blue-100 text-blue-700',
-                    )}
-                  >
-                    {tab.progress}%
-                  </span>
-                )}
-                {tab.progress === 100 && (
-                  <div
-                    className={cn(
-                      'w-4 h-4 rounded-full flex items-center justify-center ml-1',
-                      activeTab === tab.id ? 'bg-white/20' : 'bg-emerald-100',
-                    )}
-                  >
-                    <Check
+                <div className="flex items-center justify-between w-full mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <tab.icon
                       className={cn(
-                        'w-3 h-3',
-                        activeTab === tab.id ? 'text-white' : 'text-emerald-600',
+                        'w-4 h-4',
+                        activeTab === tab.id ? 'text-white/80' : 'text-slate-400',
                       )}
                     />
+                    <span>{tab.label}</span>
+                  </div>
+                  {tab.progress === 100 && (
+                    <Check
+                      className={cn(
+                        'w-3.5 h-3.5',
+                        activeTab === tab.id ? 'text-white' : 'text-emerald-500',
+                      )}
+                    />
+                  )}
+                </div>
+                {tab.progress !== null && (
+                  <div className="w-full space-y-1.5">
+                    <Progress
+                      value={tab.progress}
+                      className={cn(
+                        'h-1.5',
+                        activeTab === tab.id
+                          ? 'bg-white/20 [&>div]:bg-white'
+                          : 'bg-slate-100 [&>div]:bg-blue-500',
+                      )}
+                    />
+                    <div
+                      className={cn(
+                        'text-[10px] font-bold text-right',
+                        activeTab === tab.id ? 'text-white/80' : 'text-slate-400',
+                      )}
+                    >
+                      {tab.progress}%
+                    </div>
                   </div>
                 )}
               </button>
@@ -146,22 +164,17 @@ export default function CollaboratorModal({
                 setNacionalidade={setNacionalidade}
               />
             )}
+            {activeTab === 'docs' && <DocsTab />}
+            {activeTab === 'endereco' && <AddressTab />}
+            {activeTab === 'contato' && <ContactTab />}
+            {activeTab === 'trabalho' && <WorkTab />}
+            {activeTab === 'salario' && <SalaryTab />}
+            {activeTab === 'beneficios' && <BenefitsTab />}
+            {activeTab === 'encargos' && <ChargesTab />}
+            {activeTab === 'ferias' && <VacationTab />}
+            {activeTab === 'esocial' && <ESocialTab />}
             {activeTab === 'historico' && <HistoryTab />}
-            {activeTab !== 'pessoal' && activeTab !== 'historico' && (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400 animate-in fade-in duration-500">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-2xl font-bold text-slate-300">
-                    {TABS.find((t) => t.id === activeTab)?.progress || '--'}%
-                  </span>
-                </div>
-                <p className="font-medium text-slate-500">
-                  Conteúdo da aba {TABS.find((t) => t.id === activeTab)?.label}
-                </p>
-                <p className="text-sm mt-2 max-w-sm text-center">
-                  Em desenvolvimento para as próximas etapas do projeto.
-                </p>
-              </div>
-            )}
+            {activeTab === 'anexos' && <AttachmentsTab />}
           </div>
         </div>
 
@@ -177,7 +190,10 @@ export default function CollaboratorModal({
             >
               Cancelar
             </Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm shadow-blue-500/20 flex-1 sm:flex-none px-8">
+            <Button
+              onClick={() => onOpenChange(false)}
+              className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm shadow-blue-500/20 flex-1 sm:flex-none px-8"
+            >
               Atualizar
             </Button>
           </div>

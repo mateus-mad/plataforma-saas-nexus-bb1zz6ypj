@@ -4,11 +4,26 @@ import { Input } from '@/components/ui/input'
 import { ArrowLeft, Plus, Search, Users } from 'lucide-react'
 import CollaboratorList from '@/components/contacts/CollaboratorList'
 import CollaboratorModal from '@/components/contacts/CollaboratorModal'
+import CollaboratorProfileModal from '@/components/contacts/CollaboratorProfileModal'
 import { Link } from 'react-router-dom'
 
 export default function Contacts() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean
+    type: 'edit' | 'new' | 'profile'
+  }>({
+    isOpen: false,
+    type: 'new',
+  })
   const [view, setView] = useState<'lista' | 'kanban'>('lista')
+
+  const handleOpenModal = (type: 'edit' | 'new' | 'profile') => {
+    setModalState({ isOpen: true, type })
+  }
+
+  const handleCloseModal = () => {
+    setModalState((prev) => ({ ...prev, isOpen: false }))
+  }
 
   return (
     <div className="space-y-6 animate-fade-in flex flex-col min-h-[calc(100vh-8rem)]">
@@ -36,7 +51,7 @@ export default function Contacts() {
             <span className="mr-2">🧠</span> ENG RH
           </Button>
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => handleOpenModal('new')}
             className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm shadow-blue-500/20 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" /> Novo Colaborador
@@ -73,10 +88,21 @@ export default function Contacts() {
       </div>
 
       <div className="flex-1">
-        <CollaboratorList />
+        <CollaboratorList
+          onEdit={() => handleOpenModal('edit')}
+          onProfile={() => handleOpenModal('profile')}
+        />
       </div>
 
-      <CollaboratorModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <CollaboratorModal
+        open={modalState.isOpen && (modalState.type === 'edit' || modalState.type === 'new')}
+        onOpenChange={(open) => !open && handleCloseModal()}
+      />
+
+      <CollaboratorProfileModal
+        open={modalState.isOpen && modalState.type === 'profile'}
+        onOpenChange={(open) => !open && handleCloseModal()}
+      />
     </div>
   )
 }

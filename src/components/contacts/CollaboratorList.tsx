@@ -3,7 +3,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MoreHorizontal, Eye, Edit2, Building2, Clock, CalendarDays, User } from 'lucide-react'
 
-export default function CollaboratorList() {
+type Props = {
+  onEdit: () => void
+  onProfile: () => void
+}
+
+export default function CollaboratorList({ onEdit, onProfile }: Props) {
   const collaborator = {
     name: 'Mateus amorim dias',
     id: '# COL0001',
@@ -89,6 +94,7 @@ export default function CollaboratorList() {
           <Button
             variant="outline"
             size="sm"
+            onClick={onProfile}
             className="h-8 text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-800 shadow-sm"
           >
             <Eye className="w-3.5 h-3.5 mr-2 text-slate-400" /> Ficha
@@ -96,6 +102,7 @@ export default function CollaboratorList() {
           <Button
             variant="outline"
             size="sm"
+            onClick={onEdit}
             className="h-8 text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-800 shadow-sm"
           >
             <Edit2 className="w-3.5 h-3.5 mr-2 text-slate-400" /> Editar
