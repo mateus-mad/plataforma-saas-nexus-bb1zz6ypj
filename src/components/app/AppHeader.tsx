@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Bell, Search, Hexagon, Zap, Check, ChevronDown, ShieldAlert, Lock } from 'lucide-react'
+import { Search, Hexagon, Check, ChevronDown, ShieldAlert, Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -33,20 +34,40 @@ export function AppHeader() {
   const location = useLocation()
   const pathName = PATH_MAP[location.pathname] || 'Visão Geral'
   const { currentTenant, tenants, switchTenant } = useTenantStore()
-  const { isAdminMode, toggleAdminMode, isSetup, lock } = useSecurityStore()
+  const { isAdminMode, loginAsManager, switchToClientMode, isSetup, lock } = useSecurityStore()
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] sticky top-0 z-50 transition-all">
       <div className="flex items-center gap-3 sm:gap-4 flex-1">
         <div className="flex items-center gap-3 sm:gap-4 h-8">
           <Link to="/app" className="flex items-center gap-2 group cursor-pointer">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-colors group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]">
-              <Hexagon className="w-4 h-4 text-primary" />
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${isAdminMode ? 'bg-purple-100 border-purple-200 text-purple-600 group-hover:bg-purple-200 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]' : 'bg-primary/10 border-primary/20 text-primary group-hover:bg-primary/20 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]'}`}
+            >
+              <Hexagon className="w-4 h-4" />
             </div>
             <span className="font-bold text-slate-800 hidden lg:inline-block tracking-tight">
-              Nexus<span className="text-primary font-normal">ERP</span>
+              Nexus
+              <span
+                className={isAdminMode ? 'text-purple-600 font-normal' : 'text-primary font-normal'}
+              >
+                ERP
+              </span>
             </span>
           </Link>
+
+          {isAdminMode ? (
+            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200 shadow-none h-6 px-2 text-[10px] uppercase tracking-wider hidden sm:flex">
+              SaaS Manager
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="bg-slate-100 text-slate-600 border-slate-200 h-6 px-2 text-[10px] uppercase tracking-wider hidden sm:flex"
+            >
+              SaaS Client
+            </Badge>
+          )}
 
           <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
@@ -118,20 +139,6 @@ export function AppHeader() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={toggleAdminMode}
-                  className={`p-2 rounded-full border transition-colors ${isAdminMode ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'}`}
-                >
-                  <ShieldAlert className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isAdminMode ? 'Modo Admin Ativo (Vendo Hashes)' : 'Simular Visão de Admin'}
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
                   onClick={lock}
                   className="p-2 rounded-full bg-slate-100 border border-slate-200 text-slate-500 hover:bg-rose-100 hover:text-rose-600 hover:border-rose-200 transition-colors"
                 >
@@ -167,8 +174,12 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56 rounded-xl z-[60]">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-semibold leading-none text-slate-800">Admin Silva</p>
-                <p className="text-xs leading-none text-slate-500 mt-1">admin@nexuserp.com</p>
+                <p className="text-sm font-semibold leading-none text-slate-800">
+                  {isAdminMode ? 'Platform Owner' : 'Admin Silva'}
+                </p>
+                <p className="text-xs leading-none text-slate-500 mt-1">
+                  {isAdminMode ? 'sysadmin@nexuserp.com' : 'admin@nexuserp.com'}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-slate-100" />
@@ -177,6 +188,14 @@ export function AppHeader() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link to="/app/configuracoes">Configurações</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-slate-100" />
+            <DropdownMenuItem
+              onClick={isAdminMode ? switchToClientMode : loginAsManager}
+              className={`cursor-pointer font-medium ${isAdminMode ? 'text-slate-700' : 'text-purple-600 focus:text-purple-700 focus:bg-purple-50'}`}
+            >
+              <ShieldAlert className="w-4 h-4 mr-2" />
+              {isAdminMode ? 'Alternar para Visão Cliente' : 'Alternar para SaaS Manager'}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer">

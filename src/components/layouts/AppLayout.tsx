@@ -12,7 +12,7 @@ export default function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isReady, lastRoute, setLastRoute } = useModuleStore()
-  const { isSetup, isUnlocked } = useSecurityStore()
+  const { isSetup, isUnlocked, isAdminMode } = useSecurityStore()
   const hasRestored = useRef(false)
 
   useEffect(() => {
@@ -49,15 +49,28 @@ export default function AppLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="bg-slate-50 min-h-screen relative overflow-hidden z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100/50 -z-10 pointer-events-none" />
-        <AppHeader />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-[1600px] mx-auto z-0 relative">
-          <Outlet />
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className={isAdminMode ? 'manager-theme' : ''}>
+      {isAdminMode && (
+        <style>{`
+          .manager-theme {
+            --primary: 271 81% 56%;
+            --primary-foreground: 210 40% 98%;
+            --sidebar-primary: 271 81% 56%;
+            --sidebar-primary-foreground: 210 40% 98%;
+            --sidebar-ring: 271 81% 56%;
+          }
+        `}</style>
+      )}
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="bg-slate-50 min-h-screen relative overflow-hidden z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100/50 -z-10 pointer-events-none" />
+          <AppHeader />
+          <main className="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-[1600px] mx-auto z-0 relative">
+            <Outlet />
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
   )
 }

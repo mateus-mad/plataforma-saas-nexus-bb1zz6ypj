@@ -21,6 +21,8 @@ type SecurityStore = {
   recover: (secret: string, newPassword: string) => Promise<boolean>
   lock: () => void
   toggleAdminMode: () => void
+  loginAsManager: () => void
+  switchToClientMode: () => void
   encrypt: (text: string) => Promise<string>
   decrypt: (encryptedText: string) => Promise<string | null>
 }
@@ -82,6 +84,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const key = await importKey(rawDataKeyStr)
         setDataKey(key)
         setIsUnlocked(true)
+        setIsAdminMode(false)
         return true
       }
     } catch (e) {
@@ -112,6 +115,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const key = await importKey(rawDataKeyStr)
         setDataKey(key)
         setIsUnlocked(true)
+        setIsAdminMode(false)
         return true
       }
     } catch (e) {
@@ -123,9 +127,22 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const lock = () => {
     setDataKey(null)
     setIsUnlocked(false)
+    setIsAdminMode(false)
   }
 
   const toggleAdminMode = () => setIsAdminMode((p) => !p)
+
+  const loginAsManager = () => {
+    setIsAdminMode(true)
+    setIsUnlocked(true)
+    setDataKey(null)
+  }
+
+  const switchToClientMode = () => {
+    setIsAdminMode(false)
+    setIsUnlocked(false)
+    setDataKey(null)
+  }
 
   const encrypt = useCallback(
     async (text: string) => {
@@ -156,6 +173,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         recover,
         lock,
         toggleAdminMode,
+        loginAsManager,
+        switchToClientMode,
         encrypt,
         decrypt,
       },

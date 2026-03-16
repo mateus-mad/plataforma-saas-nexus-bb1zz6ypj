@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowDownRight, ArrowUpRight, Plus, Wallet, Lock } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Plus, Wallet, Lock, Unlock } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import useSecurityStore from '@/stores/useSecurityStore'
@@ -125,7 +125,7 @@ export default function Financial() {
         setDisplayTx(
           txDB.map((tx) => ({
             ...tx,
-            description: tx.description?.substring(0, 15) + '...',
+            description: `[Encrypted] ${tx.description?.substring(0, 15)}...`,
           })),
         )
       } else {
@@ -177,9 +177,18 @@ export default function Financial() {
             {isSetup && (
               <Badge
                 variant="outline"
-                className="bg-emerald-50 text-emerald-600 border-emerald-200 ml-2"
+                className={
+                  isAdminMode
+                    ? 'bg-purple-50 text-purple-600 border-purple-200 ml-2'
+                    : 'bg-emerald-50 text-emerald-600 border-emerald-200 ml-2'
+                }
               >
-                <Lock className="w-3 h-3 mr-1" /> E2E
+                {isAdminMode ? (
+                  <Lock className="w-3 h-3 mr-1" />
+                ) : (
+                  <Unlock className="w-3 h-3 mr-1" />
+                )}
+                {isAdminMode ? 'Encrypted (Manager)' : 'E2E Decrypted'}
               </Badge>
             )}
           </h2>
@@ -327,17 +336,31 @@ export default function Financial() {
                     <TableCell className="text-muted-foreground">{tx.date}</TableCell>
                     <TableCell>
                       <div
-                        className={`font-medium ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
+                        className={`font-medium flex items-center gap-1.5 ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
                       >
+                        {isSetup &&
+                          (isAdminMode ? (
+                            <Lock className="w-3 h-3 text-purple-400" />
+                          ) : (
+                            <Unlock className="w-3 h-3 text-emerald-400 opacity-50" />
+                          ))}
                         {tx.description}
                       </div>
                       <div className="text-xs text-muted-foreground">{tx.category}</div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      <span className={tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}>
-                        {tx.type === 'income' ? '+' : '-'} R${' '}
-                        {tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
+                      {isAdminMode && isSetup ? (
+                        <span className="font-mono text-xs text-slate-500 flex items-center justify-end gap-1">
+                          <Lock className="w-3 h-3 text-purple-400" /> [Encrypted]
+                        </span>
+                      ) : (
+                        <span
+                          className={tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}
+                        >
+                          {tx.type === 'income' ? '+' : '-'} R${' '}
+                          {tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

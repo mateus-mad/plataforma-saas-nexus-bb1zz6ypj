@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Lock, ShieldCheck, ArrowRight } from 'lucide-react'
+import { Lock, ShieldCheck, ArrowRight, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,7 +19,7 @@ export default function LockScreen() {
   const [isRecovering, setIsRecovering] = useState(false)
   const [recoverSecret, setRecoverSecret] = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const { unlock, recover } = useSecurityStore()
+  const { unlock, recover, loginAsManager } = useSecurityStore()
   const { toast } = useToast()
 
   const handleUnlock = async (e: React.FormEvent) => {
@@ -99,9 +99,20 @@ export default function LockScreen() {
             />
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base font-medium">
-            Desbloquear Cofre <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          <div className="space-y-3">
+            <Button type="submit" className="w-full h-12 text-base font-medium">
+              Desbloquear Cofre <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={loginAsManager}
+              className="w-full h-12 text-base font-medium border-purple-900/50 bg-purple-950/20 text-purple-400 hover:bg-purple-900/40 hover:text-purple-300 hover:border-purple-800 transition-colors"
+            >
+              <ShieldAlert className="w-4 h-4 mr-2" /> Entrar como SaaS Manager
+            </Button>
+          </div>
 
           <div className="text-center pt-2">
             <button

@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Filter, Plus, MoreHorizontal, Mail, Phone, Lock } from 'lucide-react'
+import { Filter, Plus, MoreHorizontal, Mail, Phone, Lock, Unlock } from 'lucide-react'
 import useSecurityStore from '@/stores/useSecurityStore'
 import { db } from '@/lib/database'
 
@@ -109,9 +109,9 @@ export default function Contacts() {
         setDisplayContacts(
           contactsDB.map((c) => ({
             ...c,
-            name: c.name?.substring(0, 20) + '...',
-            email: '*** Encrypted ***',
-            phone: c.phone?.substring(0, 10) + '...',
+            name: `[Encrypted] ${c.name?.substring(0, 12)}...`,
+            email: `[Encrypted] ${c.email?.substring(0, 12)}...`,
+            phone: `[Encrypted] ${c.phone?.substring(0, 12)}...`,
           })),
         )
       } else {
@@ -168,9 +168,18 @@ export default function Contacts() {
             {isSetup && (
               <Badge
                 variant="outline"
-                className="bg-emerald-50 text-emerald-600 border-emerald-200 ml-2"
+                className={
+                  isAdminMode
+                    ? 'bg-purple-50 text-purple-600 border-purple-200 ml-2'
+                    : 'bg-emerald-50 text-emerald-600 border-emerald-200 ml-2'
+                }
               >
-                <Lock className="w-3 h-3 mr-1" /> E2E
+                {isAdminMode ? (
+                  <Lock className="w-3 h-3 mr-1" />
+                ) : (
+                  <Unlock className="w-3 h-3 mr-1" />
+                )}
+                {isAdminMode ? 'Encrypted (Manager)' : 'E2E Decrypted'}
               </Badge>
             )}
           </h2>
@@ -283,8 +292,14 @@ export default function Contacts() {
                       <AvatarFallback>{isAdminMode ? '?' : contact.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span
-                      className={`font-medium ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
+                      className={`font-medium flex items-center gap-1.5 ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
                     >
+                      {isSetup &&
+                        (isAdminMode ? (
+                          <Lock className="w-3 h-3 text-purple-400" />
+                        ) : (
+                          <Unlock className="w-3 h-3 text-emerald-400 opacity-50" />
+                        ))}
                       {contact.name}
                     </span>
                   </div>
@@ -294,10 +309,20 @@ export default function Contacts() {
                     className={`flex flex-col space-y-1 ${isAdminMode ? 'font-mono text-[10px] text-slate-400' : 'text-sm text-muted-foreground'}`}
                   >
                     <span className="flex items-center gap-1">
-                      <Mail className="w-3 h-3" /> {contact.email}
+                      {isAdminMode ? (
+                        <Lock className="w-3 h-3 opacity-50" />
+                      ) : (
+                        <Mail className="w-3 h-3" />
+                      )}{' '}
+                      {contact.email}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> {contact.phone}
+                      {isAdminMode ? (
+                        <Lock className="w-3 h-3 opacity-50" />
+                      ) : (
+                        <Phone className="w-3 h-3" />
+                      )}{' '}
+                      {contact.phone}
                     </span>
                   </div>
                 </TableCell>

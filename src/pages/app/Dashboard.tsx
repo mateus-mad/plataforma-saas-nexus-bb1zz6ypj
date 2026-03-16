@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, CircleDollarSign, CheckSquare, Briefcase, Lock } from 'lucide-react'
+import { Users, CircleDollarSign, CheckSquare, Briefcase, Lock, Unlock } from 'lucide-react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
@@ -53,7 +53,7 @@ export default function Dashboard() {
         setActivities(
           encryptedMocks.map((act) => ({
             ...act,
-            text: act.text?.substring(0, 25) + '...',
+            text: `[Encrypted] ${act.text?.substring(0, 20)}...`,
           })),
         )
       } else {
@@ -79,9 +79,18 @@ export default function Dashboard() {
             {isSetup && (
               <Badge
                 variant="outline"
-                className="bg-emerald-50 text-emerald-600 border-emerald-200 ml-2"
+                className={
+                  isAdminMode
+                    ? 'bg-purple-50 text-purple-600 border-purple-200 ml-2'
+                    : 'bg-emerald-50 text-emerald-600 border-emerald-200 ml-2'
+                }
               >
-                <Lock className="w-3 h-3 mr-1" /> E2E
+                {isAdminMode ? (
+                  <Lock className="w-3 h-3 mr-1" />
+                ) : (
+                  <Unlock className="w-3 h-3 mr-1" />
+                )}
+                {isAdminMode ? 'Encrypted (Manager)' : 'E2E Decrypted'}
               </Badge>
             )}
           </h2>
@@ -216,8 +225,14 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1">
                     <p
-                      className={`text-sm font-medium leading-none ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
+                      className={`text-sm font-medium leading-none flex items-center gap-1.5 ${isAdminMode ? 'font-mono text-xs text-slate-500' : ''}`}
                     >
+                      {isSetup &&
+                        (isAdminMode ? (
+                          <Lock className="w-3 h-3 text-purple-400" />
+                        ) : (
+                          <Unlock className="w-3 h-3 text-emerald-400 opacity-50" />
+                        ))}
                       {activity.text}
                     </p>
                     <p className="text-xs text-muted-foreground">{activity.time}</p>
