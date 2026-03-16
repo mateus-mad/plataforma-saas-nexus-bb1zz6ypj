@@ -2,8 +2,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Info, HeartPulse } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
-type Props = { data: any; onChange: (f: string, v: string) => void }
+type Props = {
+  data: any
+  onChange: (f: string, v: string) => void
+  errors?: Record<string, string>
+  readOnly?: boolean
+}
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -23,7 +29,10 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export function ContactTab({ data, onChange }: Props) {
+export function ContactTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`contato.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
       <div>
@@ -37,6 +46,8 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.telPrinc || ''}
               onChange={(e) => onChange('telPrinc', e.target.value)}
               placeholder="(00) 00000-0000"
+              className={err('telPrinc')}
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -45,6 +56,8 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.telSec || ''}
               onChange={(e) => onChange('telSec', e.target.value)}
               placeholder="(00) 0000-0000"
+              className={err('telSec')}
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -53,6 +66,8 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.whatsapp || ''}
               onChange={(e) => onChange('whatsapp', e.target.value)}
               placeholder="(00) 00000-0000"
+              className={err('whatsapp')}
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -62,6 +77,8 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.email || ''}
               onChange={(e) => onChange('email', e.target.value)}
               placeholder="exemplo@email.com"
+              className={err('email')}
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -78,8 +95,12 @@ export function ContactTab({ data, onChange }: Props) {
             <Input
               value={data.emergNome || ''}
               onChange={(e) => onChange('emergNome', e.target.value)}
-              className="bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm"
+              className={cn(
+                'bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm',
+                err('emergNome'),
+              )}
               placeholder="Ex: Maria Silva"
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -88,7 +109,11 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.emergTel || ''}
               onChange={(e) => onChange('emergTel', e.target.value)}
               placeholder="(00) 00000-0000"
-              className="bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm"
+              className={cn(
+                'bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm',
+                err('emergTel'),
+              )}
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -97,7 +122,11 @@ export function ContactTab({ data, onChange }: Props) {
               value={data.emergRel || ''}
               onChange={(e) => onChange('emergRel', e.target.value)}
               placeholder="Ex: Mãe"
-              className="bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm"
+              className={cn(
+                'bg-white border-rose-200 focus-visible:ring-rose-500 shadow-sm',
+                err('emergRel'),
+              )}
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -106,7 +135,10 @@ export function ContactTab({ data, onChange }: Props) {
   )
 }
 
-export function WorkTab({ data, onChange }: Props) {
+export function WorkTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`trabalho.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-2">
@@ -118,8 +150,9 @@ export function WorkTab({ data, onChange }: Props) {
           <Input
             value={data.matricula || ''}
             onChange={(e) => onChange('matricula', e.target.value)}
-            className="bg-slate-50 font-mono"
+            className={cn('bg-slate-50 font-mono', err('matricula'))}
             placeholder="COL0001"
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -128,6 +161,8 @@ export function WorkTab({ data, onChange }: Props) {
             value={data.depto || ''}
             onChange={(e) => onChange('depto', e.target.value)}
             placeholder="Ex: Engenharia"
+            className={err('depto')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -136,6 +171,8 @@ export function WorkTab({ data, onChange }: Props) {
             value={data.cargo || ''}
             onChange={(e) => onChange('cargo', e.target.value)}
             placeholder="Ex: Engenheiro Civil"
+            className={err('cargo')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -144,6 +181,8 @@ export function WorkTab({ data, onChange }: Props) {
             type="date"
             value={data.admissao || ''}
             onChange={(e) => onChange('admissao', e.target.value)}
+            className={err('admissao')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -152,6 +191,8 @@ export function WorkTab({ data, onChange }: Props) {
             value={data.tipo || ''}
             onChange={(e) => onChange('tipo', e.target.value)}
             placeholder="Ex: CLT"
+            className={err('tipo')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -160,6 +201,8 @@ export function WorkTab({ data, onChange }: Props) {
             value={data.jornada || ''}
             onChange={(e) => onChange('jornada', e.target.value)}
             placeholder="Ex: 44h semanais"
+            className={err('jornada')}
+            disabled={readOnly}
           />
         </div>
       </div>

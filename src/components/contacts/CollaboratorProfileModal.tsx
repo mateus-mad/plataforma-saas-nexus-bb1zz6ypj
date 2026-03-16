@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
 import {
   User,
   Building2,
@@ -21,6 +22,8 @@ import {
   Building,
   Hash,
   Share2,
+  UserMinus,
+  UserCheck,
 } from 'lucide-react'
 
 type Props = { open: boolean; onOpenChange: (open: boolean) => void; onEdit?: () => void }
@@ -51,6 +54,18 @@ const Section = ({ t, icon: Icon, children }: any) => (
 
 export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }: Props) {
   const { toast } = useToast()
+  const [status, setStatus] = useState<'Ativo' | 'Desligado'>('Ativo')
+
+  const handleToggleStatus = () => {
+    const isDismissing = status === 'Ativo'
+    setStatus(isDismissing ? 'Desligado' : 'Ativo')
+    toast({
+      title: isDismissing ? 'Processo de Demissão' : 'Readmissão Concluída',
+      description: isDismissing
+        ? 'O colaborador foi marcado como desligado no sistema.'
+        : 'Colaborador reintegrado ao quadro de ativos com sucesso.',
+    })
+  }
 
   const printDoc = () => {
     toast({
@@ -79,7 +94,7 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
   const shareProfile = () => {
     toast({
       title: 'Link Gerado',
-      description: 'Link do perfil copiado para a área de transferência.',
+      description: 'Link seguro do perfil copiado para a área de transferência.',
     })
     navigator.clipboard.writeText(window.location.origin + '/share/colaborador/123')
   }
@@ -104,9 +119,15 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
                   <DialogTitle className="text-2xl font-bold text-slate-800">
                     Mateus amorim dias
                   </DialogTitle>
-                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-sm flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Ativo
-                  </Badge>
+                  {status === 'Ativo' ? (
+                    <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-sm flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Ativo
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-rose-500 text-white hover:bg-rose-600 border-none shadow-sm flex items-center gap-1">
+                      <UserMinus className="w-3 h-3" /> Desligado
+                    </Badge>
+                  )}
                   <Badge
                     variant="outline"
                     className="bg-slate-50 text-slate-500 border-slate-200 font-mono"
@@ -120,15 +141,15 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
                   </DialogDescription>
                 </div>
                 <div className="flex items-center gap-3 w-full max-w-sm mt-2">
-                  <Progress value={45} className="h-2 flex-1 bg-slate-100 [&>div]:bg-blue-500" />
+                  <Progress value={85} className="h-2 flex-1 bg-slate-100 [&>div]:bg-blue-500" />
                   <span className="text-xs font-semibold text-blue-600 whitespace-nowrap">
-                    45% preenchido
+                    85% preenchido
                   </span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 w-full md:w-auto mt-4 md:mt-0 justify-end md:absolute md:top-6 md:right-6">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto mt-4 md:mt-0 justify-end md:absolute md:top-6 md:right-6">
             <Button
               variant="outline"
               size="icon"
@@ -143,13 +164,35 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
               onClick={printDoc}
               className="border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              <Printer className="w-4 h-4 mr-2" /> Exportar PDF
+              <Printer className="w-4 h-4 md:mr-2" />{' '}
+              <span className="hidden md:inline">Exportar PDF</span>
+            </Button>
+            <Button
+              variant={status === 'Ativo' ? 'outline' : 'default'}
+              onClick={handleToggleStatus}
+              className={
+                status === 'Ativo'
+                  ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+              }
+            >
+              {status === 'Ativo' ? (
+                <>
+                  <UserMinus className="w-4 h-4 md:mr-2" />{' '}
+                  <span className="hidden md:inline">Demitir</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck className="w-4 h-4 md:mr-2" />{' '}
+                  <span className="hidden md:inline">Readmitir</span>
+                </>
+              )}
             </Button>
             <Button
               onClick={onEdit}
               className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20"
             >
-              <Edit className="w-4 h-4 mr-2" /> Editar
+              <Edit className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Editar</span>
             </Button>
           </div>
         </div>
@@ -188,32 +231,33 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
               <Field l="Data de Nascimento" v="20/09/1993" /> <Field l="Gênero" v="Masculino" />
               <Field l="Estado Civil" v="Casado(a)" /> <Field l="Nacionalidade" v="Brasileira" />
               <Field l="Escolaridade" v="Superior Completo" /> <Field l="Tipo Sanguíneo" v="A+" />
-              <Field l="Nome da Mãe" v="-" /> <Field l="Nome do Pai" v="-" />
+              <Field l="Nome da Mãe" v="Maria Silva" /> <Field l="Nome do Pai" v="-" />
             </div>
           </Section>
 
           <Section t="Documentos" icon={FileText}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <Field l="CPF" v="044.763.243-47" /> <Field l="RG" v="-" />{' '}
-              <Field l="PIS/PASEP" v="-" /> <Field l="CTPS" v="-" />
+              <Field l="PIS/PASEP" v="123.45678.90-1" /> <Field l="CTPS" v="-" />
             </div>
           </Section>
 
           <Section t="Contato" icon={Phone}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <Field l="Telefone Principal" v="-" /> <Field l="Telefone Secundário" v="-" />
-              <Field l="WhatsApp" v="-" /> <Field l="E-mail" v="-" />
+              <Field l="Telefone Principal" v="(11) 99999-9999" />{' '}
+              <Field l="Telefone Secundário" v="-" />
+              <Field l="WhatsApp" v="-" /> <Field l="E-mail" v="mateus@exemplo.com" />
             </div>
           </Section>
 
           <Section t="Endereço" icon={MapPin}>
-            <Field l="Logradouro" v="-" />
+            <Field l="Logradouro" v="Praça da Sé, 123, Sé - São Paulo/SP (01001-000)" />
           </Section>
 
           <Section t="Dados Bancários" icon={Building2}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <Field l="Banco" v="-" /> <Field l="Agência" v="-" /> <Field l="Conta" v="-" />{' '}
-              <Field l="PIX" v="-" />
+              <Field l="Banco" v="341" /> <Field l="Agência" v="0001" />{' '}
+              <Field l="Conta" v="12345-6" /> <Field l="PIX" v="-" />
             </div>
           </Section>
 

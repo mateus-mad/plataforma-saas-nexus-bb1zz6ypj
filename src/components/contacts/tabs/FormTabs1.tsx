@@ -13,8 +13,14 @@ import {
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
-type Props = { data: any; onChange: (f: string, v: any) => void }
+type Props = {
+  data: any
+  onChange: (f: string, v: any) => void
+  errors?: Record<string, string>
+  readOnly?: boolean
+}
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-xs sm:text-sm">
@@ -34,7 +40,7 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export function DocsTab({ data, onChange }: Props) {
+export function DocsTab({ data, onChange, errors, readOnly }: Props) {
   const [ocrLoading, setOcrLoading] = useState(false)
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -55,38 +61,49 @@ export function DocsTab({ data, onChange }: Props) {
     }
   }
 
+  const err = (f: string) =>
+    errors?.[`docs.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50/50 transition-colors">
-        <div className="bg-blue-100 p-3 rounded-full mb-3">
-          <UploadCloud className="w-6 h-6 text-blue-600" />
+      {!readOnly && (
+        <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50/50 transition-colors">
+          <div className="bg-blue-100 p-3 rounded-full mb-3">
+            <UploadCloud className="w-6 h-6 text-blue-600" />
+          </div>
+          <h4 className="font-semibold text-slate-800 mb-1">
+            Upload Automático de Documento (OCR)
+          </h4>
+          <p className="text-xs text-slate-500 mb-4 max-w-md">
+            Faça upload da foto do RG, CNH ou CTPS para preencher os campos automaticamente com a
+            nossa inteligência artificial.
+          </p>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*,.pdf"
+            onChange={handleOcrSimulate}
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={ocrLoading}
+            variant="outline"
+            className="bg-white"
+          >
+            {ocrLoading ? 'Analisando Documento...' : 'Anexar Documento para Leitura'}
+          </Button>
         </div>
-        <h4 className="font-semibold text-slate-800 mb-1">Upload Automático de Documento (OCR)</h4>
-        <p className="text-xs text-slate-500 mb-4 max-w-md">
-          Faça upload da foto do RG, CNH ou CTPS para preencher os campos automaticamente com a
-          nossa inteligência artificial.
-        </p>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*,.pdf"
-          onChange={handleOcrSimulate}
-        />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={ocrLoading}
-          variant="outline"
-          className="bg-white"
-        >
-          {ocrLoading ? 'Analisando Documento...' : 'Anexar Documento para Leitura'}
-        </Button>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div>
           <LabelT l="Tipo de Documento" t="Selecione o documento principal" />
-          <Select value={data.docType} onValueChange={(v) => onChange('docType', v)}>
+          <Select
+            value={data.docType}
+            onValueChange={(v) => onChange('docType', v)}
+            disabled={readOnly}
+          >
             <SelectTrigger className="bg-slate-50">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
@@ -103,6 +120,8 @@ export function DocsTab({ data, onChange }: Props) {
             type="date"
             value={data.docIssueDate || ''}
             onChange={(e) => onChange('docIssueDate', e.target.value)}
+            disabled={readOnly}
+            className={err('docIssueDate')}
           />
         </div>
         <div>
@@ -111,7 +130,8 @@ export function DocsTab({ data, onChange }: Props) {
             value={data.cpf || ''}
             onChange={(e) => onChange('cpf', e.target.value)}
             placeholder="000.000.000-00"
-            className="font-mono"
+            className={cn('font-mono', err('cpf'))}
+            disabled={readOnly}
           />
         </div>
         <div>
@@ -120,7 +140,8 @@ export function DocsTab({ data, onChange }: Props) {
             value={data.pis || ''}
             onChange={(e) => onChange('pis', e.target.value)}
             placeholder="000.00000.00-0"
-            className="font-mono"
+            className={cn('font-mono', err('pis'))}
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -139,6 +160,8 @@ export function DocsTab({ data, onChange }: Props) {
               value={data.ctpsNum || ''}
               onChange={(e) => onChange('ctpsNum', e.target.value)}
               placeholder="Número"
+              disabled={readOnly}
+              className={err('ctpsNum')}
             />
           </div>
           <div>
@@ -147,12 +170,18 @@ export function DocsTab({ data, onChange }: Props) {
               value={data.ctpsSeries || ''}
               onChange={(e) => onChange('ctpsSeries', e.target.value)}
               placeholder="Série"
+              disabled={readOnly}
+              className={err('ctpsSeries')}
             />
           </div>
           <div>
             <LabelT l="UF da CTPS" t="Estado de emissão" />
-            <Select value={data.ctpsUf} onValueChange={(v) => onChange('ctpsUf', v)}>
-              <SelectTrigger>
+            <Select
+              value={data.ctpsUf}
+              onValueChange={(v) => onChange('ctpsUf', v)}
+              disabled={readOnly}
+            >
+              <SelectTrigger className={err('ctpsUf')}>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -168,6 +197,8 @@ export function DocsTab({ data, onChange }: Props) {
               type="date"
               value={data.ctpsDate || ''}
               onChange={(e) => onChange('ctpsDate', e.target.value)}
+              disabled={readOnly}
+              className={err('ctpsDate')}
             />
           </div>
         </div>
@@ -184,6 +215,8 @@ export function DocsTab({ data, onChange }: Props) {
               value={data.titEleitor || ''}
               onChange={(e) => onChange('titEleitor', e.target.value)}
               placeholder="Número"
+              disabled={readOnly}
+              className={err('titEleitor')}
             />
           </div>
           <div>
@@ -192,6 +225,8 @@ export function DocsTab({ data, onChange }: Props) {
               value={data.zonaEleit || ''}
               onChange={(e) => onChange('zonaEleit', e.target.value)}
               placeholder="Zona"
+              disabled={readOnly}
+              className={err('zonaEleit')}
             />
           </div>
           <div>
@@ -200,6 +235,8 @@ export function DocsTab({ data, onChange }: Props) {
               value={data.secaoEleit || ''}
               onChange={(e) => onChange('secaoEleit', e.target.value)}
               placeholder="Seção"
+              disabled={readOnly}
+              className={err('secaoEleit')}
             />
           </div>
           <div>
@@ -208,6 +245,8 @@ export function DocsTab({ data, onChange }: Props) {
               value={data.certReserv || ''}
               onChange={(e) => onChange('certReserv', e.target.value)}
               placeholder="Número"
+              disabled={readOnly}
+              className={err('certReserv')}
             />
           </div>
         </div>
@@ -219,6 +258,7 @@ export function DocsTab({ data, onChange }: Props) {
             checked={data.isDriver}
             onCheckedChange={(v) => onChange('isDriver', v)}
             className="data-[state=checked]:bg-blue-600"
+            disabled={readOnly}
           />
           <Label className="text-slate-800 font-semibold cursor-pointer">
             Colaborador necessita de CNH (Motorista)
@@ -232,13 +272,18 @@ export function DocsTab({ data, onChange }: Props) {
                 value={data.cnhNum || ''}
                 onChange={(e) => onChange('cnhNum', e.target.value)}
                 placeholder="Número"
-                className="bg-white"
+                className={cn('bg-white', err('cnhNum'))}
+                disabled={readOnly}
               />
             </div>
             <div>
               <LabelT l="Categoria" t="Categoria de habilitação (Ex: AB, C, D)" req />
-              <Select value={data.cnhCat} onValueChange={(v) => onChange('cnhCat', v)}>
-                <SelectTrigger className="bg-white">
+              <Select
+                value={data.cnhCat}
+                onValueChange={(v) => onChange('cnhCat', v)}
+                disabled={readOnly}
+              >
+                <SelectTrigger className={cn('bg-white', err('cnhCat'))}>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -257,7 +302,8 @@ export function DocsTab({ data, onChange }: Props) {
                 type="date"
                 value={data.cnhVal || ''}
                 onChange={(e) => onChange('cnhVal', e.target.value)}
-                className="bg-white"
+                className={cn('bg-white', err('cnhVal'))}
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -267,7 +313,7 @@ export function DocsTab({ data, onChange }: Props) {
   )
 }
 
-export function AddressTab({ data, onChange }: Props) {
+export function AddressTab({ data, onChange, errors, readOnly }: Props) {
   const STATES = [
     'AC',
     'AL',
@@ -298,9 +344,12 @@ export function AddressTab({ data, onChange }: Props) {
     'TO',
   ]
 
+  const err = (f: string) =>
+    errors?.[`endereco.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   const onCepBlur = async (e: any) => {
     const cep = e.target.value.replace(/\D/g, '')
-    if (cep.length === 8) {
+    if (cep.length === 8 && !readOnly) {
       try {
         const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
         const d = await r.json()
@@ -335,7 +384,8 @@ export function AddressTab({ data, onChange }: Props) {
               onChange={(e) => onChange('cep', e.target.value)}
               onBlur={onCepBlur}
               placeholder="00000-000"
-              className="pl-10"
+              className={cn('pl-10', err('cep'))}
+              disabled={readOnly}
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
@@ -347,6 +397,8 @@ export function AddressTab({ data, onChange }: Props) {
             value={data.logradouro || ''}
             onChange={(e) => onChange('logradouro', e.target.value)}
             placeholder="Rua, Avenida, etc."
+            className={err('logradouro')}
+            disabled={readOnly}
           />
         </div>
 
@@ -356,6 +408,8 @@ export function AddressTab({ data, onChange }: Props) {
             value={data.numero || ''}
             onChange={(e) => onChange('numero', e.target.value)}
             placeholder="Nº"
+            className={err('numero')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5 md:col-span-4">
@@ -364,6 +418,8 @@ export function AddressTab({ data, onChange }: Props) {
             value={data.comp || ''}
             onChange={(e) => onChange('comp', e.target.value)}
             placeholder="Apto, Bloco, etc."
+            className={err('comp')}
+            disabled={readOnly}
           />
         </div>
 
@@ -373,6 +429,8 @@ export function AddressTab({ data, onChange }: Props) {
             value={data.bairro || ''}
             onChange={(e) => onChange('bairro', e.target.value)}
             placeholder="Bairro"
+            className={err('bairro')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
@@ -381,12 +439,18 @@ export function AddressTab({ data, onChange }: Props) {
             value={data.cidade || ''}
             onChange={(e) => onChange('cidade', e.target.value)}
             placeholder="Cidade"
+            className={err('cidade')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
           <LabelT l="Estado (UF)" t="Unidade Federativa" req />
-          <Select value={data.estado} onValueChange={(v) => onChange('estado', v)}>
-            <SelectTrigger>
+          <Select
+            value={data.estado}
+            onValueChange={(v) => onChange('estado', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={err('estado')}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>

@@ -17,8 +17,9 @@ import {
   FileText,
   MapPin,
   Phone,
-  UserMinus,
-  UserCheck,
+  Eye,
+  Edit2,
+  AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCollaboratorForm } from '@/hooks/useCollaboratorForm'
@@ -39,8 +40,8 @@ export default function CollaboratorModal({
   onOpenChange: (o: boolean) => void
 }) {
   const [activeTab, setActiveTab] = useState('pessoal')
-  const [isActiveEmpl, setIsActiveEmpl] = useState(true)
-  const { data, updateData, progress, globalProgress } = useCollaboratorForm()
+  const [isEditing, setIsEditing] = useState(true)
+  const { data, updateData, progress, globalProgress, errors, validate } = useCollaboratorForm()
   const { toast } = useToast()
 
   const TABS = [
@@ -53,24 +54,23 @@ export default function CollaboratorModal({
     { id: 'beneficios', label: 'Benefícios', prog: progress.beneficios, icon: Heart },
     { id: 'encargos', label: 'Encargos', prog: progress.encargos, icon: Shield },
     { id: 'ferias', label: 'Férias', prog: progress.ferias, icon: CalendarDays },
-    { id: 'esocial', label: 'eSocial', prog: null, icon: Building2 },
+    { id: 'esocial', label: 'eSocial', prog: progress.esocial, icon: Building2 },
     { id: 'historico', label: 'Histórico', prog: null, icon: History },
     { id: 'anexos', label: 'Anexos', prog: null, icon: Paperclip },
   ]
 
-  const handleToggleStatus = () => {
-    setIsActiveEmpl(!isActiveEmpl)
-    toast({
-      title: isActiveEmpl ? 'Processo de Demissão' : 'Readmissão Concluída',
-      description: isActiveEmpl
-        ? 'O processo de demissão foi iniciado com sucesso.'
-        : 'Colaborador reintegrado ao quadro de ativos.',
-    })
-  }
-
   const handleSave = () => {
-    toast({ title: 'Atualizado', description: 'Dados do colaborador foram salvos com sucesso.' })
-    onOpenChange(false)
+    if (!validate()) {
+      toast({
+        variant: 'destructive',
+        title: 'Erros de Validação',
+        description:
+          'Por favor, preencha corretamente os campos obrigatórios marcados em vermelho.',
+      })
+      return
+    }
+    toast({ title: 'Dados Atualizados', description: 'O registro foi salvo com sucesso.' })
+    setIsEditing(false)
   }
 
   const getProgressColor = (prog: number | null) => {
@@ -79,6 +79,8 @@ export default function CollaboratorModal({
     if (prog > 50) return 'bg-amber-400'
     return 'bg-blue-500'
   }
+
+  const hasErrors = Object.keys(errors).length > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,33 +95,22 @@ export default function CollaboratorModal({
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pr-12">
             <div>
               <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <User className="w-5 h-5 text-slate-500" /> Editar Colaborador
+                <User className="w-5 h-5 text-slate-500" />{' '}
+                {isEditing ? 'Editar Ficha Funcional' : 'Visualizar Ficha Funcional'}
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Gerencie todos os dados da ficha funcional.
+                Gerencie todos os dados da ficha do colaborador integrado ao eSocial.
               </DialogDescription>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button
-                variant={isActiveEmpl ? 'outline' : 'default'}
+                variant={isEditing ? 'outline' : 'default'}
                 size="sm"
-                onClick={handleToggleStatus}
-                className={cn(
-                  'h-9 hidden sm:flex transition-all font-semibold',
-                  isActiveEmpl
-                    ? 'border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white',
-                )}
+                onClick={() => setIsEditing(!isEditing)}
+                className="h-9 transition-all font-semibold"
               >
-                {isActiveEmpl ? (
-                  <>
-                    <UserMinus className="w-4 h-4 mr-2" /> Demitir Colaborador
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="w-4 h-4 mr-2" /> Readmitir Colaborador
-                  </>
-                )}
+                {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
+                {isEditing ? 'Modo Leitura' : 'Ativar Edição'}
               </Button>
               <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100">
                 <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
@@ -133,41 +124,46 @@ export default function CollaboratorModal({
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-3 mt-6 px-1 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex flex-col min-w-[110px] px-3 py-2 rounded-lg text-sm font-semibold transition-all shrink-0 border border-transparent shadow-sm',
-                  activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-100'
-                    : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-slate-200',
-                )}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <tab.icon
-                      className={cn(
-                        'w-4 h-4',
-                        activeTab === tab.id ? 'text-blue-600' : 'text-slate-400',
-                      )}
-                    />
-                    <span>{tab.label}</span>
-                  </div>
-                </div>
-                {tab.prog !== null && (
-                  <div className="w-full flex items-center gap-2 mt-1">
-                    <div className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className={cn('h-full', getProgressColor(tab.prog))}
-                        style={{ width: `${tab.prog}%` }}
+            {TABS.map((tab) => {
+              const tabHasError = Object.keys(errors).some((k) => k.startsWith(tab.id))
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex flex-col min-w-[100px] px-3 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 border border-transparent shadow-sm',
+                    activeTab === tab.id
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-100'
+                      : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-slate-200',
+                    tabHasError && activeTab !== tab.id && 'border-rose-200 text-rose-600',
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <tab.icon
+                        className={cn(
+                          'w-4 h-4',
+                          activeTab === tab.id ? 'text-blue-600' : 'text-slate-400',
+                          tabHasError && 'text-rose-500',
+                        )}
                       />
+                      <span>{tab.label}</span>
                     </div>
-                    <span className="text-[9px] text-slate-400 font-bold">{tab.prog}%</span>
                   </div>
-                )}
-              </button>
-            ))}
+                  {tab.prog !== null && (
+                    <div className="w-full flex items-center gap-2 mt-1">
+                      <div className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className={cn('h-full', getProgressColor(tab.prog))}
+                          style={{ width: `${tab.prog}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-slate-400 font-bold">{tab.prog}%</span>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -177,45 +173,98 @@ export default function CollaboratorModal({
               <PersonalInfoTab
                 data={data.pessoal}
                 onChange={(f, v) => updateData('pessoal', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
               />
             )}
             {activeTab === 'docs' && (
-              <DocsTab data={data.docs} onChange={(f, v) => updateData('docs', f, v)} />
+              <DocsTab
+                data={data.docs}
+                onChange={(f, v) => updateData('docs', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
             {activeTab === 'endereco' && (
-              <AddressTab data={data.endereco} onChange={(f, v) => updateData('endereco', f, v)} />
+              <AddressTab
+                data={data.endereco}
+                onChange={(f, v) => updateData('endereco', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
             {activeTab === 'contato' && (
-              <ContactTab data={data.contato} onChange={(f, v) => updateData('contato', f, v)} />
+              <ContactTab
+                data={data.contato}
+                onChange={(f, v) => updateData('contato', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
             {activeTab === 'trabalho' && (
-              <WorkTab data={data.trabalho} onChange={(f, v) => updateData('trabalho', f, v)} />
+              <WorkTab
+                data={data.trabalho}
+                onChange={(f, v) => updateData('trabalho', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
             {activeTab === 'salario' && (
-              <SalaryTab data={data.salario} onChange={(f, v) => updateData('salario', f, v)} />
+              <SalaryTab
+                data={data.salario}
+                onChange={(f, v) => updateData('salario', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
             {activeTab === 'beneficios' && (
               <BenefitsTab
                 data={data.beneficios}
                 onChange={(f, v) => updateData('beneficios', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
               />
             )}
             {activeTab === 'encargos' && (
-              <ChargesTab data={data.encargos} onChange={(f, v) => updateData('encargos', f, v)} />
+              <ChargesTab
+                data={data.encargos}
+                onChange={(f, v) => updateData('encargos', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
             {activeTab === 'ferias' && (
-              <VacationTab data={data.ferias} onChange={(f, v) => updateData('ferias', f, v)} />
+              <VacationTab
+                data={data.ferias}
+                onChange={(f, v) => updateData('ferias', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
             )}
-            {activeTab === 'esocial' && <ESocialTab />}
+            {activeTab === 'esocial' && (
+              <ESocialTab
+                data={data.esocial}
+                onChange={(f, v) => updateData('esocial', f, v)}
+                errors={errors}
+                readOnly={!isEditing}
+              />
+            )}
             {activeTab === 'historico' && <HistoryTab />}
-            {activeTab === 'anexos' && <AttachmentsTab />}
+            {activeTab === 'anexos' && <AttachmentsTab readOnly={!isEditing} />}
           </div>
         </div>
 
         <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex justify-between items-center shrink-0 z-10">
-          <p className="text-xs text-slate-500">
-            <span className="text-rose-500 font-bold">*</span> Campos obrigatórios
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-slate-500">
+              <span className="text-rose-500 font-bold">*</span> Obrigatórios
+            </p>
+            {hasErrors && (
+              <p className="text-xs font-semibold text-rose-600 flex items-center gap-1 ml-4 bg-rose-50 px-2 py-0.5 rounded-full">
+                <AlertTriangle className="w-3 h-3" /> Verifique os erros nas abas
+              </p>
+            )}
+          </div>
           <div className="flex justify-end gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
@@ -224,12 +273,14 @@ export default function CollaboratorModal({
             >
               Cancelar
             </Button>
-            <Button
-              onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
-            >
-              Salvar Dados
-            </Button>
+            {isEditing && (
+              <Button
+                onClick={handleSave}
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
+              >
+                Salvar Dados
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

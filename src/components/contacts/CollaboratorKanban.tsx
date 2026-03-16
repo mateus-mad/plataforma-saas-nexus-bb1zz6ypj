@@ -7,13 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogCancel,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -25,6 +24,7 @@ import {
   Trash2,
   UserMinus,
   UserCheck,
+  AlertTriangle,
 } from 'lucide-react'
 
 type Props = {
@@ -35,10 +35,18 @@ type Props = {
 export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
   const { toast } = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1)
   const [password, setPassword] = useState('')
   const [activeItem, setActiveItem] = useState<any>(null)
   const [isVisible, setIsVisible] = useState(true)
   const [mockStatus, setMockStatus] = useState('Ativo')
+
+  const openDeleteModal = (item: any) => {
+    setActiveItem(item)
+    setDeleteStep(1)
+    setPassword('')
+    setDeleteOpen(true)
+  }
 
   const handleDelete = () => {
     if (password === 'admin123') {
@@ -173,10 +181,7 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
                       <div className="px-2 py-1 mt-1 bg-rose-50/50 rounded-md">
                         <Button
                           variant="ghost"
-                          onClick={() => {
-                            setActiveItem(it)
-                            setDeleteOpen(true)
-                          }}
+                          onClick={() => openDeleteModal(it)}
                           className="w-full justify-start text-xs h-8 text-rose-700 hover:text-white hover:bg-rose-600"
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir Registro
@@ -216,34 +221,64 @@ export default function CollaboratorKanban({ onEdit, onProfile }: Props) {
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
-              <Lock className="w-5 h-5" /> Exclusão Segura
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Para excluir os registros de <b>{activeItem?.name}</b>, confirme sua senha de
-              administrador. Esta ação não pode ser desfeita. (Use <b>admin123</b>)
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="my-4 space-y-2">
-            <Label>Senha de Administrador</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Digite sua senha"
-              className="focus-visible:ring-rose-500"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPassword('')}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              Confirmar Exclusão
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {deleteStep === 1 ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" /> Excluir Colaborador
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Você está prestes a excluir definitivamente os registros de{' '}
+                  <b>{activeItem?.name}</b>. Esta ação é irreversível e removerá todos os dados,
+                  anexos e histórico associados ao colaborador.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4">
+                <AlertDialogCancel onClick={() => setDeleteOpen(false)}>Cancelar</AlertDialogCancel>
+                <Button
+                  onClick={() => setDeleteStep(2)}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  Entendi, prosseguir
+                </Button>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
+                  <Lock className="w-5 h-5" /> Confirmação de Segurança
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Para confirmar a exclusão de <b>{activeItem?.name}</b>, por favor, confirme sua
+                  senha de administrador (admin123).
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="my-4 space-y-2">
+                <Label>Senha de Administrador</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Digite sua senha"
+                  className="focus-visible:ring-rose-500"
+                  autoFocus
+                />
+              </div>
+              <AlertDialogFooter>
+                <Button variant="outline" onClick={() => setDeleteStep(1)}>
+                  Voltar
+                </Button>
+                <Button
+                  onClick={handleDelete}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                  disabled={!password}
+                >
+                  Confirmar Exclusão
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>

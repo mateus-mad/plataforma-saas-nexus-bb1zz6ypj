@@ -10,24 +10,31 @@ import {
   Shield,
   Heart,
   Briefcase,
+  FileSearch,
 } from 'lucide-react'
 
 export default function HistoryTab() {
   return (
     <div className="animate-in fade-in duration-500 slide-in-from-bottom-4">
       <Tabs defaultValue="trabalho" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-6 h-12 bg-slate-100 p-1 rounded-xl">
+        <TabsList className="w-full grid grid-cols-3 mb-6 h-12 bg-slate-100 p-1 rounded-xl">
           <TabsTrigger
             value="trabalho"
             className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
           >
-            <Briefcase className="w-4 h-4 mr-2" /> Histórico de Trabalho
+            <Briefcase className="w-4 h-4 mr-2 hidden sm:block" /> Trabalho
           </TabsTrigger>
           <TabsTrigger
             value="financeiro"
             className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
           >
-            <DollarSign className="w-4 h-4 mr-2" /> Histórico Financeiro
+            <DollarSign className="w-4 h-4 mr-2 hidden sm:block" /> Financeiro
+          </TabsTrigger>
+          <TabsTrigger
+            value="auditoria"
+            className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+          >
+            <FileSearch className="w-4 h-4 mr-2 hidden sm:block" /> Auditoria
           </TabsTrigger>
         </TabsList>
 
@@ -147,6 +154,50 @@ export default function HistoryTab() {
                 ),
               )}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="auditoria" className="space-y-4">
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden overflow-x-auto">
+            <div className="px-5 py-4 border-b border-slate-100 font-semibold text-slate-700 text-sm flex items-center gap-2">
+              <FileSearch className="w-4 h-4 text-slate-400" /> Registro de Alterações de Ficha
+            </div>
+            <table className="w-full text-sm text-left min-w-[600px]">
+              <thead className="bg-slate-50 text-slate-500 font-medium">
+                <tr>
+                  <th className="py-3 px-5 whitespace-nowrap">Data/Hora</th>
+                  <th className="py-3 px-5 whitespace-nowrap">Usuário Responsável</th>
+                  <th className="py-3 px-5 whitespace-nowrap">Ação</th>
+                  <th className="py-3 px-5">Detalhes da Modificação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-600">
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-5 font-mono text-xs">15/03/2026 14:32</td>
+                  <td className="py-3 px-5">João (Gerente RH)</td>
+                  <td className="py-3 px-5">
+                    <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-semibold">
+                      Atualização
+                    </span>
+                  </td>
+                  <td className="py-3 px-5">
+                    Alterou <b>Salário Base</b> de R$ 3.000,00 para <b>R$ 3.500,00</b>
+                  </td>
+                </tr>
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-5 font-mono text-xs">10/02/2026 09:15</td>
+                  <td className="py-3 px-5">Sistema (Auto)</td>
+                  <td className="py-3 px-5">
+                    <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-xs font-semibold">
+                      Cadastro
+                    </span>
+                  </td>
+                  <td className="py-3 px-5">
+                    Criação inicial da ficha via <b>Admissão Digital</b>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </TabsContent>
       </Tabs>

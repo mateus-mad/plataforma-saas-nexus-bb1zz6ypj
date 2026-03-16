@@ -9,6 +9,14 @@ import {
 } from '@/components/ui/select'
 import { Info } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
+
+type Props = {
+  data: any
+  onChange: (f: string, v: string) => void
+  errors?: Record<string, string>
+  readOnly?: boolean
+}
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -28,7 +36,10 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export default function ESocialTab() {
+export default function ESocialTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`esocial.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
       <div className="flex items-start gap-3 bg-blue-50/50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">
@@ -47,12 +58,22 @@ export default function ESocialTab() {
             t="Código gerado exclusivamente para a plataforma do eSocial"
             req
           />
-          <Input placeholder="Ex: 000001" className="focus-visible:ring-blue-500 shadow-sm h-10" />
+          <Input
+            value={data.matricula || ''}
+            onChange={(e) => onChange('matricula', e.target.value)}
+            placeholder="Ex: 000001"
+            className={cn('focus-visible:ring-blue-500 shadow-sm h-10', err('matricula'))}
+            disabled={readOnly}
+          />
         </div>
         <div className="space-y-2">
           <LabelT l="Categoria do Trabalhador" t="Classificação tributária" req />
-          <Select>
-            <SelectTrigger className="shadow-sm h-10">
+          <Select
+            value={data.categoria}
+            onValueChange={(v) => onChange('categoria', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={cn('shadow-sm h-10', err('categoria'))}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
@@ -64,12 +85,22 @@ export default function ESocialTab() {
         </div>
         <div className="space-y-2">
           <LabelT l="CBO (Cargo)" t="Classificação Brasileira de Ocupações" req />
-          <Input placeholder="Ex: 2142-05" className="focus-visible:ring-blue-500 shadow-sm h-10" />
+          <Input
+            value={data.cbo || ''}
+            onChange={(e) => onChange('cbo', e.target.value)}
+            placeholder="Ex: 2142-05"
+            className={cn('focus-visible:ring-blue-500 shadow-sm h-10', err('cbo'))}
+            disabled={readOnly}
+          />
         </div>
         <div className="space-y-2">
           <LabelT l="Ocorrência SEFIP" t="Código de exposição a agentes nocivos" />
-          <Select>
-            <SelectTrigger className="shadow-sm h-10">
+          <Select
+            value={data.sefip}
+            onValueChange={(v) => onChange('sefip', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={cn('shadow-sm h-10', err('sefip'))}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
@@ -82,8 +113,12 @@ export default function ESocialTab() {
         </div>
         <div className="space-y-2">
           <LabelT l="Natureza da Atividade" t="Classificação da atividade desempenhada" />
-          <Select>
-            <SelectTrigger className="shadow-sm h-10">
+          <Select
+            value={data.natureza}
+            onValueChange={(v) => onChange('natureza', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={cn('shadow-sm h-10', err('natureza'))}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
@@ -94,8 +129,12 @@ export default function ESocialTab() {
         </div>
         <div className="space-y-2">
           <LabelT l="Tipo de Admissão" t="Origem da contratação" />
-          <Select>
-            <SelectTrigger className="shadow-sm h-10">
+          <Select
+            value={data.admissao}
+            onValueChange={(v) => onChange('admissao', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={cn('shadow-sm h-10', err('admissao'))}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>

@@ -33,7 +33,7 @@ export default function Contacts() {
 
   const generateOnboardingLink = () => {
     const token = Math.random().toString(36).substring(2, 10)
-    const link = `${window.location.origin}/onboarding/token_${token}`
+    const link = `${window.location.origin}/onboarding/${token}`
     navigator.clipboard.writeText(link)
     toast({
       title: 'Link Gerado e Copiado',

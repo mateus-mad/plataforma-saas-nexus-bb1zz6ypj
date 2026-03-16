@@ -9,8 +9,14 @@ import {
 } from '@/components/ui/select'
 import { Info, HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
-type Props = { data: any; onChange: (f: string, v: string) => void }
+type Props = {
+  data: any
+  onChange: (f: string, v: string) => void
+  errors?: Record<string, string>
+  readOnly?: boolean
+}
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -30,7 +36,10 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export function BenefitsTab({ data, onChange }: Props) {
+export function BenefitsTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`beneficios.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex gap-3 text-sm">
@@ -52,6 +61,8 @@ export function BenefitsTab({ data, onChange }: Props) {
             value={data.saude || ''}
             onChange={(e) => onChange('saude', e.target.value)}
             placeholder="Ex: SulAmérica, Bradesco..."
+            className={err('saude')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -60,6 +71,8 @@ export function BenefitsTab({ data, onChange }: Props) {
             value={data.odonto || ''}
             onChange={(e) => onChange('odonto', e.target.value)}
             placeholder="Ex: Amil Dental..."
+            className={err('odonto')}
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -74,6 +87,8 @@ export function BenefitsTab({ data, onChange }: Props) {
             value={data.vr || ''}
             onChange={(e) => onChange('vr', e.target.value)}
             placeholder="R$ / dia ou Mês"
+            className={err('vr')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -82,6 +97,8 @@ export function BenefitsTab({ data, onChange }: Props) {
             value={data.va || ''}
             onChange={(e) => onChange('va', e.target.value)}
             placeholder="R$ / mês"
+            className={err('va')}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -90,6 +107,8 @@ export function BenefitsTab({ data, onChange }: Props) {
             value={data.vt || ''}
             onChange={(e) => onChange('vt', e.target.value)}
             placeholder="Detalhes do trajeto ou valor"
+            className={err('vt')}
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -97,7 +116,10 @@ export function BenefitsTab({ data, onChange }: Props) {
   )
 }
 
-export function SalaryTab({ data, onChange }: Props) {
+export function SalaryTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`salario.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
       <div>
@@ -112,15 +134,20 @@ export function SalaryTab({ data, onChange }: Props) {
               <Input
                 value={data.base || ''}
                 onChange={(e) => onChange('base', e.target.value)}
-                className="pl-9 font-semibold text-blue-700 bg-blue-50/30 border-blue-200"
+                className={cn('pl-9 font-semibold text-blue-700 bg-blue-50/30', err('base'))}
                 placeholder="0,00"
+                disabled={readOnly}
               />
             </div>
           </div>
           <div className="space-y-1.5">
             <LabelT l="Forma de Pagamento" t="Ex: Mensal, Quinzenal, Semanal" req />
-            <Select value={data.forma || 'Mensal'} onValueChange={(v) => onChange('forma', v)}>
-              <SelectTrigger>
+            <Select
+              value={data.forma || 'Mensal'}
+              onValueChange={(v) => onChange('forma', v)}
+              disabled={readOnly}
+            >
+              <SelectTrigger className={err('forma')}>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -144,8 +171,9 @@ export function SalaryTab({ data, onChange }: Props) {
             <Input
               value={data.banco || ''}
               onChange={(e) => onChange('banco', e.target.value)}
-              className="bg-white"
+              className={cn('bg-white', err('banco'))}
               placeholder="Ex: Itaú, Bradesco"
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -153,8 +181,9 @@ export function SalaryTab({ data, onChange }: Props) {
             <Input
               value={data.agConta || ''}
               onChange={(e) => onChange('agConta', e.target.value)}
-              className="bg-white"
+              className={cn('bg-white', err('agConta'))}
               placeholder="0000"
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -162,8 +191,9 @@ export function SalaryTab({ data, onChange }: Props) {
             <Input
               value={data.conta || ''}
               onChange={(e) => onChange('conta', e.target.value)}
-              className="bg-white"
+              className={cn('bg-white', err('conta'))}
               placeholder="00000-0"
+              disabled={readOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -171,8 +201,9 @@ export function SalaryTab({ data, onChange }: Props) {
             <Input
               value={data.pix || ''}
               onChange={(e) => onChange('pix', e.target.value)}
-              className="bg-white"
+              className={cn('bg-white', err('pix'))}
               placeholder="CPF/CNPJ, Email, Tel..."
+              disabled={readOnly}
             />
           </div>
         </div>

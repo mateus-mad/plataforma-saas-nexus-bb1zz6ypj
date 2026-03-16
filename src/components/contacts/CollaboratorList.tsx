@@ -7,13 +7,12 @@ import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogCancel,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -34,6 +33,7 @@ type Props = { onEdit: () => void; onProfile: () => void }
 
 export default function CollaboratorList({ onEdit, onProfile }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1)
   const [password, setPassword] = useState('')
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
@@ -46,18 +46,24 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
     role: 'Engenheiro Civil',
     contract: 'Mensalista',
     since: 'Desde 07/02/2026',
-    completion: 45,
+    completion: 85,
   }
   const radius = 26
   const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (collaborator.completion / 100) * circumference
+
+  const openDeleteModal = () => {
+    setDeleteStep(1)
+    setPassword('')
+    setDeleteOpen(true)
+    setPopoverOpen(false)
+  }
 
   const handleDelete = () => {
     if (password === 'admin123') {
       toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança do sistema.' })
       setDeleteOpen(false)
       setPassword('')
-      setPopoverOpen(false)
       setIsVisible(false) // Simulando a deleção
     } else {
       toast({
@@ -75,7 +81,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
     toast({
       title: isDismissing ? 'Processo de Demissão' : 'Readmissão Concluída',
       description: isDismissing
-        ? 'O colaborador foi marcado como desligado.'
+        ? 'O colaborador foi marcado como desligado no sistema.'
         : 'Colaborador reintegrado ao quadro de ativos.',
     })
   }
@@ -85,7 +91,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-blue-200 rounded-xl bg-white hover:border-blue-400 transition-all shadow-sm relative group gap-4">
-        <div className="absolute top-0 left-0 w-[45%] h-1 bg-blue-500 rounded-tl-xl transition-all duration-500"></div>
+        <div className="absolute top-0 left-0 w-[85%] h-1 bg-blue-500 rounded-tl-xl transition-all duration-500"></div>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div
@@ -215,7 +221,7 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
                 </p>
                 <Button
                   variant="ghost"
-                  onClick={() => setDeleteOpen(true)}
+                  onClick={openDeleteModal}
                   className="w-full justify-start text-rose-700 hover:text-white hover:bg-rose-600 h-8 text-xs font-semibold"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir Registro
@@ -228,34 +234,64 @@ export default function CollaboratorList({ onEdit, onProfile }: Props) {
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
-              <Lock className="w-5 h-5" /> Confirmação de Segurança
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta é uma ação destrutiva. Para excluir definitivamente os registros de{' '}
-              <b>{collaborator.name}</b>, confirme sua senha de administrador (admin123).
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="my-4 space-y-2">
-            <Label>Senha de Administrador</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Digite sua senha"
-              className="focus-visible:ring-rose-500"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPassword('')}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              Confirmar Exclusão
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {deleteStep === 1 ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" /> Excluir Colaborador
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Você está prestes a excluir definitivamente os registros de{' '}
+                  <b>{collaborator.name}</b>. Esta ação é irreversível e removerá todos os dados,
+                  anexos e histórico associados ao colaborador.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4">
+                <AlertDialogCancel onClick={() => setDeleteOpen(false)}>Cancelar</AlertDialogCancel>
+                <Button
+                  onClick={() => setDeleteStep(2)}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  Entendi, prosseguir
+                </Button>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
+                  <Lock className="w-5 h-5" /> Confirmação de Segurança
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Para confirmar a exclusão de <b>{collaborator.name}</b>, por favor, confirme sua
+                  senha de administrador (admin123).
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="my-4 space-y-2">
+                <Label>Senha de Administrador</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Digite sua senha"
+                  className="focus-visible:ring-rose-500"
+                  autoFocus
+                />
+              </div>
+              <AlertDialogFooter>
+                <Button variant="outline" onClick={() => setDeleteStep(1)}>
+                  Voltar
+                </Button>
+                <Button
+                  onClick={handleDelete}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                  disabled={!password}
+                >
+                  Confirmar Exclusão
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>

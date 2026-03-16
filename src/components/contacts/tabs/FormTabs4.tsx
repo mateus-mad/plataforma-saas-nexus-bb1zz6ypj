@@ -2,8 +2,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Info, Calculator } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
-type Props = { data: any; onChange: (f: string, v: string) => void }
+type Props = {
+  data: any
+  onChange: (f: string, v: string) => void
+  errors?: Record<string, string>
+  readOnly?: boolean
+}
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -23,7 +29,10 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export function ChargesTab({ data, onChange }: Props) {
+export function ChargesTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`encargos.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="flex items-start gap-3 bg-amber-50/50 p-4 rounded-xl border border-amber-100 text-sm shadow-sm mb-6">
@@ -91,6 +100,8 @@ export function ChargesTab({ data, onChange }: Props) {
             min="0"
             value={data.depIr || '0'}
             onChange={(e) => onChange('depIr', e.target.value)}
+            disabled={readOnly}
+            className={err('depIr')}
           />
         </div>
         <div className="space-y-1.5">
@@ -103,6 +114,8 @@ export function ChargesTab({ data, onChange }: Props) {
             min="0"
             value={data.depSf || '0'}
             onChange={(e) => onChange('depSf', e.target.value)}
+            disabled={readOnly}
+            className={err('depSf')}
           />
         </div>
       </div>
@@ -110,7 +123,10 @@ export function ChargesTab({ data, onChange }: Props) {
   )
 }
 
-export function VacationTab({ data, onChange }: Props) {
+export function VacationTab({ data, onChange, errors, readOnly }: Props) {
+  const err = (f: string) =>
+    errors?.[`ferias.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-2">
@@ -123,6 +139,8 @@ export function VacationTab({ data, onChange }: Props) {
             type="date"
             value={data.inicio || ''}
             onChange={(e) => onChange('inicio', e.target.value)}
+            disabled={readOnly}
+            className={err('inicio')}
           />
         </div>
         <div className="space-y-1.5">
@@ -131,6 +149,8 @@ export function VacationTab({ data, onChange }: Props) {
             type="date"
             value={data.fim || ''}
             onChange={(e) => onChange('fim', e.target.value)}
+            disabled={readOnly}
+            className={err('fim')}
           />
         </div>
       </div>
@@ -145,6 +165,8 @@ export function VacationTab({ data, onChange }: Props) {
             type="number"
             value={data.direito || '30'}
             onChange={(e) => onChange('direito', e.target.value)}
+            disabled={readOnly}
+            className={err('direito')}
           />
         </div>
         <div className="space-y-1.5">
@@ -153,6 +175,8 @@ export function VacationTab({ data, onChange }: Props) {
             type="number"
             value={data.tirados || '0'}
             onChange={(e) => onChange('tirados', e.target.value)}
+            disabled={readOnly}
+            className={err('tirados')}
           />
         </div>
         <div className="space-y-1.5">
@@ -161,6 +185,8 @@ export function VacationTab({ data, onChange }: Props) {
             type="date"
             value={data.prox || ''}
             onChange={(e) => onChange('prox', e.target.value)}
+            disabled={readOnly}
+            className={err('prox')}
           />
         </div>
       </div>
