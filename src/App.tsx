@@ -16,6 +16,7 @@ import Dashboard from '@/pages/app/Dashboard'
 import Relacionamento from '@/pages/app/Relacionamento'
 import Financial from '@/pages/app/Financial'
 import Settings from '@/pages/app/Settings'
+import WorkShifts from '@/pages/app/WorkShifts'
 import ComingSoon from '@/pages/app/ComingSoon'
 import NotFound from '@/pages/NotFound'
 
@@ -63,6 +64,7 @@ const App = () => (
                   <Route path="/app/relacionamento/:view" element={<Relacionamento />} />
                   <Route path="/app/financeiro" element={<Financial />} />
                   <Route path="/app/configuracoes" element={<Settings />} />
+                  <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
                   <Route path="/app/em-breve" element={<ComingSoon />} />
 
                   <Route path="/app/manager" element={<ManagerDashboard />} />

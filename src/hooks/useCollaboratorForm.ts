@@ -18,7 +18,7 @@ const formSchema = z.object({
   }),
   docs: z
     .object({
-      cpf: z.string().min(1, 'Obrigatório'),
+      cpf: z.string().min(14, 'CPF Incompleto'),
       pis: z.string().min(1, 'Obrigatório'),
       docType: z.string().optional(),
       docIssueDate: z.string().optional(),

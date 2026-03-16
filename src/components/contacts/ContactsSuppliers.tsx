@@ -70,7 +70,7 @@ export default function ContactsSuppliers() {
     const token = Math.random().toString(36).substring(2, 10)
     const link = `${window.location.origin}/share/supplier/${token}`
     const text = encodeURIComponent(
-      `Olá! Por favor, preencha o formulário de cadastro da sua empresa através deste link seguro: ${link}`,
+      `Olá! Por favor, preencha o formulário de cadastro através deste link seguro: ${link}`,
     )
     window.open(`https://wa.me/?text=${text}`, '_blank')
     toast({
@@ -91,7 +91,7 @@ export default function ContactsSuppliers() {
             onClick={sendWhatsApp}
             className="border-green-200 text-green-700 hover:bg-green-50"
           >
-            <MessageCircle className="w-4 h-4 mr-2" /> Link Autopreenchimento
+            <MessageCircle className="w-4 h-4 mr-2" /> Enviar Link de Cadastro
           </Button>
           <Button
             onClick={() => setModalState({ isOpen: true, type: 'new' })}

@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Info, HeartPulse, Plus } from 'lucide-react'
+import { Info, HeartPulse, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Select,
@@ -12,6 +12,14 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { Textarea } from '@/components/ui/textarea'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -192,50 +200,59 @@ export function WorkTab({ data, onChange, errors, readOnly }: Props) {
         </div>
         <div className="space-y-1.5">
           <LabelT l="Cargo" req />
-          <div className="flex gap-2">
-            <Select
-              value={data.cargo || ''}
-              onValueChange={(v) => onChange('cargo', v)}
-              disabled={readOnly}
-            >
-              <SelectTrigger className={cn('flex-1', err('cargo'))}>
-                <SelectValue placeholder="Selecione uma função" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!readOnly && (
-              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0 text-slate-600">
-                    <Plus className="w-4 h-4" />
+          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={isPopoverOpen}
+                className={cn('w-full justify-between font-normal bg-white', err('cargo'))}
+                disabled={readOnly}
+              >
+                {data.cargo || 'Selecione o cargo...'}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0 z-[100]" align="start">
+              <Command>
+                <CommandInput placeholder="Buscar cargo..." />
+                <CommandList>
+                  <CommandEmpty>Nenhum cargo encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {roles.map((role) => (
+                      <CommandItem
+                        key={role}
+                        value={role}
+                        onSelect={() => {
+                          onChange('cargo', role)
+                          setIsPopoverOpen(false)
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            data.cargo === role ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                        {role}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+                <div className="p-2 border-t bg-slate-50 flex gap-2">
+                  <Input
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value)}
+                    placeholder="Novo cargo..."
+                    className="h-8 text-xs bg-white"
+                  />
+                  <Button onClick={handleAddRole} size="sm" className="h-8 shrink-0">
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 p-3 z-[100]">
-                  <Label className="text-xs mb-2 block font-semibold text-slate-700">
-                    Adicionar Novo Cargo
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newRole}
-                      onChange={(e) => setNewRole(e.target.value)}
-                      placeholder="Nome do cargo"
-                      className="h-8 text-sm"
-                      autoFocus
-                    />
-                    <Button onClick={handleAddRole} size="sm" className="h-8">
-                      Ok
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
+                </div>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="space-y-1.5">
           <LabelT l="Departamento" />

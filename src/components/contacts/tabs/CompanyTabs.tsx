@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -44,16 +45,16 @@ export function CompanyDadosTab({ data, onChange, errors, readOnly }: any) {
     v = v.replace(/\.(\d{3})(\d)/, '.$1/$2')
     v = v.replace(/(\d{4})(\d)/, '$1-$2')
     onChange('cnpj', v)
+  }
 
-    if (v.replace(/\D/g, '').length === 14 && !readOnly) {
-      toast({ title: 'Buscando CNPJ...', description: 'Consultando base da Receita Federal.' })
-      setTimeout(() => {
-        onChange('razao', 'Empresa Automática S.A.')
-        onChange('fantasia', 'Fantasia Automática')
-        onChange('setor', 'Solar')
-        toast({ title: 'CNPJ Encontrado', description: 'Dados preenchidos com sucesso.' })
-      }, 1500)
-    }
+  const handleSearchCNPJ = () => {
+    toast({ title: 'Buscando CNPJ...', description: 'Consultando base da Receita Federal.' })
+    setTimeout(() => {
+      onChange('razao', 'Empresa Automática S.A.')
+      onChange('fantasia', 'Fantasia Automática')
+      onChange('setor', 'Solar')
+      toast({ title: 'CNPJ Encontrado', description: 'Dados preenchidos com sucesso.' })
+    }, 1500)
   }
 
   return (
@@ -61,15 +62,25 @@ export function CompanyDadosTab({ data, onChange, errors, readOnly }: any) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
           <LabelT l="CNPJ" req t="Digite o CNPJ para preenchimento automático" />
-          <div className="relative">
-            <Input
-              value={data.cnpj || ''}
-              onChange={handleCnpjChange}
-              disabled={readOnly}
-              className={cn('font-mono pl-10', err('cnpj'))}
-              placeholder="00.000.000/0000-00"
-            />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                value={data.cnpj || ''}
+                onChange={handleCnpjChange}
+                disabled={readOnly}
+                className={cn('font-mono pl-10', err('cnpj'))}
+                placeholder="00.000.000/0000-00"
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            </div>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={handleSearchCNPJ}
+              disabled={readOnly || (data.cnpj || '').length < 18}
+            >
+              Buscar
+            </Button>
           </div>
         </div>
         <div className="space-y-1.5 md:col-span-2 lg:col-span-1">

@@ -2,14 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Plus,
-  Search,
-  LayoutGrid,
-  List as ListIcon,
-  Link as LinkIcon,
-  MessageCircle,
-} from 'lucide-react'
+import { Plus, Search, LayoutGrid, List as ListIcon, MessageCircle } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -24,7 +17,6 @@ import CollaboratorKanban from '@/components/contacts/CollaboratorKanban'
 import CollaboratorModal from '@/components/contacts/CollaboratorModal'
 import CollaboratorProfileModal from '@/components/contacts/CollaboratorProfileModal'
 import AIEngineModal from '@/components/contacts/AIEngineModal'
-import RelacionamentoSidebar from '@/components/contacts/RelacionamentoSidebar'
 import ContactsDashboard from '@/components/contacts/ContactsDashboard'
 import ContactsClients from '@/components/contacts/ContactsClients'
 import ContactsSuppliers from '@/components/contacts/ContactsSuppliers'
@@ -39,9 +31,11 @@ export default function Relacionamento() {
   const { setOpen } = useSidebar()
 
   useEffect(() => {
-    // Automatically hide sidebar when entering the Relacionamento module
-    setOpen(false)
-  }, [setOpen])
+    const isPinned = localStorage.getItem('sidebarPinned') === 'true'
+    if (!isPinned) {
+      setOpen(false)
+    }
+  }, [setOpen, currentView])
 
   const [colabView, setColabView] = useState<'lista' | 'kanban'>('lista')
   const [sectorFilter, setSectorFilter] = useState('Todos')
@@ -61,26 +55,23 @@ export default function Relacionamento() {
   const generateOnboardingLink = () => {
     const token = Math.random().toString(36).substring(2, 10)
     const link = `${window.location.origin}/onboarding/${token}`
-    navigator.clipboard.writeText(link)
-    toast({
-      title: 'Link Gerado e Copiado',
-      description: 'Link seguro de uso único copiado para a área de transferência.',
-    })
     return link
   }
 
   const sendWhatsApp = () => {
     const link = generateOnboardingLink()
     const text = encodeURIComponent(
-      `Olá! Por favor, acesse o link para preencher seus dados de admissão na nossa plataforma: ${link}`,
+      `Olá! Por favor, acesse o link para preencher seus dados de admissão na nossa plataforma de RH: ${link}`,
     )
     window.open(`https://wa.me/?text=${text}`, '_blank')
+    toast({
+      title: 'Link Gerado e Copiado',
+      description: 'Link seguro de uso único aberto no WhatsApp Web.',
+    })
   }
 
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-6rem)] animate-fade-in">
-      <RelacionamentoSidebar active={currentView} />
-
       <div className="flex-1 flex flex-col min-w-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
           {currentView === 'dashboard' && <ContactsDashboard />}
@@ -95,14 +86,7 @@ export default function Relacionamento() {
                     onClick={sendWhatsApp}
                     className="border-green-200 text-green-700 hover:bg-green-50 shadow-sm"
                   >
-                    <MessageCircle className="w-4 h-4 mr-2" /> Enviar por WhatsApp
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={generateOnboardingLink}
-                    className="border-slate-200 text-slate-600 bg-white hover:bg-slate-50 shadow-sm"
-                  >
-                    <LinkIcon className="w-4 h-4 mr-2" /> Link de Admissão
+                    <MessageCircle className="w-4 h-4 mr-2" /> Enviar Link de Cadastro
                   </Button>
                   <Button
                     variant="outline"

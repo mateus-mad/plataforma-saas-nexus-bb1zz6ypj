@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Hexagon, Settings, HelpCircle, LogOut, ChevronRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Hexagon, Settings, LogOut, ChevronRight, Pin, PinOff } from 'lucide-react'
 import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES } from '@/config/modules'
 import useModuleStore from '@/stores/useModuleStore'
 import useSecurityStore from '@/stores/useSecurityStore'
@@ -24,7 +25,42 @@ export function AppSidebar() {
   const currentFullPath = decodeURIComponent(location.pathname + location.search)
   const { contractedModules } = useModuleStore()
   const { isAdminMode } = useSecurityStore()
-  const { toggleSidebar } = useSidebar()
+  const { state, setOpen, isMobile, setOpenMobile } = useSidebar()
+
+  const [isPinned, setIsPinned] = useState(() => localStorage.getItem('sidebarPinned') === 'true')
+
+  useEffect(() => {
+    localStorage.setItem('sidebarPinned', String(isPinned))
+    if (isPinned && !isMobile) {
+      setOpen(true)
+    }
+  }, [isPinned, isMobile, setOpen])
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    } else if (!isPinned) {
+      setOpen(false)
+    }
+  }
+
+  const handleMouseEnter = () => {
+    if (!isPinned && !isMobile) setOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    if (!isPinned && !isMobile) setOpen(false)
+  }
+
+  const togglePin = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const newPinned = !isPinned
+    setIsPinned(newPinned)
+    if (!newPinned && !isMobile) {
+      setOpen(false)
+    }
+  }
 
   const categoriesToRender = isAdminMode ? MANAGER_MENU_CATEGORIES : MENU_CATEGORIES
 
@@ -45,41 +81,55 @@ export function AppSidebar() {
       className={cn('border-r border-slate-800/60', isAdminMode ? 'bg-[#1E1033]' : 'bg-[#0A0F1C]')}
       variant="sidebar"
       collapsible="icon"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <SidebarHeader
         className={cn(
-          'p-4 border-b cursor-pointer transition-colors group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center',
+          'p-4 border-b transition-colors group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center',
           isAdminMode
-            ? 'border-purple-900/40 bg-[#1E1033]/80 hover:bg-purple-900/30'
-            : 'border-slate-800/60 bg-[#0A0F1C]/80 hover:bg-slate-800/40',
+            ? 'border-purple-900/40 bg-[#1E1033]/80'
+            : 'border-slate-800/60 bg-[#0A0F1C]/80',
         )}
-        onClick={toggleSidebar}
-        title="Alternar Menu"
       >
-        <div className="flex items-center gap-2 px-1 overflow-hidden w-full">
-          <div
-            className={cn(
-              'relative flex items-center justify-center w-8 h-8 rounded-lg border shrink-0 transition-transform group-hover:scale-105',
-              isAdminMode
-                ? 'bg-purple-500/10 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                : 'bg-primary/10 border-primary/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]',
-            )}
-          >
-            <Hexagon
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2 px-1 overflow-hidden w-full">
+            <div
               className={cn(
-                'w-5 h-5',
+                'relative flex items-center justify-center w-8 h-8 rounded-lg border shrink-0 transition-transform group-hover:scale-105',
                 isAdminMode
-                  ? 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
-                  : 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]',
+                  ? 'bg-purple-500/10 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                  : 'bg-primary/10 border-primary/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]',
               )}
-            />
-          </div>
-          <span className="font-bold text-lg text-slate-100 tracking-wide truncate group-data-[collapsible=icon]:hidden transition-opacity">
-            Nexus
-            <span className={cn('font-light', isAdminMode ? 'text-purple-400' : 'text-primary')}>
-              {isAdminMode ? 'Manager' : 'ERP'}
+            >
+              <Hexagon
+                className={cn(
+                  'w-5 h-5',
+                  isAdminMode
+                    ? 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                    : 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]',
+                )}
+              />
+            </div>
+            <span className="font-bold text-lg text-slate-100 tracking-wide truncate group-data-[collapsible=icon]:hidden transition-opacity">
+              Nexus
+              <span className={cn('font-light', isAdminMode ? 'text-purple-400' : 'text-primary')}>
+                {isAdminMode ? 'Manager' : 'ERP'}
+              </span>
             </span>
-          </span>
+          </div>
+          <button
+            onClick={togglePin}
+            className={cn(
+              'p-1.5 rounded-md transition-colors group-data-[collapsible=icon]:hidden shrink-0',
+              isPinned
+                ? 'bg-primary/20 text-primary'
+                : 'text-slate-500 hover:text-slate-100 hover:bg-slate-800/50',
+            )}
+            title={isPinned ? 'Desafixar Sidebar' : 'Fixar Sidebar expandida'}
+          >
+            {isPinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+          </button>
         </div>
       </SidebarHeader>
 
@@ -113,7 +163,11 @@ export function AppSidebar() {
                     )}
                   >
                     {category.path ? (
-                      <Link to={category.path} className="flex items-center w-full gap-3">
+                      <Link
+                        to={category.path}
+                        onClick={handleLinkClick}
+                        className="flex items-center w-full gap-3"
+                      >
                         {isActive && (
                           <div
                             className={cn(
@@ -224,6 +278,7 @@ export function AppSidebar() {
                                 <Link
                                   key={item.name}
                                   to={item.path}
+                                  onClick={handleLinkClick}
                                   className={cn(
                                     'flex items-start gap-3 p-2 rounded-lg transition-all duration-200 group/subitem relative overflow-hidden',
                                     isSubActive
@@ -344,12 +399,12 @@ export function AppSidebar() {
                 tooltip="Configurações"
                 className={cn(
                   'transition-colors rounded-lg group-data-[collapsible=icon]:mx-1',
-                  location.pathname === '/app/configuracoes'
+                  location.pathname.startsWith('/app/configuracoes')
                     ? 'bg-primary/10 text-primary border border-primary/30'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50',
                 )}
               >
-                <Link to="/app/configuracoes">
+                <Link to="/app/configuracoes" onClick={handleLinkClick}>
                   <Settings className="w-4 h-4 shrink-0" />
                   <span className="group-data-[collapsible=icon]:hidden">Configurações</span>
                 </Link>
@@ -367,7 +422,7 @@ export function AppSidebar() {
                   : 'text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10',
               )}
             >
-              <Link to="/">
+              <Link to="/" onClick={handleLinkClick}>
                 <LogOut className="w-4 h-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Sair da Plataforma</span>
               </Link>

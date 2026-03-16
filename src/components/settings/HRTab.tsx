@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Clock, Users, Zap, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function HRTab() {
   return (
@@ -115,8 +116,10 @@ export default function HRTab() {
               multiplicadores de hora extra e regras CLT/Flexíveis.
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 shrink-0">
-            <Clock className="w-4 h-4 mr-2" /> Gerenciar Jornadas
+          <Button asChild className="bg-blue-600 hover:bg-blue-700 shrink-0">
+            <Link to="/app/configuracoes/rh/jornada">
+              <Clock className="w-4 h-4 mr-2" /> Gerenciar Jornadas
+            </Link>
           </Button>
         </CardContent>
       </Card>
