@@ -6,6 +6,7 @@ import {
   Building2,
   Users,
   Shield,
+  Clock,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -14,6 +15,7 @@ import BillingTab from '@/components/settings/BillingTab'
 import TenantsTab from '@/components/settings/TenantsTab'
 import UsersTab from '@/components/settings/UsersTab'
 import SecurityTab from '@/components/settings/SecurityTab'
+import HRTab from '@/components/settings/HRTab'
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -32,30 +34,49 @@ export default function Settings() {
             Configurações e Gestão
           </h2>
           <p className="text-muted-foreground mt-1">
-            Painel administrativo para controle multi-tenant, faturamento e acesso.
+            Painel administrativo para controle multi-tenant, faturamento, acesso e RH.
           </p>
         </div>
       </div>
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 max-w-4xl mb-8 h-auto p-1">
-          <TabsTrigger value="modules" className="data-[state=active]:text-primary group py-2">
+        <TabsList className="flex w-full overflow-x-auto justify-start mb-8 h-auto p-1 custom-scrollbar">
+          <TabsTrigger
+            value="modules"
+            className="data-[state=active]:text-primary group py-2 shrink-0"
+          >
             <ShoppingBag className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Loja
           </TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:text-primary group py-2">
+          <TabsTrigger
+            value="billing"
+            className="data-[state=active]:text-primary group py-2 shrink-0"
+          >
             <CreditCard className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Fatura
           </TabsTrigger>
-          <TabsTrigger value="tenants" className="data-[state=active]:text-primary group py-2">
+          <TabsTrigger
+            value="tenants"
+            className="data-[state=active]:text-primary group py-2 shrink-0"
+          >
             <Building2 className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Empresas
           </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:text-primary group py-2">
+          <TabsTrigger
+            value="users"
+            className="data-[state=active]:text-primary group py-2 shrink-0"
+          >
             <Users className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Usuários
           </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:text-primary group py-2">
+          <TabsTrigger value="hr" className="data-[state=active]:text-primary group py-2 shrink-0">
+            <Clock className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+            RH / Jornadas
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="data-[state=active]:text-primary group py-2 shrink-0"
+          >
             <Shield className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Segurança
           </TabsTrigger>
@@ -72,6 +93,9 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="users" className="mt-0 outline-none">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="hr" className="mt-0 outline-none">
+          <HRTab />
         </TabsContent>
         <TabsContent value="security" className="mt-0 outline-none">
           <SecurityTab />

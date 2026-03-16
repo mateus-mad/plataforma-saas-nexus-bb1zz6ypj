@@ -61,6 +61,15 @@ export function DocsTab({ data, onChange, errors, readOnly }: Props) {
     }
   }
 
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let v = e.target.value.replace(/\D/g, '')
+    if (v.length > 11) v = v.slice(0, 11)
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+    onChange('cpf', v)
+  }
+
   const err = (f: string) =>
     errors?.[`docs.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
 
@@ -128,7 +137,7 @@ export function DocsTab({ data, onChange, errors, readOnly }: Props) {
           <LabelT l="CPF" t="Apenas números, obrigatório para eSocial" req />
           <Input
             value={data.cpf || ''}
-            onChange={(e) => onChange('cpf', e.target.value)}
+            onChange={handleCpfChange}
             placeholder="000.000.000-00"
             className={cn('font-mono', err('cpf'))}
             disabled={readOnly}

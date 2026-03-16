@@ -7,8 +7,20 @@ import {
   AlertTriangle,
   Building2,
   UserPlus,
+  ShieldAlert,
 } from 'lucide-react'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 
 const CHART_DATA = [
@@ -19,15 +31,31 @@ const CHART_DATA = [
   { month: 'Mar', contratacoes: 7, desligamentos: 0 },
 ]
 
+const SECTOR_DATA = [
+  { name: 'Civil', value: 45, color: 'hsl(var(--chart-1))' },
+  { name: 'Solar', value: 30, color: 'hsl(var(--chart-2))' },
+  { name: 'Metalúrgica', value: 20, color: 'hsl(var(--chart-3))' },
+  { name: 'Administrativo', value: 15, color: 'hsl(var(--chart-4))' },
+]
+
 const chartConfig = {
   contratacoes: { label: 'Contratações', color: 'hsl(var(--chart-2))' },
   desligamentos: { label: 'Desligamentos', color: 'hsl(var(--chart-3))' },
 }
 
+const sectorConfig = {
+  Civil: { label: 'Civil', color: 'hsl(var(--chart-1))' },
+  Solar: { label: 'Solar', color: 'hsl(var(--chart-2))' },
+  Metalurgica: { label: 'Metalúrgica', color: 'hsl(var(--chart-3))' },
+  Administrativo: { label: 'Administrativo', color: 'hsl(var(--chart-4))' },
+}
+
 export default function ContactsDashboard() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
-      <h2 className="text-2xl font-bold tracking-tight text-slate-800">Dashboard de Contatos</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-slate-800">
+        BI & Insights de Relacionamento
+      </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -80,10 +108,10 @@ export default function ContactsDashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Movimentação de RH (Últimos 5 meses)</CardTitle>
+            <CardTitle className="text-base">Movimentação de RH (Crescimento)</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -113,24 +141,55 @@ export default function ContactsDashboard() {
 
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">Distribuição por Setor</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={sectorConfig} className="h-[250px]">
+              <PieChart>
+                <Pie
+                  data={SECTOR_DATA}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={2}
+                >
+                  {SECTOR_DATA.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Alertas do Sistema (eSocial & Docs)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-100 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <ShieldAlert className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-rose-800 text-sm">Férias Vencidas</p>
+                <p className="font-semibold text-rose-800 text-sm">Exame Periódico Vencendo</p>
                 <p className="text-xs text-rose-600 mt-0.5">
-                  O colaborador "Carlos Mendes" possui férias acumuladas além do limite legal.
+                  O exame ocupacional periódico de "Ana Souza" vence em 5 dias. Agende a renovação.
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
               <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-amber-800 text-sm">CNH a Vencer</p>
+                <p className="font-semibold text-amber-800 text-sm">Férias Próximas do Limite</p>
                 <p className="text-xs text-amber-600 mt-0.5">
-                  3 motoristas possuem CNH vencendo nos próximos 30 dias.
+                  O colaborador "Carlos Mendes" possui férias acumuladas chegando ao limite legal
+                  (dobro).
                 </p>
               </div>
             </div>

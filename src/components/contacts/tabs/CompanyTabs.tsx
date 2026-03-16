@@ -7,9 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Info } from 'lucide-react'
+import { Info, Search } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -30,11 +31,64 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
 )
 
 export function CompanyDadosTab({ data, onChange, errors, readOnly }: any) {
+  const { toast } = useToast()
+
   const err = (f: string) =>
     errors?.[`dados.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let v = e.target.value.replace(/\D/g, '')
+    if (v.length > 14) v = v.slice(0, 14)
+    v = v.replace(/^(\d{2})(\d)/, '$1.$2')
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    v = v.replace(/\.(\d{3})(\d)/, '.$1/$2')
+    v = v.replace(/(\d{4})(\d)/, '$1-$2')
+    onChange('cnpj', v)
+
+    if (v.replace(/\D/g, '').length === 14 && !readOnly) {
+      toast({ title: 'Buscando CNPJ...', description: 'Consultando base da Receita Federal.' })
+      setTimeout(() => {
+        onChange('razao', 'Empresa Automática S.A.')
+        onChange('fantasia', 'Fantasia Automática')
+        onChange('setor', 'Solar')
+        toast({ title: 'CNPJ Encontrado', description: 'Dados preenchidos com sucesso.' })
+      }, 1500)
+    }
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+          <LabelT l="CNPJ" req t="Digite o CNPJ para preenchimento automático" />
+          <div className="relative">
+            <Input
+              value={data.cnpj || ''}
+              onChange={handleCnpjChange}
+              disabled={readOnly}
+              className={cn('font-mono pl-10', err('cnpj'))}
+              placeholder="00.000.000/0000-00"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          </div>
+        </div>
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+          <LabelT l="Setor de Atuação" req />
+          <Select
+            value={data.setor}
+            onValueChange={(v) => onChange('setor', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={err('setor')}>
+              <SelectValue placeholder="Selecione o setor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Civil">Civil</SelectItem>
+              <SelectItem value="Solar">Solar</SelectItem>
+              <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-1.5">
           <LabelT l="Razão Social" req />
           <Input
@@ -54,16 +108,6 @@ export function CompanyDadosTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="CNPJ" req t="Apenas números" />
-          <Input
-            value={data.cnpj}
-            onChange={(e) => onChange('cnpj', e.target.value)}
-            disabled={readOnly}
-            className={cn('font-mono', err('cnpj'))}
-            placeholder="00.000.000/0000-00"
-          />
-        </div>
-        <div className="space-y-1.5">
           <LabelT l="Inscrição Estadual" />
           <Input
             value={data.ie}
@@ -71,23 +115,6 @@ export function CompanyDadosTab({ data, onChange, errors, readOnly }: any) {
             disabled={readOnly}
             className={err('ie')}
           />
-        </div>
-        <div className="space-y-1.5 md:col-span-2">
-          <LabelT l="Setor de Atuação" req />
-          <Select
-            value={data.setor}
-            onValueChange={(v) => onChange('setor', v)}
-            disabled={readOnly}
-          >
-            <SelectTrigger className={err('setor')}>
-              <SelectValue placeholder="Selecione o setor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Civil">Civil</SelectItem>
-              <SelectItem value="Solar">Solar</SelectItem>
-              <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
     </div>

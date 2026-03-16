@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search, Building2 } from 'lucide-react'
+import { Plus, Search, Building2, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
 
 import CompanyModal from './CompanyModal'
 import CompanyProfileModal from './CompanyProfileModal'
@@ -57,6 +58,7 @@ export default function ContactsClients() {
     type: 'new',
   })
   const [profileOpen, setProfileOpen] = useState(false)
+  const { toast } = useToast()
 
   const filtered = MOCK_CLIENTS.filter((c) => {
     if (filter !== 'Todos' && c.sector !== filter) return false
@@ -64,18 +66,40 @@ export default function ContactsClients() {
     return true
   })
 
+  const sendWhatsApp = () => {
+    const token = Math.random().toString(36).substring(2, 10)
+    const link = `${window.location.origin}/share/client/${token}`
+    const text = encodeURIComponent(
+      `Olá! Por favor, preencha o formulário de cadastro da sua empresa através deste link seguro: ${link}`,
+    )
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+    toast({
+      title: 'WhatsApp Aberto',
+      description: 'Link de autopreenchimento copiado para a mensagem.',
+    })
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
           <Building2 className="w-6 h-6 text-slate-400" /> Clientes
         </h2>
-        <Button
-          onClick={() => setModalState({ isOpen: true, type: 'new' })}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Novo Cliente
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={sendWhatsApp}
+            className="border-green-200 text-green-700 hover:bg-green-50"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" /> Link Autopreenchimento
+          </Button>
+          <Button
+            onClick={() => setModalState({ isOpen: true, type: 'new' })}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4">

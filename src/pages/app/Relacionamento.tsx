@@ -1,8 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, LayoutGrid, List as ListIcon, Link as LinkIcon } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+  Link as LinkIcon,
+  MessageCircle,
+} from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -10,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useSidebar } from '@/components/ui/sidebar'
 
 import CollaboratorList from '@/components/contacts/CollaboratorList'
 import CollaboratorKanban from '@/components/contacts/CollaboratorKanban'
@@ -27,6 +35,13 @@ import { useToast } from '@/hooks/use-toast'
 export default function Relacionamento() {
   const { view } = useParams()
   const currentView = view || 'dashboard'
+
+  const { setOpen } = useSidebar()
+
+  useEffect(() => {
+    // Automatically hide sidebar when entering the Relacionamento module
+    setOpen(false)
+  }, [setOpen])
 
   const [colabView, setColabView] = useState<'lista' | 'kanban'>('lista')
   const [sectorFilter, setSectorFilter] = useState('Todos')
@@ -51,10 +66,19 @@ export default function Relacionamento() {
       title: 'Link Gerado e Copiado',
       description: 'Link seguro de uso único copiado para a área de transferência.',
     })
+    return link
+  }
+
+  const sendWhatsApp = () => {
+    const link = generateOnboardingLink()
+    const text = encodeURIComponent(
+      `Olá! Por favor, acesse o link para preencher seus dados de admissão na nossa plataforma: ${link}`,
+    )
+    window.open(`https://wa.me/?text=${text}`, '_blank')
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-6rem)] animate-fade-in">
+    <div className="flex flex-col gap-4 h-[calc(100vh-6rem)] animate-fade-in">
       <RelacionamentoSidebar active={currentView} />
 
       <div className="flex-1 flex flex-col min-w-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -66,6 +90,13 @@ export default function Relacionamento() {
               <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
                 <h2 className="text-2xl font-bold tracking-tight text-slate-800">Colaboradores</h2>
                 <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                  <Button
+                    variant="outline"
+                    onClick={sendWhatsApp}
+                    className="border-green-200 text-green-700 hover:bg-green-50 shadow-sm"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" /> Enviar por WhatsApp
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={generateOnboardingLink}
