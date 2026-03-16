@@ -19,6 +19,9 @@ import {
 import { Plus, Search, Truck } from 'lucide-react'
 import { useState } from 'react'
 
+import CompanyModal from './CompanyModal'
+import CompanyProfileModal from './CompanyProfileModal'
+
 const MOCK_SUPPLIERS = [
   {
     id: 'FOR-001',
@@ -49,6 +52,11 @@ const MOCK_SUPPLIERS = [
 export default function ContactsSuppliers() {
   const [filter, setFilter] = useState('Todos')
   const [search, setSearch] = useState('')
+  const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'new' | 'edit' }>({
+    isOpen: false,
+    type: 'new',
+  })
+  const [profileOpen, setProfileOpen] = useState(false)
 
   const filtered = MOCK_SUPPLIERS.filter((c) => {
     if (filter !== 'Todos' && c.sector !== filter) return false
@@ -62,7 +70,10 @@ export default function ContactsSuppliers() {
         <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
           <Truck className="w-6 h-6 text-slate-400" /> Fornecedores
         </h2>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button
+          onClick={() => setModalState({ isOpen: true, type: 'new' })}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
           <Plus className="w-4 h-4 mr-2" /> Novo Fornecedor
         </Button>
       </div>
@@ -128,7 +139,12 @@ export default function ContactsSuppliers() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setProfileOpen(true)}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
                     Ver Ficha
                   </Button>
                 </TableCell>
@@ -144,6 +160,18 @@ export default function ContactsSuppliers() {
           </TableBody>
         </Table>
       </div>
+
+      <CompanyModal
+        open={modalState.isOpen}
+        onOpenChange={(o) => setModalState((p) => ({ ...p, isOpen: o }))}
+        type="supplier"
+      />
+      <CompanyProfileModal
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        onEdit={() => setModalState({ isOpen: true, type: 'edit' })}
+        type="supplier"
+      />
     </div>
   )
 }

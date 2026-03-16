@@ -13,7 +13,7 @@ import AppLayout from '@/components/layouts/AppLayout'
 import LandingPage from '@/pages/public/LandingPage'
 import Onboarding from '@/pages/public/Onboarding'
 import Dashboard from '@/pages/app/Dashboard'
-import Contacts from '@/pages/app/Contacts'
+import Relacionamento from '@/pages/app/Relacionamento'
 import Financial from '@/pages/app/Financial'
 import Settings from '@/pages/app/Settings'
 import ComingSoon from '@/pages/app/ComingSoon'
@@ -48,7 +48,8 @@ const App = () => (
 
                 <Route element={<AppLayout />}>
                   <Route path="/app" element={<Dashboard />} />
-                  <Route path="/app/contatos" element={<Contacts />} />
+                  <Route path="/app/relacionamento" element={<Relacionamento />} />
+                  <Route path="/app/relacionamento/:view" element={<Relacionamento />} />
                   <Route path="/app/financeiro" element={<Financial />} />
                   <Route path="/app/configuracoes" element={<Settings />} />
                   <Route path="/app/em-breve" element={<ComingSoon />} />

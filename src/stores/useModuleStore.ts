@@ -23,7 +23,7 @@ export const ModuleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (modules && modules.length > 0) {
         setContractedModules(modules)
       } else {
-        const defaultModules = ['Contatos', 'Financeiro']
+        const defaultModules = ['Relacionamento', 'Financeiro']
         setContractedModules(defaultModules)
         await db.set('contracted_modules', defaultModules)
       }

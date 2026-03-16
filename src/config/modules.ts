@@ -29,6 +29,8 @@ import {
   Key,
   CreditCard,
   Settings,
+  History,
+  UserSquare2,
 } from 'lucide-react'
 
 export const ACTIVE_MODULES = [
@@ -39,10 +41,10 @@ export const ACTIVE_MODULES = [
     description: 'Central de inteligência para monitoramento em tempo real.',
   },
   {
-    name: 'Contatos',
-    path: '/app/contatos',
+    name: 'Relacionamento',
+    path: '/app/relacionamento',
     icon: Users,
-    description: 'Gestão centralizada para clientes e parceiros.',
+    description: 'Gestão centralizada para colaboradores, clientes e fornecedores.',
   },
   {
     name: 'Financeiro',
@@ -215,10 +217,34 @@ export const MENU_CATEGORIES = [
     icon: Users,
     items: [
       {
-        name: 'Contatos',
-        path: '/app/contatos',
+        name: 'Painel Geral',
+        path: '/app/relacionamento',
+        icon: LayoutDashboard,
+        description: 'Visão geral do módulo',
+      },
+      {
+        name: 'Colaboradores',
+        path: '/app/relacionamento/colaboradores',
         icon: Users,
-        description: 'Gestão de clientes e parceiros',
+        description: 'Gestão de equipe e RH',
+      },
+      {
+        name: 'Clientes',
+        path: '/app/relacionamento/clientes',
+        icon: UserSquare2,
+        description: 'Carteira de clientes',
+      },
+      {
+        name: 'Fornecedores',
+        path: '/app/relacionamento/fornecedores',
+        icon: Truck,
+        description: 'Gestão de parceiros',
+      },
+      {
+        name: 'Auditoria',
+        path: '/app/relacionamento/auditoria',
+        icon: History,
+        description: 'Histórico de ações',
       },
       {
         name: 'CRM B2B',

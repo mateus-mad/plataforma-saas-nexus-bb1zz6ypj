@@ -100,7 +100,7 @@ export default function Dashboard() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link to="/app/contatos">Adicionar Contato</Link>
+            <Link to="/app/relacionamento/clientes">Adicionar Cliente</Link>
           </Button>
           <Button asChild>
             <Link to="/app/financeiro">Nova Transação</Link>
@@ -111,7 +111,7 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Contatos</CardTitle>
+            <CardTitle className="text-sm font-medium">Contatos Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -181,7 +181,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                   <YAxis
-                    tickFormatter={(val) => `R$${val / 1000}k`}
+                    tickFormatter={(val) => `R${val / 1000}k`}
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}

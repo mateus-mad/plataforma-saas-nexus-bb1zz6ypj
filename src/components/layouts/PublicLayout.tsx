@@ -75,8 +75,8 @@ export default function PublicLayout() {
                 </Link>
               </li>
               <li>
-                <Link to="/app/contatos" className="hover:text-primary transition-colors">
-                  Gestão de Contatos
+                <Link to="/app/relacionamento" className="hover:text-primary transition-colors">
+                  Gestão de Relacionamento
                 </Link>
               </li>
               <li>
