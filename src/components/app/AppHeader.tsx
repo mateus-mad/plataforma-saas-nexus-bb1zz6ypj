@@ -217,7 +217,7 @@ export function AppHeader() {
               className={`cursor-pointer font-medium ${isAdminMode ? 'text-slate-700 focus:bg-slate-100' : 'text-purple-600 focus:text-purple-700 focus:bg-purple-50'}`}
             >
               <ShieldAlert className="w-4 h-4 mr-2" />
-              {isAdminMode ? 'Alternar para Visão Cliente' : 'Alternar para SaaS Manager'}
+              {isAdminMode ? 'Alternar para nexusErp' : 'Alternar para SaaS Manager'}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem
