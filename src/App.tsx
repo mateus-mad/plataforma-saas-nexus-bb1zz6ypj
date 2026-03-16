@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ModuleProvider } from '@/stores/useModuleStore'
+import { TenantProvider } from '@/stores/useTenantStore'
 
 import PublicLayout from '@/components/layouts/PublicLayout'
 import AppLayout from '@/components/layouts/AppLayout'
@@ -16,29 +17,31 @@ import ComingSoon from '@/pages/app/ComingSoon'
 import NotFound from '@/pages/NotFound'
 
 const App = () => (
-  <ModuleProvider>
-    <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
-          </Route>
+  <TenantProvider>
+    <ModuleProvider>
+      <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<LandingPage />} />
+            </Route>
 
-          <Route element={<AppLayout />}>
-            <Route path="/app" element={<Dashboard />} />
-            <Route path="/app/contatos" element={<Contacts />} />
-            <Route path="/app/financeiro" element={<Financial />} />
-            <Route path="/app/configuracoes" element={<Settings />} />
-            <Route path="/app/em-breve" element={<ComingSoon />} />
-          </Route>
+            <Route element={<AppLayout />}>
+              <Route path="/app" element={<Dashboard />} />
+              <Route path="/app/contatos" element={<Contacts />} />
+              <Route path="/app/financeiro" element={<Financial />} />
+              <Route path="/app/configuracoes" element={<Settings />} />
+              <Route path="/app/em-breve" element={<ComingSoon />} />
+            </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </BrowserRouter>
-  </ModuleProvider>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </BrowserRouter>
+    </ModuleProvider>
+  </TenantProvider>
 )
 
 export default App
