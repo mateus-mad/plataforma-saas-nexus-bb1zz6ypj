@@ -12,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { Badge } from '@/components/ui/badge'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
@@ -21,6 +22,7 @@ export function AppSidebar() {
   const location = useLocation()
   const currentFullPath = decodeURIComponent(location.pathname + location.search)
   const { contractedModules } = useModuleStore()
+  const { toggleSidebar } = useSidebar()
 
   const visibleCategories = MENU_CATEGORIES.map((category) => {
     if (category.path) return category
@@ -33,13 +35,21 @@ export function AppSidebar() {
   }).filter((category) => category.path || (category.items && category.items.length > 0))
 
   return (
-    <Sidebar className="border-r border-slate-800/60 bg-[#0A0F1C]" variant="sidebar">
-      <SidebarHeader className="p-4 border-b border-slate-800/60 bg-[#0A0F1C]/80 backdrop-blur-md">
-        <div className="flex items-center gap-2 px-2">
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+    <Sidebar
+      className="border-r border-slate-800/60 bg-[#0A0F1C]"
+      variant="sidebar"
+      collapsible="icon"
+    >
+      <SidebarHeader
+        className="p-4 border-b border-slate-800/60 bg-[#0A0F1C]/80 backdrop-blur-md cursor-pointer hover:bg-slate-800/40 transition-colors group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center"
+        onClick={toggleSidebar}
+        title="Alternar Menu"
+      >
+        <div className="flex items-center gap-2 px-1 overflow-hidden w-full">
+          <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 shadow-[0_0_10px_rgba(59,130,246,0.2)] shrink-0 transition-transform group-hover:scale-105">
             <Hexagon className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
           </div>
-          <span className="font-bold text-lg text-slate-100 tracking-wide">
+          <span className="font-bold text-lg text-slate-100 tracking-wide truncate group-data-[collapsible=icon]:hidden transition-opacity">
             Nexus<span className="text-primary font-light">ERP</span>
           </span>
         </div>
@@ -60,8 +70,9 @@ export function AppSidebar() {
                 const CategoryButton = (
                   <SidebarMenuButton
                     asChild
+                    tooltip={!isItemHoverable ? category.name : undefined}
                     className={cn(
-                      'relative overflow-hidden transition-all duration-300 h-10 px-3 mx-2 rounded-lg border border-transparent group/cat w-[calc(100%-1rem)]',
+                      'relative overflow-hidden transition-all duration-300 h-10 px-3 mx-2 rounded-lg border border-transparent group/cat w-auto group-data-[collapsible=icon]:mx-1',
                       isActive
                         ? 'bg-primary/10 border-primary/30 text-primary shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]'
                         : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 hover:border-slate-700/50',
@@ -80,7 +91,9 @@ export function AppSidebar() {
                               : 'group-hover/cat:text-primary/70',
                           )}
                         />
-                        <span className="flex-1 font-medium tracking-wide">{category.name}</span>
+                        <span className="flex-1 font-medium tracking-wide truncate group-data-[collapsible=icon]:hidden">
+                          {category.name}
+                        </span>
                       </Link>
                     ) : (
                       <button className="flex items-center w-full gap-3 cursor-default">
@@ -95,12 +108,12 @@ export function AppSidebar() {
                               : 'group-hover/cat:text-primary/70',
                           )}
                         />
-                        <span className="flex-1 font-medium tracking-wide text-left">
+                        <span className="flex-1 font-medium tracking-wide text-left truncate group-data-[collapsible=icon]:hidden">
                           {category.name}
                         </span>
                         <ChevronRight
                           className={cn(
-                            'w-4 h-4 transition-transform opacity-50 shrink-0',
+                            'w-4 h-4 transition-transform opacity-50 shrink-0 group-data-[collapsible=icon]:hidden',
                             isActive && 'text-primary opacity-100',
                           )}
                         />
@@ -206,43 +219,46 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-slate-800/60 bg-[#0A0F1C]/80 backdrop-blur-md">
+      <SidebarFooter className="p-4 border-t border-slate-800/60 bg-[#0A0F1C]/80 backdrop-blur-md group-data-[collapsible=icon]:p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              tooltip="Configurações"
               className={cn(
-                'transition-colors rounded-lg',
+                'transition-colors rounded-lg group-data-[collapsible=icon]:mx-1',
                 location.pathname === '/app/configuracoes'
                   ? 'bg-primary/10 text-primary border border-primary/30'
                   : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50',
               )}
             >
               <Link to="/app/configuracoes">
-                <Settings className="w-4 h-4" />
-                <span>Configurações</span>
+                <Settings className="w-4 h-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Configurações</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-colors rounded-lg"
+              tooltip="Suporte e Ajuda"
+              className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-colors rounded-lg group-data-[collapsible=icon]:mx-1"
             >
               <a href="#">
-                <HelpCircle className="w-4 h-4" />
-                <span>Suporte e Ajuda</span>
+                <HelpCircle className="w-4 h-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Suporte e Ajuda</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="mt-2 text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 border border-transparent transition-all rounded-lg"
+              tooltip="Sair"
+              className="mt-2 text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 border border-transparent transition-all rounded-lg group-data-[collapsible=icon]:mx-1"
             >
               <Link to="/">
-                <LogOut className="w-4 h-4" />
-                <span>Sair da Plataforma</span>
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Sair da Plataforma</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
