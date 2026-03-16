@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -48,6 +48,17 @@ const App = () => (
 
                 <Route element={<AppLayout />}>
                   <Route path="/app" element={<Dashboard />} />
+
+                  {/* Redirect deprecated 'contatos' routes to the new 'relacionamento' module */}
+                  <Route
+                    path="/app/contatos"
+                    element={<Navigate to="/app/relacionamento" replace />}
+                  />
+                  <Route
+                    path="/app/contatos/:view"
+                    element={<Navigate to="/app/relacionamento" replace />}
+                  />
+
                   <Route path="/app/relacionamento" element={<Relacionamento />} />
                   <Route path="/app/relacionamento/:view" element={<Relacionamento />} />
                   <Route path="/app/financeiro" element={<Financial />} />
