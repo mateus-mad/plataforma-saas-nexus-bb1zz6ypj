@@ -2,6 +2,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Info, HeartPulse } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -174,6 +181,24 @@ export function WorkTab({ data, onChange, errors, readOnly }: Props) {
             className={err('cargo')}
             disabled={readOnly}
           />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Setor de Atuação" t="Setor de alocação para categorização" req />
+          <Select
+            value={data.setor || ''}
+            onValueChange={(v) => onChange('setor', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={err('setor')}>
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Civil">Civil</SelectItem>
+              <SelectItem value="Solar">Solar</SelectItem>
+              <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
+              <SelectItem value="Administrativo">Administrativo</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <LabelT l="Data de Admissão" t="Data de início no sistema/contrato" req />
