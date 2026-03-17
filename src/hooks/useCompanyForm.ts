@@ -12,6 +12,9 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       ie: '',
       im: '',
       setor: 'Solar',
+      dataNascimento: '',
+      genero: '',
+      ativo: true,
     },
     endereco: {
       cep: '01001-000',
@@ -28,11 +31,35 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       email: 'contato@exemplo.com',
       telefone: '(11) 3333-3333',
       whatsapp: '11999999999',
+      emailCobranca: '',
+      website: '',
     },
-    ...(type === 'supplier'
-      ? { bancario: { banco: '341', agConta: '0001', conta: '12345-6', pix: '' } }
-      : {}),
+    financeiro: {
+      limiteCredito: '0,00',
+      prazoPagamento: '30',
+      ...(type === 'supplier' ? { banco: '341', agConta: '0001', conta: '12345-6', pix: '' } : {}),
+    },
+    relacionamento: {
+      clienteDesde: '',
+      segmento: '',
+      observacoes: '',
+    },
   })
+
+  let financeiroSchema: any = {
+    limiteCredito: z.string().optional(),
+    prazoPagamento: z.string().optional(),
+  }
+
+  if (type === 'supplier') {
+    financeiroSchema = {
+      ...financeiroSchema,
+      banco: z.string().min(1, 'Obrigatório'),
+      agConta: z.string().min(1, 'Obrigatório'),
+      conta: z.string().min(1, 'Obrigatório'),
+      pix: z.string().optional(),
+    }
+  }
 
   const schema = z.object({
     dados: z.object({
@@ -43,6 +70,9 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       ie: z.string().optional(),
       im: z.string().optional(),
       setor: z.string().min(1, 'Obrigatório'),
+      dataNascimento: z.string().optional(),
+      genero: z.string().optional(),
+      ativo: z.boolean().optional(),
     }),
     endereco: z.object({
       cep: z.string().min(1, 'Obrigatório'),
@@ -56,20 +86,18 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     contato: z.object({
       responsavel: z.string().min(1, 'Obrigatório'),
       cargo: z.string().min(1, 'Obrigatório'),
-      email: z.string().email('E-mail inválido'),
+      email: z.string().email('E-mail inválido').or(z.literal('')),
       telefone: z.string().min(1, 'Obrigatório'),
       whatsapp: z.string().optional(),
+      emailCobranca: z.string().email('E-mail inválido').or(z.literal('')).optional(),
+      website: z.string().url('URL inválida').or(z.literal('')).optional(),
     }),
-    ...(type === 'supplier'
-      ? {
-          bancario: z.object({
-            banco: z.string().min(1, 'Obrigatório'),
-            agConta: z.string().min(1, 'Obrigatório'),
-            conta: z.string().min(1, 'Obrigatório'),
-            pix: z.string().optional(),
-          }),
-        }
-      : {}),
+    financeiro: z.object(financeiroSchema),
+    relacionamento: z.object({
+      clienteDesde: z.string().optional(),
+      segmento: z.string().optional(),
+      observacoes: z.string().optional(),
+    }),
   })
 
   const updateData = (section: string, field: string, value: any) => {
@@ -105,7 +133,10 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     if (!data[sec]) return 0
     const vals = Object.values(data[sec])
     if (!vals.length) return 0
-    const filled = vals.filter((v) => String(v).trim() !== '').length
+    const filled = vals.filter((v) => {
+      if (typeof v === 'boolean') return true
+      return String(v).trim() !== ''
+    }).length
     return Math.round((filled / vals.length) * 100)
   }
 
@@ -113,7 +144,8 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     dados: getProgress('dados'),
     endereco: getProgress('endereco'),
     contato: getProgress('contato'),
-    ...(type === 'supplier' ? { bancario: getProgress('bancario') } : {}),
+    financeiro: getProgress('financeiro'),
+    relacionamento: getProgress('relacionamento'),
   }
 
   let totalFields = 0
@@ -121,7 +153,7 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   Object.values(data).forEach((sec: any) => {
     Object.values(sec).forEach((v) => {
       totalFields++
-      if (String(v).trim() !== '') totalFilled++
+      if (typeof v === 'boolean' || String(v).trim() !== '') totalFilled++
     })
   })
   const globalProgress = Math.round((totalFilled / totalFields) * 100)

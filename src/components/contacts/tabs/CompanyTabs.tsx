@@ -1,6 +1,5 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -8,12 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Info, Search, MessageCircle } from 'lucide-react'
+import { Info, Search } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
-const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
+export const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
     {l} {req && <span className="text-rose-500">*</span>}
     {t && (
@@ -96,37 +96,25 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
             <LabelT
               l={isPJ ? 'CNPJ' : 'CPF'}
               req
               t={isPJ ? 'Digite o CNPJ para preenchimento automático' : 'Digite o CPF válido'}
             />
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  value={data.documento || ''}
-                  onChange={handleDocChange}
-                  disabled={readOnly}
-                  className={cn('font-mono pl-10', err('documento'))}
-                  placeholder={isPJ ? '00.000.000/0000-00' : '000.000.000-00'}
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              </div>
-              {isPJ && (
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={handleSearchDoc}
-                  disabled={readOnly || (data.documento || '').length < 18}
-                >
-                  Buscar
-                </Button>
-              )}
+            <div className="relative">
+              <Input
+                value={data.documento || ''}
+                onChange={handleDocChange}
+                disabled={readOnly}
+                className={cn('font-mono pl-10', err('documento'))}
+                placeholder={isPJ ? '00.000.000/0000-00' : '000.000.000-00'}
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             </div>
           </div>
-          <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+          <div className="space-y-1.5">
             <LabelT l="Setor de Atuação" req />
             <Select
               value={data.setor}
@@ -147,45 +135,84 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
           <div className="space-y-1.5">
             <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />
             <Input
-              value={data.nomeRazao}
+              value={data.nomeRazao || ''}
               onChange={(e) => onChange('nomeRazao', e.target.value)}
               disabled={readOnly}
               className={err('nomeRazao')}
             />
           </div>
           {isPJ && (
-            <div className="space-y-1.5">
-              <LabelT l="Nome Fantasia" />
-              <Input
-                value={data.fantasia}
-                onChange={(e) => onChange('fantasia', e.target.value)}
-                disabled={readOnly}
-                className={err('fantasia')}
-              />
-            </div>
+            <>
+              <div className="space-y-1.5">
+                <LabelT l="Nome Fantasia" />
+                <Input
+                  value={data.fantasia || ''}
+                  onChange={(e) => onChange('fantasia', e.target.value)}
+                  disabled={readOnly}
+                  className={err('fantasia')}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <LabelT l="Inscrição Estadual" />
+                <Input
+                  value={data.ie || ''}
+                  onChange={(e) => onChange('ie', e.target.value)}
+                  disabled={readOnly}
+                  className={err('ie')}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <LabelT l="Inscrição Municipal" />
+                <Input
+                  value={data.im || ''}
+                  onChange={(e) => onChange('im', e.target.value)}
+                  disabled={readOnly}
+                  className={err('im')}
+                />
+              </div>
+            </>
           )}
-          {isPJ && (
-            <div className="space-y-1.5">
-              <LabelT l="Inscrição Estadual" />
-              <Input
-                value={data.ie}
-                onChange={(e) => onChange('ie', e.target.value)}
+
+          <div className="space-y-1.5">
+            <LabelT l="Data de Nascimento" />
+            <Input
+              type="date"
+              value={data.dataNascimento || ''}
+              onChange={(e) => onChange('dataNascimento', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <LabelT l="Gênero" />
+            <Select
+              value={data.genero || ''}
+              onValueChange={(v) => onChange('genero', v)}
+              disabled={readOnly}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Masculino">Masculino</SelectItem>
+                <SelectItem value="Feminino">Feminino</SelectItem>
+                <SelectItem value="Outro">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 flex flex-col justify-center">
+            <LabelT l="Ativo" />
+            <div className="flex items-center gap-2 mt-1">
+              <Switch
+                checked={data.ativo}
+                onCheckedChange={(v) => onChange('ativo', v)}
                 disabled={readOnly}
-                className={err('ie')}
+                className="data-[state=checked]:bg-emerald-500"
               />
+              <span className="text-sm font-medium text-slate-700">
+                {data.ativo ? 'Sim' : 'Não'}
+              </span>
             </div>
-          )}
-          {isPJ && (
-            <div className="space-y-1.5">
-              <LabelT l="Inscrição Municipal" />
-              <Input
-                value={data.im}
-                onChange={(e) => onChange('im', e.target.value)}
-                disabled={readOnly}
-                className={err('im')}
-              />
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
@@ -201,7 +228,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
         <div className="space-y-1.5">
           <LabelT l="Nome do Responsável" req />
           <Input
-            value={data.responsavel}
+            value={data.responsavel || ''}
             onChange={(e) => onChange('responsavel', e.target.value)}
             disabled={readOnly}
             className={err('responsavel')}
@@ -209,30 +236,18 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
         </div>
         <div className="space-y-1.5">
           <LabelT l="Cargo (Função)" req />
-          <Select
-            value={data.cargo}
-            onValueChange={(v) => onChange('cargo', v)}
+          <Input
+            value={data.cargo || ''}
+            onChange={(e) => onChange('cargo', e.target.value)}
             disabled={readOnly}
-          >
-            <SelectTrigger className={err('cargo')}>
-              <SelectValue placeholder="Selecione o cargo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Sócio/Proprietário">Sócio/Proprietário</SelectItem>
-              <SelectItem value="Diretor">Diretor</SelectItem>
-              <SelectItem value="Gerente">Gerente</SelectItem>
-              <SelectItem value="Financeiro">Financeiro</SelectItem>
-              <SelectItem value="Comercial">Comercial</SelectItem>
-              <SelectItem value="Comprador">Comprador</SelectItem>
-              <SelectItem value="Outro">Outro</SelectItem>
-            </SelectContent>
-          </Select>
+            className={err('cargo')}
+          />
         </div>
         <div className="space-y-1.5">
           <LabelT l="E-mail de Contato" req />
           <Input
             type="email"
-            value={data.email}
+            value={data.email || ''}
             onChange={(e) => onChange('email', e.target.value)}
             disabled={readOnly}
             className={err('email')}
@@ -241,7 +256,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
         <div className="space-y-1.5">
           <LabelT l="Telefone Comercial" req />
           <Input
-            value={data.telefone}
+            value={data.telefone || ''}
             onChange={(e) => onChange('telefone', e.target.value)}
             disabled={readOnly}
             className={err('telefone')}
@@ -250,77 +265,33 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
         </div>
         <div className="space-y-1.5">
           <LabelT l="WhatsApp" />
-          <div className="flex gap-2">
-            <Input
-              value={data.whatsapp}
-              onChange={(e) => onChange('whatsapp', e.target.value)}
-              disabled={readOnly}
-              className={err('whatsapp')}
-              placeholder="(00) 00000-0000"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              asChild
-              className="shrink-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
-            >
-              <a
-                href={`https://wa.me/${(data.whatsapp || '').replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                title="Abrir WhatsApp"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </a>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function CompanyBancarioTab({ data, onChange, errors, readOnly }: any) {
-  const err = (f: string) =>
-    errors?.[`bancario.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-1.5">
-          <LabelT l="Banco" req />
           <Input
-            value={data.banco}
-            onChange={(e) => onChange('banco', e.target.value)}
+            value={data.whatsapp || ''}
+            onChange={(e) => onChange('whatsapp', e.target.value)}
             disabled={readOnly}
-            className={err('banco')}
-            placeholder="Ex: Itaú (341)"
+            className={err('whatsapp')}
+            placeholder="(00) 00000-0000"
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="Agência" req />
+          <LabelT l="E-mail de Cobrança" />
           <Input
-            value={data.agConta}
-            onChange={(e) => onChange('agConta', e.target.value)}
+            type="email"
+            value={data.emailCobranca || ''}
+            onChange={(e) => onChange('emailCobranca', e.target.value)}
             disabled={readOnly}
-            className={err('agConta')}
+            className={err('emailCobranca')}
           />
         </div>
-        <div className="space-y-1.5">
-          <LabelT l="Conta" req />
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="Website" />
           <Input
-            value={data.conta}
-            onChange={(e) => onChange('conta', e.target.value)}
+            type="url"
+            value={data.website || ''}
+            onChange={(e) => onChange('website', e.target.value)}
             disabled={readOnly}
-            className={err('conta')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="Chave PIX" />
-          <Input
-            value={data.pix}
-            onChange={(e) => onChange('pix', e.target.value)}
-            disabled={readOnly}
-            className={err('pix')}
+            className={err('website')}
+            placeholder="https://"
           />
         </div>
       </div>

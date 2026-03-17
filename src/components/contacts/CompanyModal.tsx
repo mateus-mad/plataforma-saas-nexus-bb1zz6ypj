@@ -5,18 +5,27 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import {
   X,
+  Users,
   Building2,
   Phone,
   MapPin,
   Paperclip,
-  Eye,
-  Edit2,
   AlertTriangle,
   CreditCard,
+  FileSignature,
+  UsersRound,
+  History,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-import { CompanyDadosTab, CompanyContatoTab, CompanyBancarioTab } from './tabs/CompanyTabs'
+import { CompanyDadosTab, CompanyContatoTab } from './tabs/CompanyTabs'
+import {
+  CompanyFinanceiroTab,
+  CompanyHistoricoTab,
+  CompanyContratosTab,
+} from './tabs/CompanyFinancialTabs'
+import { CompanyRelacionamentoTab } from './tabs/CompanyRelationshipTabs'
 import { AddressTab } from './tabs/FormTabs1'
 import AttachmentsTab from './tabs/AttachmentsTab'
 import { useCompanyForm } from '@/hooks/useCompanyForm'
@@ -31,19 +40,24 @@ export default function CompanyModal({
   type: 'client' | 'supplier'
 }) {
   const [activeTab, setActiveTab] = useState('dados')
-  const [isEditing, setIsEditing] = useState(true)
   const { data, updateData, progress, globalProgress, errors, validate, autofillCNPJ } =
     useCompanyForm(type)
   const { toast } = useToast()
 
   const TABS = [
-    { id: 'dados', label: 'Identificação', prog: progress.dados, icon: Building2 },
-    { id: 'contato', label: 'Contato', prog: progress.contato, icon: Phone },
+    { id: 'dados', label: 'Identificação', prog: progress.dados, icon: Users },
     { id: 'endereco', label: 'Endereço', prog: progress.endereco, icon: MapPin },
-    ...(type === 'supplier'
-      ? [{ id: 'bancario', label: 'Bancário', prog: progress.bancario, icon: CreditCard }]
-      : []),
-    { id: 'anexos', label: 'Anexos', prog: null, icon: Paperclip },
+    { id: 'contato', label: 'Contato', prog: progress.contato, icon: Phone },
+    { id: 'financeiro', label: 'Financeiro', prog: progress.financeiro, icon: CreditCard },
+    { id: 'contratos', label: 'Contratos', prog: null, icon: FileSignature },
+    {
+      id: 'relacionamento',
+      label: 'Relacionamento',
+      prog: progress.relacionamento,
+      icon: UsersRound,
+    },
+    { id: 'historico', label: 'Histórico', prog: null, icon: History },
+    { id: 'anexos', label: 'Documentos', prog: null, icon: FileText },
   ]
 
   const handleSave = () => {
@@ -55,14 +69,14 @@ export default function CompanyModal({
       })
       return
     }
-    toast({ title: 'Sucesso', description: 'Registro salvo com segurança.' })
-    setIsEditing(false)
+    toast({ title: 'Sucesso', description: 'Registro atualizado com sucesso.' })
+    onOpenChange(false)
   }
 
   const getProgressColor = (p: number | null) => {
     if (p === null) return 'bg-slate-200'
     if (p === 100) return 'bg-emerald-500'
-    if (p > 50) return 'bg-amber-400'
+    if (p > 50) return 'bg-blue-500'
     return 'bg-blue-500'
   }
 
@@ -70,7 +84,7 @@ export default function CompanyModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[950px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-2xl shadow-2xl overflow-hidden [&>button]:hidden">
+      <DialogContent className="max-w-[1000px] w-[95vw] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-2xl shadow-2xl overflow-hidden [&>button]:hidden">
         <div className="p-5 pb-0 bg-white border-b border-slate-200 shrink-0 relative z-10">
           <button
             onClick={() => onOpenChange(false)}
@@ -78,40 +92,39 @@ export default function CompanyModal({
           >
             <X className="w-4 h-4" />
           </button>
+
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pr-12">
             <div>
               <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-slate-500" />
-                {isEditing
-                  ? `Editar Ficha de ${type === 'client' ? 'Cliente' : 'Fornecedor'}`
-                  : `Visualizar Ficha de ${type === 'client' ? 'Cliente' : 'Fornecedor'}`}
+                <Users className="w-5 h-5 text-slate-700" />
+                {`Editar ${type === 'client' ? 'Cliente' : 'Fornecedor'}`}
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Gerencie todos os dados da empresa e contatos.
+                Preencha os dados do {type === 'client' ? 'cliente' : 'fornecedor'}. Campos com *
+                são obrigatórios.
               </DialogDescription>
             </div>
+
             <div className="flex items-center gap-3">
-              <Button
-                variant={isEditing ? 'outline' : 'default'}
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-                className="h-9 transition-all font-semibold"
-              >
-                {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
-                {isEditing ? 'Modo Leitura' : 'Ativar Edição'}
-              </Button>
-              <div className="hidden sm:flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100">
+                <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded-full border border-emerald-500 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                  </div>
+                  Preenchimento:
+                </span>
                 <Progress
                   value={globalProgress}
-                  className="w-24 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
+                  className="w-24 h-2 bg-slate-200 [&>div]:bg-blue-600"
                 />
-                <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+                <span className="text-sm font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-md">
+                  {globalProgress}%
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-3 mt-6 px-1 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full">
+          <div className="flex flex-wrap gap-2 pb-4 mt-6">
             {TABS.map((tab) => {
               const tabHasError = Object.keys(errors).some((k) => k.startsWith(tab.id))
               return (
@@ -119,32 +132,49 @@ export default function CompanyModal({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex flex-col min-w-[100px] px-3 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 border shadow-sm',
+                    'flex flex-col min-w-[120px] px-3 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 relative overflow-hidden',
                     activeTab === tab.id
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-100'
-                      : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200 hover:text-slate-700',
-                    tabHasError && activeTab !== tab.id && 'border-rose-200 text-rose-600',
+                      ? 'bg-blue-500 text-white shadow-md border-transparent hover:bg-blue-600'
+                      : 'bg-transparent text-slate-500 hover:bg-slate-50 border-transparent hover:text-slate-700',
+                    tabHasError && activeTab !== tab.id && 'text-rose-600',
                   )}
                 >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <tab.icon
-                      className={cn(
-                        'w-4 h-4',
-                        activeTab === tab.id ? 'text-blue-600' : 'text-slate-400',
-                        tabHasError && 'text-rose-500',
-                      )}
-                    />
-                    <span>{tab.label}</span>
+                  <div className="flex items-center gap-2 relative z-10 w-full justify-between">
+                    <div className="flex items-center gap-2">
+                      <tab.icon
+                        className={cn(
+                          'w-4 h-4',
+                          activeTab === tab.id ? 'text-white' : 'text-slate-400',
+                          tabHasError && activeTab !== tab.id && 'text-rose-500',
+                        )}
+                      />
+                      <span>{tab.label}</span>
+                    </div>
+                    {tab.prog !== null && activeTab !== tab.id && (
+                      <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold ml-2">
+                        {tab.prog}%
+                      </span>
+                    )}
+                    {tab.prog !== null && activeTab === tab.id && (
+                      <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded font-bold ml-2">
+                        {tab.prog}%
+                      </span>
+                    )}
                   </div>
-                  {tab.prog !== null && (
-                    <div className="w-full flex items-center gap-2 mt-1">
-                      <div className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                          className={cn('h-full', getProgressColor(tab.prog))}
-                          style={{ width: `${tab.prog}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] text-slate-400 font-bold">{tab.prog}%</span>
+                  {tab.prog !== null && activeTab !== tab.id && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-slate-100">
+                      <div
+                        className={cn(
+                          'h-full',
+                          tab.prog === 100 ? 'bg-emerald-500' : 'bg-blue-500',
+                        )}
+                        style={{ width: `${tab.prog}%` }}
+                      />
+                    </div>
+                  )}
+                  {tab.prog !== null && activeTab === tab.id && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20">
+                      <div className="h-full bg-white" style={{ width: `${tab.prog}%` }} />
                     </div>
                   )}
                 </button>
@@ -153,23 +183,15 @@ export default function CompanyModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm min-h-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50">
+          <div className="bg-transparent min-h-full">
             {activeTab === 'dados' && (
               <CompanyDadosTab
                 data={data.dados}
                 onChange={(f: string, v: any) => updateData('dados', f, v)}
                 onAutofill={autofillCNPJ}
                 errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'contato' && (
-              <CompanyContatoTab
-                data={data.contato}
-                onChange={(f: string, v: any) => updateData('contato', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
+                readOnly={false}
               />
             )}
             {activeTab === 'endereco' && (
@@ -177,29 +199,44 @@ export default function CompanyModal({
                 data={data.endereco}
                 onChange={(f: string, v: any) => updateData('endereco', f, v)}
                 errors={errors}
-                readOnly={!isEditing}
+                readOnly={false}
               />
             )}
-            {activeTab === 'bancario' && (
-              <CompanyBancarioTab
-                data={data.bancario}
-                onChange={(f: string, v: any) => updateData('bancario', f, v)}
+            {activeTab === 'contato' && (
+              <CompanyContatoTab
+                data={data.contato}
+                onChange={(f: string, v: any) => updateData('contato', f, v)}
                 errors={errors}
-                readOnly={!isEditing}
+                readOnly={false}
               />
             )}
-            {activeTab === 'anexos' && <AttachmentsTab readOnly={!isEditing} />}
+            {activeTab === 'financeiro' && (
+              <CompanyFinanceiroTab
+                data={data.financeiro}
+                type={type}
+                onChange={(f: string, v: any) => updateData('financeiro', f, v)}
+                errors={errors}
+                readOnly={false}
+              />
+            )}
+            {activeTab === 'contratos' && <CompanyContratosTab />}
+            {activeTab === 'relacionamento' && (
+              <CompanyRelacionamentoTab
+                data={data.relacionamento}
+                onChange={(f: string, v: any) => updateData('relacionamento', f, v)}
+                readOnly={false}
+              />
+            )}
+            {activeTab === 'historico' && <CompanyHistoricoTab />}
+            {activeTab === 'anexos' && <AttachmentsTab readOnly={false} />}
           </div>
         </div>
 
         <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex justify-between items-center shrink-0 z-10">
           <div className="flex items-center gap-2 hidden sm:flex">
-            <p className="text-xs text-slate-500">
-              <span className="text-rose-500 font-bold">*</span> Obrigatórios
-            </p>
             {hasErrors && (
-              <p className="text-xs font-semibold text-rose-600 flex items-center gap-1 ml-4 bg-rose-50 px-2 py-0.5 rounded-full">
-                <AlertTriangle className="w-3 h-3" /> Erros na validação
+              <p className="text-xs font-semibold text-rose-600 flex items-center gap-1 bg-rose-50 px-3 py-1.5 rounded-md">
+                <AlertTriangle className="w-3.5 h-3.5" /> Verifique os erros nas abas para salvar
               </p>
             )}
           </div>
@@ -207,18 +244,16 @@ export default function CompanyModal({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="font-semibold text-slate-600"
+              className="font-semibold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 px-6 rounded-xl"
             >
               Cancelar
             </Button>
-            {isEditing && (
-              <Button
-                onClick={handleSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
-              >
-                Salvar Dados
-              </Button>
-            )}
+            <Button
+              onClick={handleSave}
+              className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm px-8 font-semibold rounded-xl"
+            >
+              Atualizar
+            </Button>
           </div>
         </div>
       </DialogContent>
