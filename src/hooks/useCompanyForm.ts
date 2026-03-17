@@ -93,8 +93,8 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       email: z.string().email('E-mail inválido').or(z.literal('')),
       telefone: z.string().min(1, 'Obrigatório'),
       whatsapp: z.string().optional(),
-      emailCobranca: z.string().email('E-mail inválido').or(z.literal('')).optional(),
-      website: z.string().url('URL inválida').or(z.literal('')).optional(),
+      emailCobranca: z.string().email('E-mail inválido').min(1, 'Obrigatório'),
+      website: z.string().url('URL inválida').min(1, 'Obrigatório'),
     }),
     financeiro: z.object(financeiroSchema),
     relacionamento: z.object({

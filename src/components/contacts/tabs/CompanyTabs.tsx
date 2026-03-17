@@ -270,7 +270,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="E-mail de Contato Principal" req />
+          <LabelT l="E-mail de Contato Principal" />
           <Input
             type="email"
             value={data.email || ''}
@@ -300,7 +300,11 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="E-mail de Cobrança / Financeiro" />
+          <LabelT
+            l="E-mail de Cobrança / Financeiro"
+            req
+            t="Endereço usado para automação de faturas e alertas"
+          />
           <Input
             type="email"
             value={data.emailCobranca || ''}
@@ -310,7 +314,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
-          <LabelT l="Website Oficial" />
+          <LabelT l="Website Oficial" req t="URL do site institucional" />
           <Input
             type="url"
             value={data.website || ''}

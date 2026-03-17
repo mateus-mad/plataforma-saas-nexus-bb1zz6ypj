@@ -13,40 +13,35 @@ import {
   CartesianGrid,
   AreaChart,
   Area,
+  LineChart,
+  Line,
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 
-const SECTOR_DATA = [
-  { name: 'Civil', value: 120, fill: 'hsl(var(--chart-1))' },
-  { name: 'Solar', value: 85, fill: 'hsl(var(--chart-2))' },
-  { name: 'Metalúrgica', value: 40, fill: 'hsl(var(--chart-3))' },
-  { name: 'Administrativo', value: 25, fill: 'hsl(var(--chart-4))' },
-]
-
 const VOLUME_DATA = [
-  { month: 'Jan', Civil: 20, Solar: 15, Metalurgica: 8 },
-  { month: 'Fev', Civil: 25, Solar: 18, Metalurgica: 12 },
-  { month: 'Mar', Civil: 30, Solar: 25, Metalurgica: 15 },
-  { month: 'Abr', Civil: 28, Solar: 30, Metalurgica: 18 },
-  { month: 'Mai', Civil: 35, Solar: 35, Metalurgica: 20 },
+  { month: 'Jan', novos: 12 },
+  { month: 'Fev', novos: 15 },
+  { month: 'Mar', novos: 8 },
+  { month: 'Abr', novos: 20 },
+  { month: 'Mai', novos: 25 },
+  { month: 'Jun', novos: 18 },
 ]
 
 const REVENUE_DATA = [
-  { month: 'Jan', revenue: 120000 },
-  { month: 'Fev', revenue: 135000 },
-  { month: 'Mar', revenue: 150000 },
-  { month: 'Abr', revenue: 180000 },
-  { month: 'Mai', revenue: 210000 },
+  { month: 'Jan', civil: 40000, solar: 50000, metalurgica: 30000 },
+  { month: 'Fev', civil: 45000, solar: 55000, metalurgica: 35000 },
+  { month: 'Mar', civil: 50000, solar: 60000, metalurgica: 40000 },
+  { month: 'Abr', civil: 60000, solar: 70000, metalurgica: 50000 },
+  { month: 'Mai', civil: 70000, solar: 80000, metalurgica: 60000 },
 ]
 
-const sectorConfig = {
-  Civil: { label: 'Civil', color: 'hsl(var(--chart-1))' },
-  Solar: { label: 'Solar', color: 'hsl(var(--chart-2))' },
-  Metalurgica: { label: 'Metalúrgica', color: 'hsl(var(--chart-3))' },
-  Administrativo: { label: 'Administrativo', color: 'hsl(var(--chart-4))' },
-  revenue: { label: 'Faturamento', color: 'hsl(var(--primary))' },
+const chartConfig = {
+  novos: { label: 'Novos Clientes', color: 'hsl(var(--primary))' },
+  civil: { label: 'Civil', color: 'hsl(var(--chart-1))' },
+  solar: { label: 'Solar', color: 'hsl(var(--chart-2))' },
+  metalurgica: { label: 'Metalúrgica', color: 'hsl(var(--chart-3))' },
 }
 
 export default function ContactsDashboard() {
@@ -56,15 +51,22 @@ export default function ContactsDashboard() {
     toast({
       title: 'Disparo Automático Executado',
       description:
-        '3 alertas de vencimento enviados aos gestores internos e contatos principais dos clientes.',
+        '3 alertas de vencimento enviados com sucesso para os E-mails de Cobrança configurados nos cadastros.',
     })
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
-      <h2 className="text-2xl font-bold tracking-tight text-slate-800">
-        Dashboard de Relacionamentos & BI
-      </h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">
+            Performance & Automação (BI)
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Métricas de crescimento do relacionamento comercial e controle de riscos.
+          </p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-emerald-100 shadow-sm">
@@ -114,10 +116,12 @@ export default function ContactsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm border-slate-200">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Volume de Clientes por Setor</CardTitle>
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Volume de Aquisição (Novos Clientes)
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={sectorConfig} className="h-[250px] w-full">
+            <ChartContainer config={chartConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={VOLUME_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -130,17 +134,10 @@ export default function ContactsDashboard() {
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar
-                    dataKey="Civil"
-                    stackId="a"
-                    fill="var(--color-Civil)"
-                    radius={[0, 0, 4, 4]}
-                  />
-                  <Bar dataKey="Solar" stackId="a" fill="var(--color-Solar)" />
-                  <Bar
-                    dataKey="Metalurgica"
-                    stackId="a"
-                    fill="var(--color-Metalurgica)"
+                    dataKey="novos"
+                    fill="var(--color-novos)"
                     radius={[4, 4, 0, 0]}
+                    barSize={40}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -150,18 +147,22 @@ export default function ContactsDashboard() {
 
         <Card className="shadow-sm border-slate-200">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">
-              Crescimento de Faturamento (Base)
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Crescimento de Faturamento por Segmento
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={sectorConfig} className="h-[250px] w-full">
+            <ChartContainer config={chartConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0} />
+                    <linearGradient id="colorCivil" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-civil)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-civil)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-solar)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-solar)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -182,11 +183,25 @@ export default function ContactsDashboard() {
                   />
                   <Area
                     type="monotone"
-                    dataKey="revenue"
-                    stroke="var(--color-revenue)"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorRev)"
+                    dataKey="civil"
+                    stackId="1"
+                    stroke="var(--color-civil)"
+                    fill="url(#colorCivil)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="solar"
+                    stackId="1"
+                    stroke="var(--color-solar)"
+                    fill="url(#colorSolar)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="metalurgica"
+                    stackId="1"
+                    stroke="var(--color-metalurgica)"
+                    fill="var(--color-metalurgica)"
+                    fillOpacity={0.1}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -200,81 +215,91 @@ export default function ContactsDashboard() {
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <CalendarClock className="w-5 h-5 text-blue-500" />
-              Automação de Contratos e Alertas
+              Automação de Comunicação & Alertas
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-slate-600 mb-4">
+            <p className="text-sm text-slate-600 mb-4 bg-blue-50/50 p-3 rounded-xl border border-blue-100">
               O sistema verifica diariamente a validade de contratos e documentos, disparando
-              e-mails automáticos para clientes e gestores 30 dias antes do vencimento.
+              e-mails automáticos <span className="font-semibold text-blue-700">
+                30 dias antes
+              </span>{' '}
+              do vencimento para o <b>E-mail de Cobrança</b> cadastrado no perfil do
+              cliente/fornecedor.
             </p>
-            <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"></div>
                 <div>
                   <p className="font-semibold text-amber-900 text-sm">
-                    Construtora Horizonte (Renovação)
+                    Construtora Horizonte (Renovação de Contrato)
                   </p>
-                  <p className="text-xs text-amber-700">Vence em: 15 dias</p>
+                  <p className="text-xs text-amber-700">Aviso a enviar: cobranca@horizonte.com</p>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-white border-amber-300 text-amber-700">
-                Pendente
-              </Badge>
+              <span className="text-xs font-bold text-amber-600 whitespace-nowrap ml-2">
+                Em 15 dias
+              </span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-rose-50 border border-rose-200 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between p-3 bg-rose-50 border border-rose-200 rounded-xl shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></div>
                 <div>
                   <p className="font-semibold text-rose-900 text-sm">
-                    SolarTech (CNH Vencida de Motorista)
+                    SolarTech (Documento CNPJ Vencido)
                   </p>
-                  <p className="text-xs text-rose-700">Venceu há: 2 dias</p>
+                  <p className="text-xs text-rose-700">Alerta crítico: contato@solartech.com</p>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-white border-rose-300 text-rose-700">
+              <span className="text-xs font-bold text-rose-600 whitespace-nowrap ml-2">
                 Atrasado
-              </Badge>
+              </span>
             </div>
             <Button
               onClick={handleSimulateAlerts}
-              className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
+              className="w-full mt-2 bg-blue-600 hover:bg-blue-700 h-11 text-sm font-semibold rounded-xl"
             >
-              <Send className="w-4 h-4 mr-2" /> Simular Disparo de Alertas
+              <Send className="w-4 h-4 mr-2" /> Forçar Execução de Automação
             </Button>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm border-slate-200">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Ações de Data Quality</CardTitle>
+            <CardTitle className="text-base font-semibold">Data Quality & Governança</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-3 p-3 bg-white border border-slate-200 hover:border-blue-300 transition-colors rounded-lg shadow-sm">
-              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 bg-white border border-slate-200 hover:border-blue-300 transition-colors rounded-xl shadow-sm">
+              <div className="bg-amber-100 p-2 rounded-lg shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
               <div>
                 <p className="font-semibold text-slate-800 text-sm">
-                  Atualizar Documentos de Colaboradores
+                  Revisão de Limites de Crédito Pendentes
                 </p>
-                <p className="text-xs text-slate-600 mt-0.5 mb-2">
-                  Existem 5 colaboradores com CNH vencida e 2 aguardando envio de exames periódicos.
+                <p className="text-xs text-slate-600 mt-1 mb-2 leading-relaxed">
+                  Operadores solicitaram alteração de limite de crédito para 3 clientes. As mudanças
+                  estão bloqueadas aguardando aprovação gerencial.
                 </p>
-                <span className="text-xs text-blue-600 font-medium cursor-pointer hover:underline">
-                  Ver lista de pendências &rarr;
+                <span className="text-xs text-blue-600 font-semibold cursor-pointer hover:underline flex items-center gap-1">
+                  Acessar aprovações pendentes &rarr;
                 </span>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 bg-white border border-slate-200 hover:border-blue-300 transition-colors rounded-lg shadow-sm">
-              <UserSquare2 className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 bg-white border border-slate-200 hover:border-blue-300 transition-colors rounded-xl shadow-sm">
+              <div className="bg-rose-100 p-2 rounded-lg shrink-0">
+                <UserSquare2 className="w-5 h-5 text-rose-600" />
+              </div>
               <div>
                 <p className="font-semibold text-slate-800 text-sm">
-                  Falta de Contato Principal (Clientes)
+                  Falta de E-mail de Cobrança Mandatório
                 </p>
-                <p className="text-xs text-slate-600 mt-0.5 mb-2">
-                  Há 4 clientes na base sem e-mail ou telefone de faturamento configurado.
+                <p className="text-xs text-slate-600 mt-1 mb-2 leading-relaxed">
+                  Há 4 clientes ativos operando sem a configuração do E-mail de Cobrança obrigatório
+                  para automação.
                 </p>
-                <span className="text-xs text-blue-600 font-medium cursor-pointer hover:underline">
-                  Enviar link de autopreenchimento &rarr;
+                <span className="text-xs text-blue-600 font-semibold cursor-pointer hover:underline flex items-center gap-1">
+                  Verificar cadastros incompletos &rarr;
                 </span>
               </div>
             </div>
