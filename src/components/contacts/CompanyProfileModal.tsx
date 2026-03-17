@@ -5,6 +5,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import {
   Users,
   Truck,
   FileText,
@@ -30,6 +38,7 @@ import {
   History,
   TrendingUp,
   Calendar,
+  Clock,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
