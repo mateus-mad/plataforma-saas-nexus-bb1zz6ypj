@@ -31,12 +31,14 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       email: 'contato@exemplo.com',
       telefone: '(11) 3333-3333',
       whatsapp: '11999999999',
-      emailCobranca: '',
-      website: '',
+      emailCobranca: 'cobranca@exemplo.com',
+      website: 'https://exemplo.com',
     },
     financeiro: {
       limiteCredito: '0,00',
       prazoPagamento: '30',
+      pendingLimite: null,
+      pendingPrazo: null,
       ...(type === 'supplier' ? { banco: '341', agConta: '0001', conta: '12345-6', pix: '' } : {}),
     },
     relacionamento: {
@@ -49,6 +51,8 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   let financeiroSchema: any = {
     limiteCredito: z.string().optional(),
     prazoPagamento: z.string().optional(),
+    pendingLimite: z.string().nullable().optional(),
+    pendingPrazo: z.string().nullable().optional(),
   }
 
   if (type === 'supplier') {
@@ -135,7 +139,7 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     if (!vals.length) return 0
     const filled = vals.filter((v) => {
       if (typeof v === 'boolean') return true
-      return String(v).trim() !== ''
+      return String(v).trim() !== '' && v !== null
     }).length
     return Math.round((filled / vals.length) * 100)
   }
@@ -153,7 +157,7 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   Object.values(data).forEach((sec: any) => {
     Object.values(sec).forEach((v) => {
       totalFields++
-      if (typeof v === 'boolean' || String(v).trim() !== '') totalFilled++
+      if (typeof v === 'boolean' || (String(v).trim() !== '' && v !== null)) totalFilled++
     })
   })
   const globalProgress = Math.round((totalFilled / totalFields) * 100)
@@ -167,6 +171,7 @@ export function useCompanyForm(type: 'client' | 'supplier') {
         fantasia: 'Horizonte Engenharia',
         ie: '111.222.333.444',
         im: '98765432',
+        dataNascimento: '2010-05-15',
       },
       endereco: {
         ...prev.endereco,

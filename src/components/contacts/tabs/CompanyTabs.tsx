@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -7,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Info, Search } from 'lucide-react'
+import { Info, Search, Building, User } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
@@ -77,21 +78,21 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
               type="button"
               onClick={() => onChange('tipoPessoa', 'PJ')}
               className={cn(
-                'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+                'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
                 isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
               )}
             >
-              Pessoa Jurídica
+              <Building className="w-4 h-4" /> Pessoa Jurídica
             </button>
             <button
               type="button"
               onClick={() => onChange('tipoPessoa', 'PF')}
               className={cn(
-                'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+                'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
                 !isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
               )}
             >
-              Pessoa Física
+              <User className="w-4 h-4" /> Pessoa Física
             </button>
           </div>
         </div>
@@ -103,15 +104,25 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
               req
               t={isPJ ? 'Digite o CNPJ para preenchimento automático' : 'Digite o CPF válido'}
             />
-            <div className="relative">
+            <div className="relative flex">
               <Input
                 value={data.documento || ''}
                 onChange={handleDocChange}
                 disabled={readOnly}
-                className={cn('font-mono pl-10', err('documento'))}
+                className={cn('font-mono', err('documento'), isPJ ? 'pr-12' : '')}
                 placeholder={isPJ ? '00.000.000/0000-00' : '000.000.000-00'}
               />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              {isPJ && !readOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1 h-8 w-8 text-blue-600 hover:bg-blue-50"
+                  onClick={handleSearchDoc}
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
           <div className="space-y-1.5">
@@ -173,34 +184,49 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
             </>
           )}
 
-          <div className="space-y-1.5">
-            <LabelT l="Data de Nascimento" />
-            <Input
-              type="date"
-              value={data.dataNascimento || ''}
-              onChange={(e) => onChange('dataNascimento', e.target.value)}
-              disabled={readOnly}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <LabelT l="Gênero" />
-            <Select
-              value={data.genero || ''}
-              onValueChange={(v) => onChange('genero', v)}
-              disabled={readOnly}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Masculino">Masculino</SelectItem>
-                <SelectItem value="Feminino">Feminino</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {isPJ ? (
+            <div className="space-y-1.5">
+              <LabelT l="Data de Abertura" />
+              <Input
+                type="date"
+                value={data.dataNascimento || ''}
+                onChange={(e) => onChange('dataNascimento', e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <LabelT l="Data de Nascimento" />
+                <Input
+                  type="date"
+                  value={data.dataNascimento || ''}
+                  onChange={(e) => onChange('dataNascimento', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <LabelT l="Gênero" />
+                <Select
+                  value={data.genero || ''}
+                  onValueChange={(v) => onChange('genero', v)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Feminino">Feminino</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
           <div className="space-y-1.5 flex flex-col justify-center">
-            <LabelT l="Ativo" />
+            <LabelT l="Status Operacional" />
             <div className="flex items-center gap-2 mt-1">
               <Switch
                 checked={data.ativo}
@@ -209,7 +235,7 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
                 className="data-[state=checked]:bg-emerald-500"
               />
               <span className="text-sm font-medium text-slate-700">
-                {data.ativo ? 'Sim' : 'Não'}
+                {data.ativo ? 'Ativo' : 'Inativo'}
               </span>
             </div>
           </div>
@@ -244,7 +270,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="E-mail de Contato" req />
+          <LabelT l="E-mail de Contato Principal" req />
           <Input
             type="email"
             value={data.email || ''}
@@ -264,7 +290,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="WhatsApp" />
+          <LabelT l="WhatsApp Corporativo" />
           <Input
             value={data.whatsapp || ''}
             onChange={(e) => onChange('whatsapp', e.target.value)}
@@ -274,7 +300,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5">
-          <LabelT l="E-mail de Cobrança" />
+          <LabelT l="E-mail de Cobrança / Financeiro" />
           <Input
             type="email"
             value={data.emailCobranca || ''}
@@ -284,7 +310,7 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
-          <LabelT l="Website" />
+          <LabelT l="Website Oficial" />
           <Input
             type="url"
             value={data.website || ''}
