@@ -32,11 +32,12 @@ export default function CompanyModal({
 }) {
   const [activeTab, setActiveTab] = useState('dados')
   const [isEditing, setIsEditing] = useState(true)
-  const { data, updateData, progress, globalProgress, errors, validate } = useCompanyForm(type)
+  const { data, updateData, progress, globalProgress, errors, validate, autofillCNPJ } =
+    useCompanyForm(type)
   const { toast } = useToast()
 
   const TABS = [
-    { id: 'dados', label: 'Dados', prog: progress.dados, icon: Building2 },
+    { id: 'dados', label: 'Identificação', prog: progress.dados, icon: Building2 },
     { id: 'contato', label: 'Contato', prog: progress.contato, icon: Phone },
     { id: 'endereco', label: 'Endereço', prog: progress.endereco, icon: MapPin },
     ...(type === 'supplier'
@@ -86,7 +87,7 @@ export default function CompanyModal({
                   : `Visualizar Ficha de ${type === 'client' ? 'Cliente' : 'Fornecedor'}`}
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Gerencie todos os dados da empresa.
+                Gerencie todos os dados da empresa e contatos.
               </DialogDescription>
             </div>
             <div className="flex items-center gap-3">
@@ -158,6 +159,7 @@ export default function CompanyModal({
               <CompanyDadosTab
                 data={data.dados}
                 onChange={(f: string, v: any) => updateData('dados', f, v)}
+                onAutofill={autofillCNPJ}
                 errors={errors}
                 readOnly={!isEditing}
               />

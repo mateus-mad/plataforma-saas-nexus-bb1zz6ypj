@@ -5,10 +5,12 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [data, setData] = useState<any>({
     dados: {
-      razao: 'Empresa Exemplo LTDA',
+      tipoPessoa: 'PJ',
+      nomeRazao: 'Empresa Exemplo LTDA',
       fantasia: 'Exemplo',
-      cnpj: '12.345.678/0001-90',
+      documento: '12.345.678/0001-90',
       ie: '',
+      im: '',
       setor: 'Solar',
     },
     endereco: {
@@ -22,9 +24,10 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     },
     contato: {
       responsavel: 'João Gestor',
+      cargo: 'Diretor',
       email: 'contato@exemplo.com',
       telefone: '(11) 3333-3333',
-      whatsapp: '',
+      whatsapp: '11999999999',
     },
     ...(type === 'supplier'
       ? { bancario: { banco: '341', agConta: '0001', conta: '12345-6', pix: '' } }
@@ -33,10 +36,12 @@ export function useCompanyForm(type: 'client' | 'supplier') {
 
   const schema = z.object({
     dados: z.object({
-      razao: z.string().min(1, 'Obrigatório'),
-      fantasia: z.string().min(1, 'Obrigatório'),
-      cnpj: z.string().min(1, 'Obrigatório'),
+      tipoPessoa: z.enum(['PF', 'PJ']),
+      nomeRazao: z.string().min(1, 'Obrigatório'),
+      fantasia: z.string().optional(),
+      documento: z.string().min(1, 'Obrigatório'),
       ie: z.string().optional(),
+      im: z.string().optional(),
       setor: z.string().min(1, 'Obrigatório'),
     }),
     endereco: z.object({
@@ -50,6 +55,7 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     }),
     contato: z.object({
       responsavel: z.string().min(1, 'Obrigatório'),
+      cargo: z.string().min(1, 'Obrigatório'),
       email: z.string().email('E-mail inválido'),
       telefone: z.string().min(1, 'Obrigatório'),
       whatsapp: z.string().optional(),
@@ -120,5 +126,28 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   })
   const globalProgress = Math.round((totalFilled / totalFields) * 100)
 
-  return { data, updateData, progress, globalProgress, errors, validate }
+  const autofillCNPJ = () => {
+    setData((prev: any) => ({
+      ...prev,
+      dados: {
+        ...prev.dados,
+        nomeRazao: 'Construtora Horizonte S.A.',
+        fantasia: 'Horizonte Engenharia',
+        ie: '111.222.333.444',
+        im: '98765432',
+      },
+      endereco: {
+        ...prev.endereco,
+        cep: '01001-000',
+        logradouro: 'Praça da Sé',
+        numero: '123',
+        bairro: 'Sé',
+        cidade: 'São Paulo',
+        estado: 'SP',
+      },
+    }))
+    setErrors({})
+  }
+
+  return { data, updateData, progress, globalProgress, errors, validate, autofillCNPJ }
 }

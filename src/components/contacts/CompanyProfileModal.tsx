@@ -4,6 +4,14 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   Users,
   Truck,
   FileText,
@@ -21,8 +29,22 @@ import {
   TrendingUp,
   History,
   AlertTriangle,
+  Receipt,
+  FileSignature,
+  Paperclip,
+  Download,
+  Eye,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+
+const Section = ({ t, icon: Icon, children }: any) => (
+  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+    <h3 className="font-semibold text-blue-900 flex items-center gap-2 border-b border-slate-100 pb-3 text-sm">
+      <Icon className="w-4 h-4 text-blue-500" /> {t}
+    </h3>
+    {children}
+  </div>
+)
 
 export default function CompanyProfileModal({
   open,
@@ -66,7 +88,6 @@ export default function CompanyProfileModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1200px] w-[95vw] p-0 bg-slate-50 border-none shadow-2xl rounded-2xl flex flex-col max-h-[95vh] overflow-hidden [&>button]:hidden">
-        {/* Header Bar */}
         <div className="flex justify-between items-center px-6 py-4 bg-white border-b border-slate-200 shrink-0 relative z-10">
           <div className="flex items-center gap-2 font-semibold text-slate-800 text-lg">
             {titleIcon} {titleText}
@@ -99,9 +120,7 @@ export default function CompanyProfileModal({
           </div>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-          {/* Profile Hero Block */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm">
             <Avatar className="w-24 h-24 border border-blue-100 shadow-sm bg-blue-50 shrink-0">
               <AvatarImage src={defaultAvatar} className="object-contain p-2" />
@@ -137,13 +156,6 @@ export default function CompanyProfileModal({
             </div>
           </div>
 
-          {isClient && (
-            <div className="text-sm text-slate-500 font-medium flex items-center gap-2 px-2">
-              <User className="w-4 h-4" /> Nascimento: 20/08/2000
-            </div>
-          )}
-
-          {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <Card className="shadow-sm border-slate-200 bg-white">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
@@ -157,29 +169,28 @@ export default function CompanyProfileModal({
             <Card className="shadow-sm border-slate-200 bg-white">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                 <FileText className="w-8 h-8 text-blue-500 mb-2" />
-                <div className="text-2xl font-bold text-blue-700 leading-none mb-1">0</div>
+                <div className="text-2xl font-bold text-blue-700 leading-none mb-1">2</div>
                 <p className="text-xs text-slate-500 font-medium">Contratos Ativos</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">0 total</p>
               </CardContent>
             </Card>
             <Card className="shadow-sm border-slate-200 bg-white">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                 <ThumbsUp className="w-8 h-8 text-emerald-500 mb-2" />
-                <div className="text-2xl font-bold text-emerald-600 leading-none mb-1">0</div>
+                <div className="text-2xl font-bold text-emerald-600 leading-none mb-1">98%</div>
                 <p className="text-xs text-slate-500 font-medium">Pagos no Prazo</p>
               </CardContent>
             </Card>
             <Card className="shadow-sm border-slate-200 bg-white">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                 <ThumbsDown className="w-8 h-8 text-rose-500 mb-2" />
-                <div className="text-2xl font-bold text-rose-600 leading-none mb-1">0%</div>
+                <div className="text-2xl font-bold text-rose-600 leading-none mb-1">2%</div>
                 <p className="text-xs text-slate-500 font-medium">Pagos c/ Atraso</p>
               </CardContent>
             </Card>
             <Card className="shadow-sm border-slate-200 bg-white">
               <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                 <Timer className="w-8 h-8 text-emerald-500 mb-2" />
-                <p className="text-sm font-bold text-slate-800 mb-0.5">Antecipado</p>
+                <p className="text-sm font-bold text-slate-800 mb-0.5">Em dia</p>
                 <p className="text-xs text-slate-500 font-medium">Prazo Médio</p>
               </CardContent>
             </Card>
@@ -187,14 +198,13 @@ export default function CompanyProfileModal({
               <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                 <DollarSign className="w-8 h-8 text-blue-500 mb-2" />
                 <div className="text-lg font-bold text-blue-700 leading-none mb-1 whitespace-nowrap">
-                  R$ 0,00
+                  R$ 25k
                 </div>
                 <p className="text-xs text-slate-500 font-medium leading-tight">Valor Contratos</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Details Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="shadow-sm border-slate-200 bg-white">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2 text-blue-900 font-semibold text-sm">
@@ -203,27 +213,19 @@ export default function CompanyProfileModal({
               <CardContent className="p-6 grid grid-cols-2 gap-y-6 gap-x-4">
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Tipo:</p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {isClient ? 'Pessoa Física' : 'Pessoa Jurídica'}
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800">Pessoa Jurídica</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">{isClient ? 'CPF:' : 'CNPJ:'}</p>
-                  <p className="text-sm font-semibold text-slate-800">-</p>
+                  <p className="text-xs text-slate-500 mb-1">CNPJ:</p>
+                  <p className="text-sm font-semibold text-slate-800">12.345.678/0001-90</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">Gênero:</p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {isClient ? 'Masculino' : '-'}
-                  </p>
+                  <p className="text-xs text-slate-500 mb-1">Inscrição Estadual:</p>
+                  <p className="text-sm font-semibold text-slate-800">111.222.333.444</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">
-                    {isClient ? 'Data de Nascimento:' : 'Fundação:'}
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {isClient ? '20/08/2000' : '-'}
-                  </p>
+                  <p className="text-xs text-slate-500 mb-1">Inscrição Municipal:</p>
+                  <p className="text-sm font-semibold text-slate-800">98765432</p>
                 </div>
               </CardContent>
             </Card>
@@ -232,169 +234,205 @@ export default function CompanyProfileModal({
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2 text-blue-900 font-semibold text-sm">
                 <MapPin className="w-4 h-4 text-blue-500" /> Endereço
               </div>
-              <CardContent className="p-6 flex items-center justify-center text-slate-400 italic text-sm h-[calc(100%-53px)]">
-                {companyData?.location || 'Endereço não cadastrado'}
+              <CardContent className="p-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-800">Praça da Sé, 123</p>
+                  <p className="text-sm text-slate-600">Sé, São Paulo - SP</p>
+                  <p className="text-xs text-slate-500 mt-2">CEP: 01001-000</p>
+                </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-sm border-slate-200 bg-white">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2 text-blue-900 font-semibold text-sm">
-                <MessageCircle className="w-4 h-4 text-blue-500" /> Contato
+                <MessageCircle className="w-4 h-4 text-blue-500" /> Contato Comercial
               </div>
               <CardContent className="p-6 space-y-4">
-                <a
-                  href="#"
-                  className="flex items-center gap-2 text-emerald-600 font-medium text-sm hover:underline w-fit"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-                    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
-                  </svg>
-                  (89) 99457-8033 <ExternalLinkIcon />
-                </a>
-                <p className="text-slate-400 italic text-sm">Contato não cadastrado</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-slate-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-slate-800">João Gestor</p>
+                    <p className="text-xs text-slate-500">Diretor Comercial</p>
+                  </div>
+                </div>
+                <div className="pt-2 space-y-2">
+                  <p className="text-sm text-slate-600 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-slate-400" /> (11) 3333-3333
+                  </p>
+                  <p className="text-sm text-slate-600 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-emerald-500" /> (11) 99999-9999
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-sm border-slate-200 bg-white">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2 text-blue-900 font-semibold text-sm">
-                <Building2 className="w-4 h-4 text-blue-500" /> Pessoa de Contato (Relacionamento)
+                <DollarSign className="w-4 h-4 text-blue-500" /> Resumo Financeiro
               </div>
-              <CardContent className="p-6 flex items-center justify-center text-slate-400 italic text-sm h-[calc(100%-53px)]">
-                Nenhuma pessoa de contato cadastrada
+              <CardContent className="p-6 grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <p className="text-xs text-slate-500 mb-1">Prazo Pagamento:</p>
+                  <p className="text-sm font-bold text-slate-800">30 dias</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <p className="text-xs text-slate-500 mb-1">Limite de Crédito:</p>
+                  <p className="text-sm font-bold text-slate-800">R$ 50.000,00</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <p className="text-xs text-slate-500 mb-1">Total Faturado:</p>
+                  <p className="text-sm font-bold text-slate-800">R$ 125.000,00</p>
+                </div>
+                <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                  <p className="text-xs text-emerald-700 mb-1">Total Recebido:</p>
+                  <p className="text-sm font-bold text-emerald-700">R$ 112.500,00</p>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Finance Row */}
-          <Card className="shadow-sm border-slate-200 bg-white">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2 text-blue-900 font-semibold text-sm">
-              <DollarSign className="w-4 h-4 text-blue-500" /> Dados Financeiros
-            </div>
-            <CardContent className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Prazo Pagamento:</p>
-                <p className="text-sm font-bold text-slate-800">30 dias</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Limite de Crédito:</p>
-                <p className="text-sm font-bold text-slate-800">Não definido</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Total Faturado:</p>
-                <p className="text-sm font-bold text-slate-800">R$ 0,00</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Total Recebido:</p>
-                <p className="text-sm font-bold text-emerald-600">R$ 0,00</p>
-              </div>
-            </CardContent>
-          </Card>
+          {isClient && (
+            <>
+              <Section t="Histórico Completo (Contas a Receber)" icon={Receipt}>
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead>Fatura / Ref.</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium text-slate-800">15/04/2026</TableCell>
+                        <TableCell className="text-slate-600">FAT-2026-042</TableCell>
+                        <TableCell className="font-semibold text-slate-800">R$ 12.500,00</TableCell>
+                        <TableCell>
+                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none shadow-none">
+                            Pago
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium text-slate-800">15/05/2026</TableCell>
+                        <TableCell className="text-slate-600">FAT-2026-055</TableCell>
+                        <TableCell className="font-semibold text-slate-800">R$ 12.500,00</TableCell>
+                        <TableCell>
+                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none shadow-none">
+                            Pendente
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </Section>
 
-          {/* Relations Row */}
-          <div>
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2 mb-4 px-1">
-              <History className="w-5 h-5 text-slate-400" /> Análise de Relacionamento
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <Card className="shadow-sm border-slate-200 bg-white">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-5 h-5 text-blue-500" />
+              <Section t="Contratos Firmados" icon={FileSignature}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow bg-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                        <FileSignature className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800 text-sm">
+                          Contrato de Manutenção
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Assinado em: 10/01/2025 • Validade: 12 meses
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-none shadow-none">
+                      Ativo
+                    </Badge>
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">
-                      Total Vendido
-                    </p>
-                    <p className="text-lg font-bold text-slate-800 leading-none">R$ 0,00</p>
+                  <div className="border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow bg-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-slate-50 text-slate-500 rounded-lg flex items-center justify-center shrink-0">
+                        <FileSignature className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800 text-sm">Serviço Pontual</p>
+                        <p className="text-xs text-slate-500">
+                          Finalizado em: 05/12/2024 • Instalação
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-none shadow-none">
+                      Encerrado
+                    </Badge>
                   </div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 bg-white">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-5 h-5 text-emerald-500" />
+                </div>
+              </Section>
+
+              <Section t="Documentos Anexados" icon={Paperclip}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                    <div className="shrink-0">
+                      <FileText className="w-8 h-8 text-rose-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-slate-800 truncate">
+                        Cartão_CNPJ.pdf
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">245 KB • Anexado há 2 dias</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">
-                      Recebido
-                    </p>
-                    <p className="text-lg font-bold text-emerald-600 leading-none">R$ 0,00</p>
+                  <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                    <div className="shrink-0">
+                      <FileText className="w-8 h-8 text-rose-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-slate-800 truncate">
+                        Contrato_Assinado_2025.pdf
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">1.2 MB • Anexado há 1 mês</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 bg-white">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-                    <Timer className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">
-                      A Vencer
-                    </p>
-                    <p className="text-lg font-bold text-amber-600 leading-none">R$ 0,00</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 bg-white">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-rose-500" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">
-                      Vencido
-                    </p>
-                    <p className="text-lg font-bold text-rose-600 leading-none">R$ 0,00</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 bg-white">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">
-                      Transações
-                    </p>
-                    <p className="text-lg font-bold text-blue-700 leading-none">0</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                </div>
+              </Section>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   )
 }
-
-const ExternalLinkIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="opacity-70"
-  >
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-    <polyline points="15 3 21 3 21 9"></polyline>
-    <line x1="10" y1="14" x2="21" y2="3"></line>
-  </svg>
-)

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Info, Search } from 'lucide-react'
+import { Info, Search, MessageCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
@@ -31,101 +31,161 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export function CompanyDadosTab({ data, onChange, errors, readOnly }: any) {
+export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }: any) {
   const { toast } = useToast()
 
   const err = (f: string) =>
     errors?.[`dados.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
 
-  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '')
-    if (v.length > 14) v = v.slice(0, 14)
-    v = v.replace(/^(\d{2})(\d)/, '$1.$2')
-    v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    v = v.replace(/\.(\d{3})(\d)/, '.$1/$2')
-    v = v.replace(/(\d{4})(\d)/, '$1-$2')
-    onChange('cnpj', v)
+    if (data.tipoPessoa === 'PJ') {
+      if (v.length > 14) v = v.slice(0, 14)
+      v = v.replace(/^(\d{2})(\d)/, '$1.$2')
+      v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      v = v.replace(/\.(\d{3})(\d)/, '.$1/$2')
+      v = v.replace(/(\d{4})(\d)/, '$1-$2')
+    } else {
+      if (v.length > 11) v = v.slice(0, 11)
+      v = v.replace(/(\d{3})(\d)/, '$1.$2')
+      v = v.replace(/(\d{3})(\d)/, '$1.$2')
+      v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+    }
+    onChange('documento', v)
   }
 
-  const handleSearchCNPJ = () => {
+  const handleSearchDoc = () => {
+    if (data.tipoPessoa !== 'PJ') return
     toast({ title: 'Buscando CNPJ...', description: 'Consultando base da Receita Federal.' })
     setTimeout(() => {
-      onChange('razao', 'Empresa Automática S.A.')
-      onChange('fantasia', 'Fantasia Automática')
-      onChange('setor', 'Solar')
+      if (onAutofill) onAutofill()
       toast({ title: 'CNPJ Encontrado', description: 'Dados preenchidos com sucesso.' })
     }, 1500)
   }
 
+  const isPJ = data.tipoPessoa === 'PJ'
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
-          <LabelT l="CNPJ" req t="Digite o CNPJ para preenchimento automático" />
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                value={data.cnpj || ''}
-                onChange={handleCnpjChange}
-                disabled={readOnly}
-                className={cn('font-mono pl-10', err('cnpj'))}
-                placeholder="00.000.000/0000-00"
-              />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            </div>
-            <Button
-              variant="secondary"
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4">
+          <h4 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2">
+            Identificação
+          </h4>
+          <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+            <button
               type="button"
-              onClick={handleSearchCNPJ}
-              disabled={readOnly || (data.cnpj || '').length < 18}
+              onClick={() => onChange('tipoPessoa', 'PJ')}
+              className={cn(
+                'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+                isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
+              )}
             >
-              Buscar
-            </Button>
+              Pessoa Jurídica
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange('tipoPessoa', 'PF')}
+              className={cn(
+                'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+                !isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
+              )}
+            >
+              Pessoa Física
+            </button>
           </div>
         </div>
-        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
-          <LabelT l="Setor de Atuação" req />
-          <Select
-            value={data.setor}
-            onValueChange={(v) => onChange('setor', v)}
-            disabled={readOnly}
-          >
-            <SelectTrigger className={err('setor')}>
-              <SelectValue placeholder="Selecione o setor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Civil">Civil</SelectItem>
-              <SelectItem value="Solar">Solar</SelectItem>
-              <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="Razão Social" req />
-          <Input
-            value={data.razao}
-            onChange={(e) => onChange('razao', e.target.value)}
-            disabled={readOnly}
-            className={err('razao')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="Nome Fantasia" req />
-          <Input
-            value={data.fantasia}
-            onChange={(e) => onChange('fantasia', e.target.value)}
-            disabled={readOnly}
-            className={err('fantasia')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="Inscrição Estadual" />
-          <Input
-            value={data.ie}
-            onChange={(e) => onChange('ie', e.target.value)}
-            disabled={readOnly}
-            className={err('ie')}
-          />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+            <LabelT
+              l={isPJ ? 'CNPJ' : 'CPF'}
+              req
+              t={isPJ ? 'Digite o CNPJ para preenchimento automático' : 'Digite o CPF válido'}
+            />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  value={data.documento || ''}
+                  onChange={handleDocChange}
+                  disabled={readOnly}
+                  className={cn('font-mono pl-10', err('documento'))}
+                  placeholder={isPJ ? '00.000.000/0000-00' : '000.000.000-00'}
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              </div>
+              {isPJ && (
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={handleSearchDoc}
+                  disabled={readOnly || (data.documento || '').length < 18}
+                >
+                  Buscar
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+            <LabelT l="Setor de Atuação" req />
+            <Select
+              value={data.setor}
+              onValueChange={(v) => onChange('setor', v)}
+              disabled={readOnly}
+            >
+              <SelectTrigger className={err('setor')}>
+                <SelectValue placeholder="Selecione o setor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Civil">Civil</SelectItem>
+                <SelectItem value="Solar">Solar</SelectItem>
+                <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
+                <SelectItem value="Serviços">Serviços</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />
+            <Input
+              value={data.nomeRazao}
+              onChange={(e) => onChange('nomeRazao', e.target.value)}
+              disabled={readOnly}
+              className={err('nomeRazao')}
+            />
+          </div>
+          {isPJ && (
+            <div className="space-y-1.5">
+              <LabelT l="Nome Fantasia" />
+              <Input
+                value={data.fantasia}
+                onChange={(e) => onChange('fantasia', e.target.value)}
+                disabled={readOnly}
+                className={err('fantasia')}
+              />
+            </div>
+          )}
+          {isPJ && (
+            <div className="space-y-1.5">
+              <LabelT l="Inscrição Estadual" />
+              <Input
+                value={data.ie}
+                onChange={(e) => onChange('ie', e.target.value)}
+                disabled={readOnly}
+                className={err('ie')}
+              />
+            </div>
+          )}
+          {isPJ && (
+            <div className="space-y-1.5">
+              <LabelT l="Inscrição Municipal" />
+              <Input
+                value={data.im}
+                onChange={(e) => onChange('im', e.target.value)}
+                disabled={readOnly}
+                className={err('im')}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -146,6 +206,27 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
             disabled={readOnly}
             className={err('responsavel')}
           />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Cargo (Função)" req />
+          <Select
+            value={data.cargo}
+            onValueChange={(v) => onChange('cargo', v)}
+            disabled={readOnly}
+          >
+            <SelectTrigger className={err('cargo')}>
+              <SelectValue placeholder="Selecione o cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Sócio/Proprietário">Sócio/Proprietário</SelectItem>
+              <SelectItem value="Diretor">Diretor</SelectItem>
+              <SelectItem value="Gerente">Gerente</SelectItem>
+              <SelectItem value="Financeiro">Financeiro</SelectItem>
+              <SelectItem value="Comercial">Comercial</SelectItem>
+              <SelectItem value="Comprador">Comprador</SelectItem>
+              <SelectItem value="Outro">Outro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <LabelT l="E-mail de Contato" req />
@@ -169,13 +250,30 @@ export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
         </div>
         <div className="space-y-1.5">
           <LabelT l="WhatsApp" />
-          <Input
-            value={data.whatsapp}
-            onChange={(e) => onChange('whatsapp', e.target.value)}
-            disabled={readOnly}
-            className={err('whatsapp')}
-            placeholder="(00) 00000-0000"
-          />
+          <div className="flex gap-2">
+            <Input
+              value={data.whatsapp}
+              onChange={(e) => onChange('whatsapp', e.target.value)}
+              disabled={readOnly}
+              className={err('whatsapp')}
+              placeholder="(00) 00000-0000"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              asChild
+              className="shrink-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+            >
+              <a
+                href={`https://wa.me/${(data.whatsapp || '').replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                title="Abrir WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
