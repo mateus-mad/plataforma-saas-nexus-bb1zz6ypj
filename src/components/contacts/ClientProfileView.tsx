@@ -46,7 +46,9 @@ export default function ClientProfileView({ onOpenChange, onEdit, companyData, t
   const printDoc = () => {
     toast({ title: 'Gerando PDF', description: 'O documento será baixado em instantes.' })
     setTimeout(() => {
-      const blob = new Blob(['Ficha Completa'], { type: 'application/pdf' })
+      const pdfContent =
+        '%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Count 1/Kids[3 0 R]>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R/Resources<<>>>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000015 00000 n\n0000000060 00000 n\n0000000117 00000 n\ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n187\n%%EOF'
+      const blob = new Blob([pdfContent], { type: 'application/pdf' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url

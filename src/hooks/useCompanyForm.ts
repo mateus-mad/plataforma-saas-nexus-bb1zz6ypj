@@ -6,15 +6,16 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   const [data, setData] = useState<any>({
     dados: {
       tipoPessoa: 'PJ',
-      nomeRazao: 'Empresa Exemplo LTDA',
-      fantasia: 'Exemplo',
+      nomeRazao: 'DIRECAO GERAL',
+      fantasia: '',
       documento: '12.345.678/0001-90',
       ie: '',
       im: '',
-      setor: 'Solar',
+      setor: 'Serviços',
       dataNascimento: '',
       genero: '',
       ativo: true,
+      logo: '',
     },
     endereco: {
       cep: '01001-000',
@@ -26,82 +27,34 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       estado: 'SP',
     },
     contato: {
-      responsavel: 'João Gestor',
-      cargo: 'Diretor',
-      email: 'contato@exemplo.com',
+      responsavel: 'João Silva',
+      cargo: 'Gerente de Contas',
+      email: 'contato@direcaogeral.com',
       telefone: '(11) 3333-3333',
       whatsapp: '11999999999',
-      emailCobranca: 'cobranca@exemplo.com',
-      website: 'https://exemplo.com',
+      emailCobranca: 'financeiro@direcaogeral.com',
+      website: 'https://direcaogeral.com',
     },
     financeiro: {
       limiteCredito: '0,00',
       prazoPagamento: '30',
       pendingLimite: null,
       pendingPrazo: null,
-      ...(type === 'supplier' ? { banco: '341', agConta: '0001', conta: '12345-6', pix: '' } : {}),
+    },
+    bancario: {
+      contas: [],
+      pix: [{ tipo: 'CNPJ', chave: '12.345.678/0001-90' }],
+    },
+    acordos: {
+      desconto: '5% em serviços',
+      negociacao: 'Pagamento 30 dias',
+      observacoes: '',
     },
     relacionamento: {
       clienteDesde: '',
       segmento: '',
       observacoes: '',
     },
-  })
-
-  let financeiroSchema: any = {
-    limiteCredito: z.string().optional(),
-    prazoPagamento: z.string().optional(),
-    pendingLimite: z.string().nullable().optional(),
-    pendingPrazo: z.string().nullable().optional(),
-  }
-
-  if (type === 'supplier') {
-    financeiroSchema = {
-      ...financeiroSchema,
-      banco: z.string().min(1, 'Obrigatório'),
-      agConta: z.string().min(1, 'Obrigatório'),
-      conta: z.string().min(1, 'Obrigatório'),
-      pix: z.string().optional(),
-    }
-  }
-
-  const schema = z.object({
-    dados: z.object({
-      tipoPessoa: z.enum(['PF', 'PJ']),
-      nomeRazao: z.string().min(1, 'Obrigatório'),
-      fantasia: z.string().optional(),
-      documento: z.string().min(1, 'Obrigatório'),
-      ie: z.string().optional(),
-      im: z.string().optional(),
-      setor: z.string().min(1, 'Obrigatório'),
-      dataNascimento: z.string().optional(),
-      genero: z.string().optional(),
-      ativo: z.boolean().optional(),
-    }),
-    endereco: z.object({
-      cep: z.string().min(1, 'Obrigatório'),
-      logradouro: z.string().min(1, 'Obrigatório'),
-      numero: z.string().min(1, 'Obrigatório'),
-      bairro: z.string().min(1, 'Obrigatório'),
-      cidade: z.string().min(1, 'Obrigatório'),
-      estado: z.string().min(1, 'Obrigatório'),
-      comp: z.string().optional(),
-    }),
-    contato: z.object({
-      responsavel: z.string().min(1, 'Obrigatório'),
-      cargo: z.string().min(1, 'Obrigatório'),
-      email: z.string().email('E-mail inválido').or(z.literal('')),
-      telefone: z.string().min(1, 'Obrigatório'),
-      whatsapp: z.string().optional(),
-      emailCobranca: z.string().email('E-mail inválido').min(1, 'Obrigatório'),
-      website: z.string().url('URL inválida').min(1, 'Obrigatório'),
-    }),
-    financeiro: z.object(financeiroSchema),
-    relacionamento: z.object({
-      clienteDesde: z.string().optional(),
-      segmento: z.string().optional(),
-      observacoes: z.string().optional(),
-    }),
   })
 
   const updateData = (section: string, field: string, value: any) => {
@@ -116,29 +69,13 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     }
   }
 
-  const validate = () => {
-    try {
-      schema.parse(data)
-      setErrors({})
-      return true
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        const errs: any = {}
-        e.issues.forEach((i) => {
-          errs[i.path.join('.')] = i.message
-        })
-        setErrors(errs)
-      }
-      return false
-    }
-  }
-
   const getProgress = (sec: string) => {
     if (!data[sec]) return 0
     const vals = Object.values(data[sec])
     if (!vals.length) return 0
     const filled = vals.filter((v) => {
       if (typeof v === 'boolean') return true
+      if (Array.isArray(v)) return v.length > 0
       return String(v).trim() !== '' && v !== null
     }).length
     return Math.round((filled / vals.length) * 100)
@@ -149,42 +86,23 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     endereco: getProgress('endereco'),
     contato: getProgress('contato'),
     financeiro: getProgress('financeiro'),
-    relacionamento: getProgress('relacionamento'),
+    bancario: data.bancario?.contas?.length > 0 || data.bancario?.pix?.length > 0 ? 100 : 0,
+    acordos: getProgress('acordos'),
   }
 
-  let totalFields = 0
-  let totalFilled = 0
-  Object.values(data).forEach((sec: any) => {
-    Object.values(sec).forEach((v) => {
-      totalFields++
-      if (typeof v === 'boolean' || (String(v).trim() !== '' && v !== null)) totalFilled++
-    })
-  })
-  const globalProgress = Math.round((totalFilled / totalFields) * 100)
+  const totalSections = Object.keys(progress).length
+  const globalProgress = Math.round(
+    Object.values(progress).reduce((a, b) => a + b, 0) / totalSections,
+  )
 
   const autofillCNPJ = () => {
     setData((prev: any) => ({
       ...prev,
-      dados: {
-        ...prev.dados,
-        nomeRazao: 'Construtora Horizonte S.A.',
-        fantasia: 'Horizonte Engenharia',
-        ie: '111.222.333.444',
-        im: '98765432',
-        dataNascimento: '2010-05-15',
-      },
-      endereco: {
-        ...prev.endereco,
-        cep: '01001-000',
-        logradouro: 'Praça da Sé',
-        numero: '123',
-        bairro: 'Sé',
-        cidade: 'São Paulo',
-        estado: 'SP',
-      },
+      dados: { ...prev.dados, nomeRazao: 'EMPRESA BUSCADA SA', fantasia: 'Empresa Buscada' },
+      endereco: { ...prev.endereco, logradouro: 'Av Paulista', cidade: 'São Paulo', estado: 'SP' },
     }))
     setErrors({})
   }
 
-  return { data, updateData, progress, globalProgress, errors, validate, autofillCNPJ }
+  return { data, updateData, progress, globalProgress, errors, autofillCNPJ }
 }

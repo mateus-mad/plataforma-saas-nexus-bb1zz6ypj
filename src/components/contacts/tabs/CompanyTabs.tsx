@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Info, Search, Building, User } from 'lucide-react'
+import { Info, Search, Building, User, Upload } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
@@ -34,294 +34,236 @@ export const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) 
 
 export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }: any) {
   const { toast } = useToast()
-
-  const err = (f: string) =>
-    errors?.[`dados.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
-
-  const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let v = e.target.value.replace(/\D/g, '')
-    if (data.tipoPessoa === 'PJ') {
-      if (v.length > 14) v = v.slice(0, 14)
-      v = v.replace(/^(\d{2})(\d)/, '$1.$2')
-      v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-      v = v.replace(/\.(\d{3})(\d)/, '.$1/$2')
-      v = v.replace(/(\d{4})(\d)/, '$1-$2')
-    } else {
-      if (v.length > 11) v = v.slice(0, 11)
-      v = v.replace(/(\d{3})(\d)/, '$1.$2')
-      v = v.replace(/(\d{3})(\d)/, '$1.$2')
-      v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-    }
-    onChange('documento', v)
-  }
+  const isPJ = data.tipoPessoa === 'PJ'
+  const err = (f: string) => (errors?.[`dados.${f}`] ? 'border-rose-500 bg-rose-50/30' : '')
 
   const handleSearchDoc = () => {
-    if (data.tipoPessoa !== 'PJ') return
-    toast({ title: 'Buscando CNPJ...', description: 'Consultando base da Receita Federal.' })
+    if (!isPJ) return
+    toast({ title: 'Buscando dados...', description: 'Consultando base da Receita.' })
     setTimeout(() => {
       if (onAutofill) onAutofill()
-      toast({ title: 'CNPJ Encontrado', description: 'Dados preenchidos com sucesso.' })
-    }, 1500)
+      toast({ title: 'Encontrado', description: 'Dados preenchidos com sucesso.' })
+    }, 1000)
   }
-
-  const isPJ = data.tipoPessoa === 'PJ'
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4">
-          <h4 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2">
-            Identificação
-          </h4>
-          <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
-            <button
-              type="button"
-              onClick={() => onChange('tipoPessoa', 'PJ')}
-              className={cn(
-                'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
-                isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
-              )}
-            >
-              <Building className="w-4 h-4" /> Pessoa Jurídica
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange('tipoPessoa', 'PF')}
-              className={cn(
-                'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
-                !isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
-              )}
-            >
-              <User className="w-4 h-4" /> Pessoa Física
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
-            <LabelT
-              l={isPJ ? 'CNPJ' : 'CPF'}
-              req
-              t={isPJ ? 'Digite o CNPJ para preenchimento automático' : 'Digite o CPF válido'}
-            />
-            <div className="relative flex">
-              <Input
-                value={data.documento || ''}
-                onChange={handleDocChange}
-                disabled={readOnly}
-                className={cn('font-mono', err('documento'), isPJ ? 'pr-12' : '')}
-                placeholder={isPJ ? '00.000.000/0000-00' : '000.000.000-00'}
-              />
-              {isPJ && !readOnly && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1 h-8 w-8 text-blue-600 hover:bg-blue-50"
-                  onClick={handleSearchDoc}
-                >
-                  <Search className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <LabelT l="Setor de Atuação" req />
-            <Select
-              value={data.setor}
-              onValueChange={(v) => onChange('setor', v)}
-              disabled={readOnly}
-            >
-              <SelectTrigger className={err('setor')}>
-                <SelectValue placeholder="Selecione o setor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Civil">Civil</SelectItem>
-                <SelectItem value="Solar">Solar</SelectItem>
-                <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
-                <SelectItem value="Serviços">Serviços</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />
-            <Input
-              value={data.nomeRazao || ''}
-              onChange={(e) => onChange('nomeRazao', e.target.value)}
-              disabled={readOnly}
-              className={err('nomeRazao')}
-            />
-          </div>
-          {isPJ && (
-            <>
-              <div className="space-y-1.5">
-                <LabelT l="Nome Fantasia" />
-                <Input
-                  value={data.fantasia || ''}
-                  onChange={(e) => onChange('fantasia', e.target.value)}
-                  disabled={readOnly}
-                  className={err('fantasia')}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <LabelT l="Inscrição Estadual" />
-                <Input
-                  value={data.ie || ''}
-                  onChange={(e) => onChange('ie', e.target.value)}
-                  disabled={readOnly}
-                  className={err('ie')}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <LabelT l="Inscrição Municipal" />
-                <Input
-                  value={data.im || ''}
-                  onChange={(e) => onChange('im', e.target.value)}
-                  disabled={readOnly}
-                  className={err('im')}
-                />
-              </div>
-            </>
-          )}
-
-          {isPJ ? (
-            <div className="space-y-1.5">
-              <LabelT l="Data de Abertura" />
-              <Input
-                type="date"
-                value={data.dataNascimento || ''}
-                onChange={(e) => onChange('dataNascimento', e.target.value)}
-                disabled={readOnly}
-              />
-            </div>
+      <div className="flex gap-6 items-center mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div className="relative w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center hover:border-blue-500 overflow-hidden shrink-0">
+          {data.logo ? (
+            <img src={data.logo} className="w-full h-full object-cover" />
           ) : (
-            <>
-              <div className="space-y-1.5">
-                <LabelT l="Data de Nascimento" />
-                <Input
-                  type="date"
-                  value={data.dataNascimento || ''}
-                  onChange={(e) => onChange('dataNascimento', e.target.value)}
-                  disabled={readOnly}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <LabelT l="Gênero" />
-                <Select
-                  value={data.genero || ''}
-                  onValueChange={(v) => onChange('genero', v)}
-                  disabled={readOnly}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Masculino">Masculino</SelectItem>
-                    <SelectItem value="Feminino">Feminino</SelectItem>
-                    <SelectItem value="Outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
+            <Upload className="w-6 h-6 text-slate-400" />
           )}
+          <input
+            type="file"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={(e) => {
+              if (e.target.files?.[0]) onChange('logo', URL.createObjectURL(e.target.files[0]))
+            }}
+            disabled={readOnly}
+          />
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-slate-800">Logo ou Marca da Empresa</h4>
+          <p className="text-xs text-slate-500 mb-2">JPG ou PNG (Max 2MB)</p>
+          {!readOnly && (
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={handleSearchDoc}
+              className="h-8 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 shadow-sm"
+            >
+              <Search className="w-3.5 h-3.5 mr-1.5" /> Buscar Automático via CNPJ/Site
+            </Button>
+          )}
+        </div>
+      </div>
 
-          <div className="space-y-1.5 flex flex-col justify-center">
-            <LabelT l="Status Operacional" />
-            <div className="flex items-center gap-2 mt-1">
-              <Switch
-                checked={data.ativo}
-                onCheckedChange={(v) => onChange('ativo', v)}
-                disabled={readOnly}
-                className="data-[state=checked]:bg-emerald-500"
-              />
-              <span className="text-sm font-medium text-slate-700">
-                {data.ativo ? 'Ativo' : 'Inativo'}
-              </span>
-            </div>
+      <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+        <button
+          type="button"
+          onClick={() => onChange('tipoPessoa', 'PJ')}
+          className={cn(
+            'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
+            isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
+          )}
+        >
+          <Building className="w-4 h-4" /> Pessoa Jurídica
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange('tipoPessoa', 'PF')}
+          className={cn(
+            'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
+            !isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
+          )}
+        >
+          <User className="w-4 h-4" /> Pessoa Física
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+          <LabelT l={isPJ ? 'CNPJ' : 'CPF'} req />
+          <Input
+            value={data.documento || ''}
+            onChange={(e) => onChange('documento', e.target.value)}
+            disabled={readOnly}
+            className={cn('font-mono', err('documento'))}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />
+          <Input
+            value={data.nomeRazao || ''}
+            onChange={(e) => onChange('nomeRazao', e.target.value)}
+            disabled={readOnly}
+            className={err('nomeRazao')}
+          />
+        </div>
+        {isPJ && (
+          <div className="space-y-1.5">
+            <LabelT l="Nome Fantasia" />
+            <Input
+              value={data.fantasia || ''}
+              onChange={(e) => onChange('fantasia', e.target.value)}
+              disabled={readOnly}
+            />
           </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function CompanyContatoTab({ data, onChange, readOnly }: any) {
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+      <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-4">
+        <h4 className="font-semibold text-blue-900 text-sm mb-1 flex items-center gap-2">
+          <User className="w-4 h-4" /> Pessoa de Contato Principal
+        </h4>
+        <p className="text-xs text-blue-800/80">
+          Informações direcionadas à pessoa responsável pelo relacionamento comercial.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-1.5">
+          <LabelT l="Nome do Contato" req />
+          <Input
+            value={data.responsavel || ''}
+            onChange={(e) => onChange('responsavel', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Cargo / Função" req />
+          <Input
+            value={data.cargo || ''}
+            onChange={(e) => onChange('cargo', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="E-mail Pessoal de Contato" />
+          <Input
+            type="email"
+            value={data.email || ''}
+            onChange={(e) => onChange('email', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Telefone Direto / Celular" req />
+          <Input
+            value={data.telefone || ''}
+            onChange={(e) => onChange('telefone', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="E-mail do Financeiro/Cobrança" t="Para envio de NFs e Faturas" />
+          <Input
+            type="email"
+            value={data.emailCobranca || ''}
+            onChange={(e) => onChange('emailCobranca', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Website da Empresa" />
+          <Input
+            type="url"
+            value={data.website || ''}
+            onChange={(e) => onChange('website', e.target.value)}
+            disabled={readOnly}
+          />
         </div>
       </div>
     </div>
   )
 }
 
-export function CompanyContatoTab({ data, onChange, errors, readOnly }: any) {
-  const err = (f: string) =>
-    errors?.[`contato.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
+export function CompanyAddressTab({ data, onChange, readOnly }: any) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-1.5">
-          <LabelT l="Nome do Responsável" req />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-1.5 md:col-span-1">
+          <LabelT l="CEP" req />
           <Input
-            value={data.responsavel || ''}
-            onChange={(e) => onChange('responsavel', e.target.value)}
+            value={data.cep || ''}
+            onChange={(e) => onChange('cep', e.target.value)}
             disabled={readOnly}
-            className={err('responsavel')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="Cargo (Função)" req />
-          <Input
-            value={data.cargo || ''}
-            onChange={(e) => onChange('cargo', e.target.value)}
-            disabled={readOnly}
-            className={err('cargo')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="E-mail de Contato Principal" />
-          <Input
-            type="email"
-            value={data.email || ''}
-            onChange={(e) => onChange('email', e.target.value)}
-            disabled={readOnly}
-            className={err('email')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="Telefone Comercial" req />
-          <Input
-            value={data.telefone || ''}
-            onChange={(e) => onChange('telefone', e.target.value)}
-            disabled={readOnly}
-            className={err('telefone')}
-            placeholder="(00) 0000-0000"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT l="WhatsApp Corporativo" />
-          <Input
-            value={data.whatsapp || ''}
-            onChange={(e) => onChange('whatsapp', e.target.value)}
-            disabled={readOnly}
-            className={err('whatsapp')}
-            placeholder="(00) 00000-0000"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <LabelT
-            l="E-mail de Cobrança / Financeiro"
-            req
-            t="Endereço usado para automação de faturas e alertas"
-          />
-          <Input
-            type="email"
-            value={data.emailCobranca || ''}
-            onChange={(e) => onChange('emailCobranca', e.target.value)}
-            disabled={readOnly}
-            className={err('emailCobranca')}
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
-          <LabelT l="Website Oficial" req t="URL do site institucional" />
+          <LabelT l="Logradouro" req />
           <Input
-            type="url"
-            value={data.website || ''}
-            onChange={(e) => onChange('website', e.target.value)}
+            value={data.logradouro || ''}
+            onChange={(e) => onChange('logradouro', e.target.value)}
             disabled={readOnly}
-            className={err('website')}
-            placeholder="https://"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Número" req />
+          <Input
+            value={data.numero || ''}
+            onChange={(e) => onChange('numero', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5 md:col-span-2">
+          <LabelT l="Complemento" />
+          <Input
+            value={data.comp || ''}
+            onChange={(e) => onChange('comp', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Bairro" req />
+          <Input
+            value={data.bairro || ''}
+            onChange={(e) => onChange('bairro', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Cidade" req />
+          <Input
+            value={data.cidade || ''}
+            onChange={(e) => onChange('cidade', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <LabelT l="Estado (UF)" req />
+          <Input
+            value={data.estado || ''}
+            onChange={(e) => onChange('estado', e.target.value)}
+            disabled={readOnly}
           />
         </div>
       </div>

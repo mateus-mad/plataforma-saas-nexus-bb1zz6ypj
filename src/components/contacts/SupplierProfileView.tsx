@@ -1,436 +1,213 @@
-import { DialogContent } from '@/components/ui/dialog'
+import { useState } from 'react'
+import { DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  FileText,
-  Printer,
-  Edit,
-  X,
-  Activity,
-  CheckCircle2,
-  ThumbsUp,
-  ThumbsDown,
-  Handshake,
-  DollarSign,
-  History,
-  TrendingUp,
-  Clock,
-  AlertTriangle,
-  ShoppingCart,
-  Timer,
-  Calendar,
-  User,
-  Phone,
-  MapPin,
-  CreditCard,
-  FileSignature,
-} from 'lucide-react'
+import { useCompanyForm } from '@/hooks/useCompanyForm'
+import { Truck, CheckCircle2, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
-const KPICard = ({ icon: Icon, title, value, sub, iconClass, textClass }: any) => (
-  <Card className="shadow-sm border-slate-200 rounded-xl">
-    <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-      <div className="w-8 h-8 flex items-center justify-center mb-2">
-        {value ? (
-          <span className={cn('font-bold text-lg', textClass)}>{value}</span>
-        ) : (
-          <Icon className={cn('w-6 h-6', iconClass)} />
-        )}
-      </div>
-      <p className="text-[11px] text-slate-500 font-medium leading-tight">{title}</p>
-      <p className={cn('text-xs font-semibold mt-0.5', textClass)}>{sub}</p>
-    </CardContent>
-  </Card>
-)
+import { CompanyDadosTab, CompanyContatoTab, CompanyAddressTab } from './tabs/CompanyTabs'
+import { CompanyFinanceiroTab } from './tabs/CompanyFinancialTabs'
+import { CompanyBankingTab } from './tabs/CompanyBankingTab'
+import { CompanyAgreementsTab } from './tabs/CompanyAgreementsTab'
+import { CompanyRelacionamentoTab } from './tabs/CompanyRelationshipTabs'
+import AttachmentsTab from './tabs/AttachmentsTab'
+import HistoryTab from './tabs/HistoryTab'
 
-const RelCard = ({ icon: Icon, title, value, iconClass, bgClass, valClass }: any) => (
-  <Card className="shadow-sm border-slate-200 rounded-xl">
-    <CardContent className="p-4 flex items-center gap-3">
-      <div
-        className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0', bgClass)}
-      >
-        <Icon className={cn('w-4 h-4', iconClass)} />
-      </div>
-      <div>
-        <p className="text-[10px] text-slate-500 font-medium">{title}</p>
-        <p className={cn('text-sm font-bold', valClass || 'text-slate-800')}>{value}</p>
-      </div>
-    </CardContent>
-  </Card>
-)
+const generateValidPDF = () => {
+  const pdfContent =
+    '%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Count 1/Kids[3 0 R]>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R/Resources<<>>>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000015 00000 n\n0000000060 00000 n\n0000000117 00000 n\ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n187\n%%EOF'
+  return new Blob([pdfContent], { type: 'application/pdf' })
+}
 
-export default function SupplierProfileView({ onOpenChange, onEdit, companyData }: any) {
+export default function SupplierProfileView({ onOpenChange }: any) {
   const { toast } = useToast()
+  const { data, updateData, globalProgress, progress, autofillCNPJ } = useCompanyForm('supplier')
+  const [activeTab, setActiveTab] = useState('identificacao')
 
-  const printDoc = () => {
-    toast({ title: 'Gerando PDF', description: 'O documento será baixado em instantes.' })
+  const handleUpdate = () => {
+    toast({
+      title: 'Fornecedor Atualizado',
+      description: 'As alterações foram salvas com sucesso.',
+    })
+    onOpenChange(false)
+  }
+
+  const exportDoc = () => {
+    toast({ title: 'Gerando PDF', description: 'O relatório será baixado em instantes.' })
     setTimeout(() => {
+      const url = URL.createObjectURL(generateValidPDF())
       const a = document.createElement('a')
-      a.href = URL.createObjectURL(new Blob(['Ficha'], { type: 'application/pdf' }))
+      a.href = url
       a.download = `Ficha_Fornecedor.pdf`
       a.click()
     }, 1500)
   }
 
-  const defaultName = companyData?.name || 'DIRECAO GERAL'
-  const defaultInitial = defaultName.substring(0, 2).toUpperCase()
-  const plusPattern =
-    "url(\"data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 8V16M8 12H16' stroke='white' stroke-opacity='0.2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")"
+  const tabs = [
+    { id: 'identificacao', label: 'Identificação', prog: progress.dados },
+    { id: 'endereco', label: 'Endereço', prog: progress.endereco },
+    { id: 'contato', label: 'Contato', prog: progress.contato },
+    { id: 'financeiro', label: 'Financeiro', prog: progress.financeiro },
+    { id: 'bancario', label: 'Bancário' },
+    { id: 'acordos', label: 'Acordos' },
+    { id: 'contratos', label: 'Contratos' },
+    { id: 'relacionamento', label: 'Relacionamento' },
+    { id: 'documentos', label: 'Documentos' },
+    { id: 'historico', label: 'Histórico' },
+  ]
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'identificacao':
+        return (
+          <CompanyDadosTab
+            data={data.dados}
+            onChange={(f: any, v: any) => updateData('dados', f, v)}
+            onAutofill={autofillCNPJ}
+          />
+        )
+      case 'endereco':
+        return (
+          <CompanyAddressTab
+            data={data.endereco}
+            onChange={(f: any, v: any) => updateData('endereco', f, v)}
+          />
+        )
+      case 'contato':
+        return (
+          <CompanyContatoTab
+            data={data.contato}
+            onChange={(f: any, v: any) => updateData('contato', f, v)}
+          />
+        )
+      case 'financeiro':
+        return (
+          <CompanyFinanceiroTab
+            type="supplier"
+            data={data.financeiro}
+            onChange={(f: any, v: any) => updateData('financeiro', f, v)}
+          />
+        )
+      case 'bancario':
+        return (
+          <CompanyBankingTab
+            data={data.bancario}
+            onChange={(f: any, v: any) => updateData('bancario', f, v)}
+          />
+        )
+      case 'acordos':
+        return (
+          <CompanyAgreementsTab
+            data={data.acordos}
+            onChange={(f: any, v: any) => updateData('acordos', f, v)}
+          />
+        )
+      case 'contratos':
+        return <AttachmentsTab />
+      case 'relacionamento':
+        return (
+          <CompanyRelacionamentoTab
+            data={data.relacionamento}
+            onChange={(f: any, v: any) => updateData('relacionamento', f, v)}
+          />
+        )
+      case 'documentos':
+        return <AttachmentsTab />
+      case 'historico':
+        return <HistoryTab />
+      default:
+        return null
+    }
+  }
 
   return (
-    <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 bg-slate-50 border-none shadow-2xl rounded-2xl flex flex-col overflow-hidden [&>button]:hidden">
-      <div
-        className="relative bg-blue-500 overflow-hidden shrink-0 h-[140px]"
-        style={{ backgroundImage: plusPattern }}
-      >
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          <Button
-            variant="secondary"
-            className="bg-white/20 text-white hover:bg-white/30 border-none h-8 text-xs font-semibold shadow-none"
-          >
-            <FileText className="w-3.5 h-3.5 mr-2" /> Gerar Documento
-          </Button>
-          <Button
-            variant="secondary"
-            className="bg-white/20 text-white hover:bg-white/30 border-none h-8 text-xs font-semibold shadow-none"
-            onClick={printDoc}
-          >
-            <Printer className="w-3.5 h-3.5 mr-2" /> Imprimir
-          </Button>
-          <Button
-            variant="secondary"
-            className="bg-white/20 text-white hover:bg-white/30 border-none h-8 text-xs font-semibold shadow-none"
-            onClick={() => {
-              onOpenChange(false)
-              onEdit()
-            }}
-          >
-            <Edit className="w-3.5 h-3.5 mr-2" /> Editar
-          </Button>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="text-white/70 hover:text-white p-1 ml-1"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <DialogContent className="max-w-[1200px] w-[95vw] h-[95vh] p-0 bg-slate-50 border-none shadow-2xl rounded-2xl flex flex-col overflow-hidden [&>button]:hidden">
+      <div className="bg-white border-b border-slate-200 pt-6 px-6 pb-0 flex flex-col gap-5 shrink-0 z-10">
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <Truck className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-slate-800">
+                Editar Fornecedor
+              </DialogTitle>
+              <DialogDescription className="text-sm text-slate-500 mt-0.5">
+                Preencha os dados do fornecedor. Campos com * são obrigatórios.
+              </DialogDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 shrink-0">
+            <div className="hidden sm:flex items-center gap-2 text-sm bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+              <span className="text-emerald-600 flex items-center gap-1 font-medium">
+                <CheckCircle2 className="w-4 h-4" /> Preenchimento:
+              </span>
+              <div className="w-32 h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-500"
+                  style={{ width: `${globalProgress}%` }}
+                />
+              </div>
+              <span className="font-bold text-slate-700">{globalProgress}%</span>
+            </div>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex overflow-x-auto custom-scrollbar gap-2 pb-3 pt-1">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                'px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all flex items-center gap-2',
+                activeTab === t.id
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'text-slate-600 hover:bg-slate-100',
+              )}
+            >
+              {t.label}
+              {t.prog !== undefined && (
+                <span
+                  className={cn(
+                    'text-[10px] px-1.5 py-0.5 rounded-full font-bold',
+                    activeTab === t.id
+                      ? 'bg-blue-500/50 text-white'
+                      : 'bg-amber-100 text-amber-700',
+                  )}
+                >
+                  {t.prog}%
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="px-6 md:px-8 relative flex-1 overflow-y-auto pb-10 custom-scrollbar">
-        <div className="flex flex-col md:flex-row items-start md:items-end gap-4 -mt-[4.5rem] mb-6">
-          <div className="relative">
-            <div className="w-[120px] h-[120px] rounded-full bg-slate-50 border-[6px] border-white shadow-sm flex items-center justify-center text-4xl font-medium text-blue-600">
-              {defaultInitial}
-            </div>
-            <div className="absolute bottom-3 right-3 w-4 h-4 bg-emerald-500 border-[2px] border-white rounded-full shadow-sm"></div>
-          </div>
-          <div className="flex-1 pb-2 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">
-                  {defaultName}
-                </h1>
-                <Badge className="bg-emerald-50/50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50 shadow-none font-medium h-6">
-                  <Activity className="w-3 h-3 mr-1.5" /> 100% Excelente
-                </Badge>
-                <Badge className="bg-blue-500 hover:bg-blue-600 text-white shadow-none font-medium h-6">
-                  Ativo
-                </Badge>
-              </div>
-              <p className="text-slate-500 text-sm mt-1 uppercase font-medium">
-                {companyData?.documento || 'BANCO DO BRASIL SA'}
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-50/50 custom-scrollbar">
+        <div className="max-w-5xl mx-auto">{renderTab()}</div>
+      </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <KPICard
-              title="Confiabilidade"
-              value="100"
-              sub="Excelente"
-              textClass="text-emerald-600"
-            />
-            <KPICard
-              title="Contratos Ativos"
-              icon={FileSignature}
-              sub="0 total"
-              iconClass="text-blue-600"
-              textClass="text-slate-400"
-            />
-            <KPICard
-              title="Entregas no Prazo"
-              icon={ThumbsUp}
-              sub="1 antecipado"
-              iconClass="text-emerald-600"
-              textClass="text-emerald-600"
-            />
-            <KPICard
-              title="Entregas c/ Atraso"
-              icon={ThumbsDown}
-              sub="0%"
-              iconClass="text-rose-500"
-              textClass="text-slate-400"
-            />
-            <KPICard
-              title="Acordos Ativos"
-              icon={Handshake}
-              sub="0 total"
-              iconClass="text-purple-600"
-              textClass="text-slate-400"
-            />
-            <KPICard
-              title="Valor Contratos"
-              icon={DollarSign}
-              sub="R$ 0,00"
-              iconClass="text-blue-600"
-              textClass="text-blue-600"
-            />
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-3">
-              <History className="w-4 h-4 text-blue-600" /> Análise de Relacionamento
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
-              <RelCard
-                title="Total Compras"
-                value="R$ 20,00"
-                icon={DollarSign}
-                iconClass="text-blue-600"
-                bgClass="bg-blue-50"
-              />
-              <RelCard
-                title="Total Pago"
-                value="R$ 20,00"
-                icon={TrendingUp}
-                iconClass="text-emerald-600"
-                bgClass="bg-emerald-50"
-                valClass="text-emerald-600"
-              />
-              <RelCard
-                title="Pendente"
-                value="R$ 0,00"
-                icon={Clock}
-                iconClass="text-amber-600"
-                bgClass="bg-amber-50"
-                valClass="text-amber-600"
-              />
-              <RelCard
-                title="Vencido"
-                value="R$ 0,00"
-                icon={AlertTriangle}
-                iconClass="text-rose-600"
-                bgClass="bg-rose-50"
-                valClass="text-rose-600"
-              />
-              <RelCard
-                title="Transações"
-                value="1"
-                icon={ShoppingCart}
-                iconClass="text-purple-600"
-                bgClass="bg-purple-50"
-              />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-4 text-center">
-                  <p className="text-lg font-bold text-slate-800">R$ 20,00</p>
-                  <p className="text-[11px] text-slate-500 font-medium mt-1">Ticket Médio</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-4 text-center">
-                  <p className="text-lg font-bold text-slate-800">- dias</p>
-                  <p className="text-[11px] text-slate-500 font-medium mt-1">Frequência Média</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-4 text-center">
-                  <p className="text-lg font-bold text-emerald-600">-30 dias</p>
-                  <p className="text-[11px] text-slate-500 font-medium mt-1">
-                    Média Pagamento vs Venc.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-4 text-center">
-                  <p className="text-lg font-bold text-emerald-600">+0%</p>
-                  <p className="text-[11px] text-slate-500 font-medium mt-1">Crescimento Anual</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          <Card className="shadow-sm border-slate-200 rounded-xl">
-            <CardContent className="p-6">
-              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-4">
-                <Timer className="w-4 h-4 text-slate-600" /> Desempenho Logístico e Qualidade
-              </h3>
-              <div className="mb-5">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-slate-600">Taxa de entrega no prazo ou antecipada</span>
-                  <span className="font-bold text-slate-800">100%</span>
-                </div>
-                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 w-[100%]" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-600 mb-2" />
-                  <p className="text-xl font-bold text-emerald-700">1</p>
-                  <p className="text-xs text-emerald-600 font-medium mt-1">
-                    Prazo de Entrega (Antecipado)
-                  </p>
-                </div>
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                  <CheckCircle2 className="w-5 h-5 text-blue-600 mb-2" />
-                  <p className="text-xl font-bold text-blue-700">100%</p>
-                  <p className="text-xs text-blue-600 font-medium mt-1">
-                    Qualidade da Entrega (Intacta)
-                  </p>
-                </div>
-                <div className="bg-purple-50/50 border border-purple-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                  <Activity className="w-5 h-5 text-purple-600 mb-2" />
-                  <p className="text-xl font-bold text-purple-700">9.8</p>
-                  <p className="text-xs text-purple-600 font-medium mt-1">
-                    Qualidade dos Produtos (Nota)
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm border-slate-200 rounded-xl">
-            <CardContent className="p-6">
-              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-4">
-                <Calendar className="w-4 h-4 text-slate-600" /> Comparativo Anual
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Compras 2026</p>
-                  <p className="text-xl font-bold text-slate-800 mt-1">R$ 20,00</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Compras 2025</p>
-                  <p className="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Variação</p>
-                  <p className="text-xl font-bold text-emerald-600 mt-1">+0%</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-6 mt-5 pt-4 border-t border-slate-100">
-                <p className="text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">Primeira compra:</span> 03/03/2026
-                </p>
-                <p className="text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">Última compra:</span> 03/03/2026
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="shadow-sm border-slate-200 rounded-xl">
-              <CardContent className="p-5">
-                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-                  <FileText className="w-4 h-4 text-blue-600" /> Termos Comerciais
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <span className="text-xs text-slate-500 font-medium">Desconto Combinado</span>
-                    <span className="text-sm font-bold text-emerald-600">5% em toda linha</span>
-                  </div>
-                  <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <span className="text-xs text-slate-500 font-medium">Negociação Combinada</span>
-                    <span className="text-sm font-medium text-slate-700">Frete FOB</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm border-slate-200 rounded-xl">
-              <CardContent className="p-5">
-                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-                  <ShoppingCart className="w-4 h-4 text-purple-600" /> Detalhes de Compra & Catálogo
-                </h3>
-                <div className="space-y-3">
-                  <div className="bg-purple-50/50 border border-purple-100 p-3 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <ShoppingCart className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-800">Produtos Comprados</p>
-                      </div>
-                    </div>
-                    <span className="text-lg font-bold text-purple-700">12</span>
-                  </div>
-                  <div className="bg-blue-50/50 border border-blue-100 p-3 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <FileText className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-800">Catálogo Disponível</p>
-                      </div>
-                    </div>
-                    <span className="text-lg font-bold text-blue-700">150</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-600" /> Cadastro Detalhado
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-5">
-                  <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mb-2">
-                    <Phone className="w-3.5 h-3.5" /> Contato
-                  </p>
-                  <p className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" /> 6134939002
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-5">
-                  <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mb-2">
-                    <MapPin className="w-3.5 h-3.5" /> Endereço
-                  </p>
-                  <p className="text-sm font-medium text-slate-400 italic">
-                    Endereço não cadastrado
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-slate-200 rounded-xl">
-                <CardContent className="p-5">
-                  <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mb-3">
-                    <CreditCard className="w-3.5 h-3.5" /> Condições Financeiras
-                  </p>
-                  <div className="flex gap-2">
-                    <div className="flex-1 bg-slate-50 p-2 rounded border border-slate-100 text-center">
-                      <p className="text-sm font-bold text-blue-700">30</p>
-                      <p className="text-[10px] text-slate-500">Prazo (dias)</p>
-                    </div>
-                    <div className="flex-1 bg-slate-50 p-2 rounded border border-slate-100 text-center">
-                      <p className="text-sm font-bold text-slate-800">1</p>
-                      <p className="text-[10px] text-slate-500">Dia Fixo</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+      <div className="bg-white border-t border-slate-200 p-4 px-6 flex justify-between items-center shrink-0 z-10">
+        <Button variant="outline" onClick={exportDoc} className="hidden sm:flex text-slate-600">
+          Exportar Ficha (PDF)
+        </Button>
+        <div className="flex gap-3 w-full sm:w-auto justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="px-6">
+            Cancelar
+          </Button>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 shadow-sm"
+            onClick={handleUpdate}
+          >
+            Atualizar
+          </Button>
         </div>
       </div>
     </DialogContent>
