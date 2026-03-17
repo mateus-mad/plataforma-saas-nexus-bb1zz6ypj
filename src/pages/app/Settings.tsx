@@ -71,7 +71,7 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger value="hr" className="data-[state=active]:text-primary group py-2 shrink-0">
             <Clock className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            RH / Jornadas
+            Jornada de Trabalho
           </TabsTrigger>
           <TabsTrigger
             value="security"
