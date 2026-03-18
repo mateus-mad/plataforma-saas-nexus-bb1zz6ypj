@@ -1,6 +1,9 @@
 export interface DatabaseSchema {
   contracted_modules: string[]
   last_route: string
+  collaborators_data: any
+  companies_data: any
+  whatsapp_config: any
 }
 
 class MockDatabase {

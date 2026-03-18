@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { User, Info, Camera } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -34,6 +34,10 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
   const [photoPreview, setPhotoPreview] = useState<string | null>(data.foto || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    setPhotoPreview(data.foto || null)
+  }, [data.foto])
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -42,11 +46,6 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
       onChange('foto', url)
     }
   }
-
-  const defaultPhoto =
-    data.name.toLowerCase() === 'mateus amorim dias' && !photoPreview
-      ? 'https://img.usecurling.com/ppl/medium?gender=male&seed=1'
-      : null
 
   const err = (f: string) =>
     errors?.[`pessoal.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
@@ -82,12 +81,8 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
             )}
             onClick={() => !readOnly && fileInputRef.current?.click()}
           >
-            {photoPreview || defaultPhoto ? (
-              <img
-                src={photoPreview || defaultPhoto!}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+            {photoPreview ? (
+              <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <User className="w-12 h-12 opacity-50" />
             )}

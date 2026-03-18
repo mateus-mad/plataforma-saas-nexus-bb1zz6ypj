@@ -23,6 +23,7 @@ import {
   ScanLine,
   UploadCloud,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCollaboratorForm } from '@/hooks/useCollaboratorForm'
@@ -30,10 +31,16 @@ import PersonalInfoTab from './tabs/PersonalInfoTab'
 import HistoryTab from './tabs/HistoryTab'
 import ESocialTab from './tabs/ESocialTab'
 import AttachmentsTab from './tabs/AttachmentsTab'
-import { DocsTab, AddressTab } from './tabs/FormTabs1'
-import { ContactTab, WorkTab } from './tabs/FormTabs2'
-import { BenefitsTab, SalaryTab } from './tabs/FormTabs3'
-import { ChargesTab, VacationTab } from './tabs/FormTabs4'
+import {
+  DocsTab,
+  AddressTab,
+  ContactTab,
+  WorkTab,
+  BenefitsTab,
+  SalaryTab,
+  ChargesTab,
+  VacationTab,
+} from './tabs/FormTabs'
 
 export default function CollaboratorModal({
   open,
@@ -55,13 +62,14 @@ export default function CollaboratorModal({
     isProcessingOCR,
     fetchESocial,
     isFetchingESocial,
+    saveStatus,
   } = useCollaboratorForm()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const TABS = [
     { id: 'pessoal', label: 'Pessoal', prog: progress.pessoal, icon: User },
-    { id: 'docs', label: 'Docs', prog: progress.docs, icon: FileText },
+    { id: 'docs', label: 'Docs/Compliance', prog: progress.docs, icon: FileText },
     { id: 'endereco', label: 'Endereço', prog: progress.endereco, icon: MapPin },
     { id: 'contato', label: 'Contato', prog: progress.contato, icon: Phone },
     { id: 'trabalho', label: 'Trabalho', prog: progress.trabalho, icon: Briefcase },
@@ -84,7 +92,10 @@ export default function CollaboratorModal({
       })
       return
     }
-    toast({ title: 'Dados Atualizados', description: 'O registro foi salvo com sucesso.' })
+    toast({
+      title: 'Dados Atualizados',
+      description: 'Sincronização persistente realizada com sucesso na nuvem.',
+    })
     setIsEditing(false)
   }
 
@@ -94,8 +105,9 @@ export default function CollaboratorModal({
       const success = await processOCR(file)
       if (success) {
         toast({
-          title: 'Documento Processado',
-          description: 'Dados e foto extraídos via OCR e arquivo salvo nos anexos.',
+          title: 'Inteligência Artificial (OCR)',
+          description:
+            'Foto e dados extraídos. Verificamos a validade dos documentos publicamente.',
         })
       } else {
         toast({
@@ -134,26 +146,41 @@ export default function CollaboratorModal({
                 {isEditing ? 'Editar Ficha Funcional' : 'Visualizar Ficha Funcional'}
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
-                Gerencie todos os dados da ficha do colaborador integrado ao eSocial.
+                Autosalvamento ativo. Gerencie todos os dados da ficha integrados à nuvem e ao
+                eSocial.
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <Button
                 variant={isEditing ? 'outline' : 'default'}
                 size="sm"
                 onClick={() => setIsEditing(!isEditing)}
-                className="h-9 transition-all font-semibold"
+                className="h-9 transition-all font-semibold shadow-sm"
               >
                 {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
                 {isEditing ? 'Modo Leitura' : 'Ativar Edição'}
               </Button>
-              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
-                <Progress
-                  value={globalProgress}
-                  className="w-24 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
-                />
-                <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 shadow-inner">
+                {saveStatus === 'saving' ? (
+                  <span className="text-xs text-blue-600 font-semibold flex items-center">
+                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Salvando...
+                  </span>
+                ) : saveStatus === 'saved' ? (
+                  <span className="text-xs text-emerald-600 font-semibold flex items-center">
+                    <CheckCircle2 className="w-3 h-3 mr-1.5" /> Salvo
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
+                )}
+                {saveStatus === 'idle' && (
+                  <>
+                    <Progress
+                      value={globalProgress}
+                      className="w-20 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
+                    />
+                    <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -215,10 +242,11 @@ export default function CollaboratorModal({
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-800 text-base">
-                      Preenchimento Inteligente (OCR)
+                      Preenchimento e Compliance (OCR)
                     </h4>
                     <p className="text-sm text-slate-500">
-                      Faça upload de CNH/RG ou comprovante para extrair foto e dados.
+                      Faça upload de CNH/RG para extração automática e validação imediata em bases
+                      públicas.
                     </p>
                   </div>
                 </div>
@@ -226,16 +254,16 @@ export default function CollaboratorModal({
                 <div className="z-10 w-full sm:w-auto">
                   <Button
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md transition-all"
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md transition-all font-semibold"
                     disabled={isProcessingOCR}
                   >
                     {isProcessingOCR ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verificando Dados...
                       </>
                     ) : (
                       <>
-                        <UploadCloud className="w-4 h-4 mr-2" /> Enviar Documento
+                        <UploadCloud className="w-4 h-4 mr-2" /> Extrair de Documento
                       </>
                     )}
                   </Button>
@@ -262,7 +290,7 @@ export default function CollaboratorModal({
               {activeTab === 'docs' && (
                 <DocsTab
                   data={data.docs}
-                  onChange={(f, v) => updateData('docs', f, v)}
+                  onChange={(f: string, v: string) => updateData('docs', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -270,7 +298,7 @@ export default function CollaboratorModal({
               {activeTab === 'endereco' && (
                 <AddressTab
                   data={data.endereco}
-                  onChange={(f, v) => updateData('endereco', f, v)}
+                  onChange={(f: string, v: string) => updateData('endereco', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -278,7 +306,7 @@ export default function CollaboratorModal({
               {activeTab === 'contato' && (
                 <ContactTab
                   data={data.contato}
-                  onChange={(f, v) => updateData('contato', f, v)}
+                  onChange={(f: string, v: string) => updateData('contato', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -286,7 +314,7 @@ export default function CollaboratorModal({
               {activeTab === 'trabalho' && (
                 <WorkTab
                   data={data.trabalho}
-                  onChange={(f, v) => updateData('trabalho', f, v)}
+                  onChange={(f: string, v: string) => updateData('trabalho', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -294,7 +322,7 @@ export default function CollaboratorModal({
               {activeTab === 'salario' && (
                 <SalaryTab
                   data={data.salario}
-                  onChange={(f, v) => updateData('salario', f, v)}
+                  onChange={(f: string, v: string) => updateData('salario', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -302,7 +330,7 @@ export default function CollaboratorModal({
               {activeTab === 'beneficios' && (
                 <BenefitsTab
                   data={data.beneficios}
-                  onChange={(f, v) => updateData('beneficios', f, v)}
+                  onChange={(f: string, v: string) => updateData('beneficios', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -310,7 +338,7 @@ export default function CollaboratorModal({
               {activeTab === 'encargos' && (
                 <ChargesTab
                   data={data.encargos}
-                  onChange={(f, v) => updateData('encargos', f, v)}
+                  onChange={(f: string, v: string) => updateData('encargos', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -318,7 +346,7 @@ export default function CollaboratorModal({
               {activeTab === 'ferias' && (
                 <VacationTab
                   data={data.ferias}
-                  onChange={(f, v) => updateData('ferias', f, v)}
+                  onChange={(f: string, v: string) => updateData('ferias', f, v)}
                   errors={errors}
                   readOnly={!isEditing}
                 />
@@ -360,16 +388,16 @@ export default function CollaboratorModal({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="font-semibold text-slate-600"
+              className="font-semibold text-slate-600 shadow-sm"
             >
-              Cancelar
+              Fechar Ficha
             </Button>
             {isEditing && (
               <Button
                 onClick={handleSave}
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
               >
-                Salvar Dados
+                Garantir Dados na Nuvem
               </Button>
             )}
           </div>

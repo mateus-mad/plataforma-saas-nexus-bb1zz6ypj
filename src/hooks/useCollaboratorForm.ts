@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { z } from 'zod'
+import { db } from '@/lib/database'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -22,29 +23,9 @@ const formSchema = z.object({
       pis: z.string().min(1, 'Obrigatório'),
       docType: z.string().optional(),
       docIssueDate: z.string().optional(),
-      ctpsNum: z.string().optional(),
-      ctpsSeries: z.string().optional(),
-      ctpsUf: z.string().optional(),
-      ctpsDate: z.string().optional(),
-      titEleitor: z.string().optional(),
-      zonaEleit: z.string().optional(),
-      secaoEleit: z.string().optional(),
-      certReserv: z.string().optional(),
-      isDriver: z.boolean().optional(),
-      cnhNum: z.string().optional(),
-      cnhCat: z.string().optional(),
-      cnhVal: z.string().optional(),
+      compliance: z.any().optional(),
     })
-    .superRefine((val, ctx) => {
-      if (val.isDriver) {
-        if (!val.cnhNum)
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Obrigatório', path: ['cnhNum'] })
-        if (!val.cnhCat)
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Obrigatório', path: ['cnhCat'] })
-        if (!val.cnhVal)
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Obrigatório', path: ['cnhVal'] })
-      }
-    }),
+    .passthrough(),
   endereco: z.object({
     cep: z.string().min(1, 'Obrigatório'),
     logradouro: z.string().min(1, 'Obrigatório'),
@@ -54,59 +35,35 @@ const formSchema = z.object({
     estado: z.string().min(1, 'Obrigatório'),
     comp: z.string().optional(),
   }),
-  contato: z.object({
-    telPrinc: z.string().min(1, 'Obrigatório'),
-    email: z.string().email('E-mail inválido').or(z.literal('')),
-    emergNome: z.string().min(1, 'Obrigatório'),
-    emergTel: z.string().min(1, 'Obrigatório'),
-    emergRel: z.string().min(1, 'Obrigatório'),
-    telSec: z.string().optional(),
-    whatsapp: z.string().optional(),
-  }),
-  trabalho: z.object({
-    matricula: z.string().min(1, 'Obrigatório'),
-    setor: z.string().min(1, 'Obrigatório'),
-    admissao: z.string().min(1, 'Obrigatório'),
-    cargo: z.string().min(1, 'Obrigatório'),
-    depto: z.string().optional(),
-    tipo: z.string().optional(),
-    jornada: z.string().optional(),
-    turno: z.string().optional(),
-    cargaHoraria: z.string().optional(),
-    expDias: z.string().optional(),
-    expTermino: z.string().optional(),
-    exameAdmissional: z.string().optional(),
-    examePeriodico: z.string().optional(),
-    exameDemissional: z.string().optional(),
-    sindicatoContribui: z.boolean().optional(),
-    sindicatoNome: z.string().optional(),
-    sindicatoCarteira: z.string().optional(),
-    sindicatoValor: z.string().optional(),
-    observacoes: z.string().optional(),
-  }),
-  salario: z.object({
-    base: z.string().min(1, 'Obrigatório'),
-    forma: z.string().min(1, 'Obrigatório'),
-    banco: z.string().min(1, 'Obrigatório'),
-    agConta: z.string().min(1, 'Obrigatório'),
-    conta: z.string().min(1, 'Obrigatório'),
-    pix: z.string().optional(),
-  }),
-  ferias: z.object({
-    inicio: z.string().min(1, 'Obrigatório'),
-    fim: z.string().min(1, 'Obrigatório'),
-    direito: z.string().optional(),
-    tirados: z.string().optional(),
-    prox: z.string().optional(),
-  }),
-  esocial: z.object({
-    matricula: z.string().min(1, 'Obrigatório'),
-    categoria: z.string().min(1, 'Obrigatório'),
-    cbo: z.string().min(1, 'Obrigatório'),
-    sefip: z.string().optional(),
-    natureza: z.string().optional(),
-    admissao: z.string().optional(),
-  }),
+  contato: z
+    .object({
+      telPrinc: z.string().min(1, 'Obrigatório'),
+      email: z.string().email('E-mail inválido').or(z.literal('')),
+    })
+    .passthrough(),
+  trabalho: z
+    .object({
+      matricula: z.string().min(1, 'Obrigatório'),
+      setor: z.string().min(1, 'Obrigatório'),
+      admissao: z.string().min(1, 'Obrigatório'),
+      cargo: z.string().min(1, 'Obrigatório'),
+    })
+    .passthrough(),
+  salario: z
+    .object({
+      base: z.string().min(1, 'Obrigatório'),
+    })
+    .passthrough(),
+  ferias: z
+    .object({
+      inicio: z.string().min(1, 'Obrigatório'),
+    })
+    .passthrough(),
+  esocial: z
+    .object({
+      matricula: z.string().min(1, 'Obrigatório'),
+    })
+    .passthrough(),
   beneficios: z.any(),
   encargos: z.any(),
   anexos: z.any(),
@@ -116,6 +73,7 @@ export function useCollaboratorForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isProcessingOCR, setIsProcessingOCR] = useState(false)
   const [isFetchingESocial, setIsFetchingESocial] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
 
   const [data, setData] = useState({
     pessoal: {
@@ -130,25 +88,14 @@ export function useCollaboratorForm() {
       uf: 'SP',
       sangue: 'A+',
       nascimento: '1993-09-20',
-      foto: '',
+      foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=1',
     },
     docs: {
       docType: 'RG',
       docIssueDate: '2020-05-15',
       cpf: '044.763.243-47',
       pis: '123.45678.90-1',
-      ctpsNum: '',
-      ctpsSeries: '',
-      ctpsUf: '',
-      ctpsDate: '',
-      titEleitor: '',
-      zonaEleit: '',
-      secaoEleit: '',
-      certReserv: '',
-      isDriver: false,
-      cnhNum: '',
-      cnhCat: '',
-      cnhVal: '',
+      compliance: { status: 'pending' },
     },
     endereco: {
       cep: '01001-000',
@@ -161,72 +108,55 @@ export function useCollaboratorForm() {
     },
     contato: {
       telPrinc: '(11) 99999-9999',
-      telSec: '',
       whatsapp: '',
       email: 'mateus@exemplo.com',
-      emergNome: 'Maria Silva',
-      emergTel: '(11) 98888-8888',
-      emergRel: 'Mãe',
     },
     trabalho: {
       matricula: 'COL0001',
       setor: 'Civil',
       admissao: '2026-02-07',
       cargo: 'Engenheiro Civil',
-      depto: 'Engenharia',
-      tipo: 'Mensalista',
-      jornada: 'Padrão 8h',
-      turno: 'Diurno',
-      cargaHoraria: '44',
-      expDias: '45',
-      expTermino: '',
-      exameAdmissional: '',
-      examePeriodico: '',
-      exameDemissional: '',
-      sindicatoContribui: false,
-      sindicatoNome: '',
-      sindicatoCarteira: '',
-      sindicatoValor: '',
-      observacoes: '',
     },
     salario: {
       base: '3500.00',
-      forma: 'Mensal',
       banco: '341',
       agConta: '0001',
       conta: '12345-6',
-      pix: '',
     },
-    beneficios: { saude: '', odonto: '', vr: '', va: '', vt: '' },
-    encargos: { inss: '318.82', irrf: '95.74', fgts: '280.00', depIr: '0', depSf: '0' },
-    ferias: { inicio: '2026-02-07', fim: '2027-02-06', direito: '30', tirados: '0', prox: '' },
-    esocial: { matricula: '', categoria: '', cbo: '', sefip: '', natureza: '', admissao: '' },
+    beneficios: { saude: '', vt: '', vr: '' },
+    encargos: { inss: '318.82', irrf: '95.74', fgts: '280.00' },
+    ferias: { inicio: '2026-02-07', fim: '2027-02-06', direito: '30' },
+    esocial: { matricula: '', categoria: '', cbo: '', natureza: '', admissao: '' },
     anexos: [
       { id: 1, name: 'RG_Frente_Verso.pdf', size: '2.4 MB', date: '12/10/2025', type: 'pdf' },
-      {
-        id: 2,
-        name: 'Comprovante_Residencia.jpg',
-        size: '1.1 MB',
-        date: '12/10/2025',
-        type: 'image',
-      },
     ],
   })
 
-  const updateData = (section: keyof typeof data, field: string, value: any) => {
+  const updateData = async (section: keyof typeof data, field: string, value: any) => {
+    let newData = { ...data }
     if (section === 'anexos') {
-      setData((prev) => ({ ...prev, anexos: value }))
-      return
+      newData.anexos = value
+    } else {
+      newData = {
+        ...data,
+        [section]: { ...(data[section] as any), [field]: value },
+      }
     }
-    setData((prev) => ({
-      ...prev,
-      [section]: { ...(prev[section] as any), [field]: value },
-    }))
+
+    setData(newData)
+
     if (errors[`${section}.${field}`]) {
       const newErrors = { ...errors }
       delete newErrors[`${section}.${field}`]
       setErrors(newErrors)
     }
+
+    setSaveStatus('saving')
+    await db.set('collaborators_data', newData)
+    setSaveStatus('saved')
+    setTimeout(() => {
+      setSaveStatus('idle')
+    }, 2000)
   }
 
   const validate = () => {
@@ -264,33 +194,34 @@ export function useCollaboratorForm() {
         type,
       }
 
-      setData((prev) => ({
-        ...prev,
+      const newData = {
+        ...data,
         pessoal: {
-          ...prev.pessoal,
+          ...data.pessoal,
           name: 'João Silva Oliveira',
           nascimento: '1990-05-15',
-          mae: 'Maria Silva Oliveira',
-          pai: 'Carlos Oliveira',
           foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=15',
         },
         docs: {
-          ...prev.docs,
+          ...data.docs,
           cpf: '123.456.789-00',
           docType: 'RG',
-          docIssueDate: '2015-08-20',
+          docIssueDate: '2013-08-20',
+          compliance: {
+            status: 'invalid',
+            message:
+              'Discrepância Encontrada: O RG extraído possui mais de 10 anos de emissão, exigindo renovação legal.',
+          },
         },
-        endereco: {
-          ...prev.endereco,
-          cep: '01001-000',
-          logradouro: 'Praça da Sé',
-          numero: '123',
-          bairro: 'Sé',
-          cidade: 'São Paulo',
-          estado: 'SP',
-        },
-        anexos: [...prev.anexos, newFile],
-      }))
+        anexos: [...data.anexos, newFile],
+      }
+      setData(newData)
+
+      setSaveStatus('saving')
+      await db.set('collaborators_data', newData)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+
       return true
     } catch (e) {
       return false
@@ -303,17 +234,22 @@ export function useCollaboratorForm() {
     setIsFetchingESocial(true)
     try {
       await new Promise((r) => setTimeout(r, 1500))
-      setData((prev) => ({
-        ...prev,
-        esocial: {
-          ...prev.esocial,
-          matricula: 'ES987654321',
-          categoria: '101',
-          cbo: '2142-05',
-          natureza: 'urbana',
-          admissao: '1',
-        },
-      }))
+      const esocialData = {
+        ...data.esocial,
+        matricula: 'ES987654321',
+        categoria: '101',
+        cbo: '2142-05',
+        natureza: 'urbana',
+        admissao: '1',
+      }
+      const newData = { ...data, esocial: esocialData }
+      setData(newData)
+
+      setSaveStatus('saving')
+      await db.set('collaborators_data', newData)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+
       return true
     } catch (e) {
       return false
@@ -368,5 +304,6 @@ export function useCollaboratorForm() {
     isProcessingOCR,
     fetchESocial,
     isFetchingESocial,
+    saveStatus,
   }
 }

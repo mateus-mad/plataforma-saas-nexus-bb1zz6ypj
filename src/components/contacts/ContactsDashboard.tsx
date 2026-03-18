@@ -1,11 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, UserSquare2, Truck, AlertTriangle, Send, CalendarClock } from 'lucide-react'
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  ResponsiveContainer,
+  Users,
+  UserSquare2,
+  Truck,
+  AlertTriangle,
+  Send,
+  CalendarClock,
+  MessageCircle,
+} from 'lucide-react'
+import {
   BarChart,
   Bar,
   XAxis,
@@ -13,11 +16,11 @@ import {
   CartesianGrid,
   AreaChart,
   Area,
-  LineChart,
-  Line,
+  ResponsiveContainer,
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 
 const VOLUME_DATA = [
@@ -25,7 +28,7 @@ const VOLUME_DATA = [
   { month: 'Fev', novos: 15 },
   { month: 'Mar', novos: 8 },
   { month: 'Abr', novos: 20 },
-  { month: 'Mai', novos: 25 },
+  { month: 'Mai', offset: 25, novos: 25 },
   { month: 'Jun', novos: 18 },
 ]
 
@@ -55,6 +58,13 @@ export default function ContactsDashboard() {
     })
   }
 
+  const notifyCandidate = (nome: string) => {
+    toast({
+      title: 'WhatsApp Enviado',
+      description: `Mensagem de cobrança enviada automaticamente para ${nome}.`,
+    })
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -63,7 +73,7 @@ export default function ContactsDashboard() {
             Performance & Automação (BI)
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Métricas de crescimento do relacionamento comercial e controle de riscos.
+            Métricas de crescimento do relacionamento comercial e controle de riscos e admissões.
           </p>
         </div>
       </div>
@@ -175,7 +185,7 @@ export default function ContactsDashboard() {
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tickFormatter={(v) => `R$${v / 1000}k`}
+                    tickFormatter={(v) => `R${v / 1000}k`}
                     tick={{ fill: '#64748b' }}
                   />
                   <ChartTooltip
@@ -211,6 +221,71 @@ export default function ContactsDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-sm border-purple-200 bg-purple-50/30">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold flex items-center gap-2 text-purple-900">
+              <Users className="w-5 h-5 text-purple-600" />
+              Notificações de Onboarding (RH)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-purple-800/80 mb-4 bg-white p-3 rounded-xl border border-purple-100 shadow-sm">
+              Candidatos que iniciaram o preenchimento via link de auto-cadastro mas abandonaram a
+              sessão ou possuem documentos faltantes.
+            </p>
+            <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-purple-300 transition-colors">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-9 h-9 border border-slate-100">
+                  <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
+                    JS
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-slate-800 text-sm">
+                    João Silva (Engenheiro Civil)
+                  </p>
+                  <p className="text-xs text-rose-500 font-medium">
+                    Documento Faltante: Comprovante de Residência
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => notifyCandidate('João Silva')}
+                className="h-8 shadow-sm"
+              >
+                <MessageCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-500" /> Cobrar
+              </Button>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-purple-300 transition-colors">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-9 h-9 border border-slate-100">
+                  <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
+                    AM
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-slate-800 text-sm">
+                    Ana Maria (Analista Financeiro)
+                  </p>
+                  <p className="text-xs text-rose-500 font-medium">
+                    Processo abandonado (Passo 1: Pessoal)
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => notifyCandidate('Ana Maria')}
+                className="h-8 shadow-sm"
+              >
+                <MessageCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-500" /> Cobrar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-sm border-slate-200">
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -224,8 +299,7 @@ export default function ContactsDashboard() {
               e-mails automáticos <span className="font-semibold text-blue-700">
                 30 dias antes
               </span>{' '}
-              do vencimento para o <b>E-mail de Cobrança</b> cadastrado no perfil do
-              cliente/fornecedor.
+              do vencimento para o <b>E-mail de Cobrança</b> configurado.
             </p>
             <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl shadow-sm">
               <div className="flex items-center gap-3">
@@ -257,52 +331,10 @@ export default function ContactsDashboard() {
             </div>
             <Button
               onClick={handleSimulateAlerts}
-              className="w-full mt-2 bg-blue-600 hover:bg-blue-700 h-11 text-sm font-semibold rounded-xl"
+              className="w-full mt-2 bg-blue-600 hover:bg-blue-700 h-11 text-sm font-semibold rounded-xl shadow-sm"
             >
               <Send className="w-4 h-4 mr-2" /> Forçar Execução de Automação
             </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Data Quality & Governança</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-white border border-slate-200 hover:border-blue-300 transition-colors rounded-xl shadow-sm">
-              <div className="bg-amber-100 p-2 rounded-lg shrink-0">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800 text-sm">
-                  Revisão de Limites de Crédito Pendentes
-                </p>
-                <p className="text-xs text-slate-600 mt-1 mb-2 leading-relaxed">
-                  Operadores solicitaram alteração de limite de crédito para 3 clientes. As mudanças
-                  estão bloqueadas aguardando aprovação gerencial.
-                </p>
-                <span className="text-xs text-blue-600 font-semibold cursor-pointer hover:underline flex items-center gap-1">
-                  Acessar aprovações pendentes &rarr;
-                </span>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-4 bg-white border border-slate-200 hover:border-blue-300 transition-colors rounded-xl shadow-sm">
-              <div className="bg-rose-100 p-2 rounded-lg shrink-0">
-                <UserSquare2 className="w-5 h-5 text-rose-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800 text-sm">
-                  Falta de E-mail de Cobrança Mandatório
-                </p>
-                <p className="text-xs text-slate-600 mt-1 mb-2 leading-relaxed">
-                  Há 4 clientes ativos operando sem a configuração do E-mail de Cobrança obrigatório
-                  para automação.
-                </p>
-                <span className="text-xs text-blue-600 font-semibold cursor-pointer hover:underline flex items-center gap-1">
-                  Verificar cadastros incompletos &rarr;
-                </span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

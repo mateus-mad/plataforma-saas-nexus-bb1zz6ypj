@@ -7,6 +7,7 @@ import {
   Users,
   Shield,
   Clock,
+  MessageCircle,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -16,6 +17,7 @@ import TenantsTab from '@/components/settings/TenantsTab'
 import UsersTab from '@/components/settings/UsersTab'
 import SecurityTab from '@/components/settings/SecurityTab'
 import HRTab from '@/components/settings/HRTab'
+import WhatsAppTab from '@/components/settings/WhatsAppTab'
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -34,7 +36,7 @@ export default function Settings() {
             Configurações e Gestão
           </h2>
           <p className="text-muted-foreground mt-1">
-            Painel administrativo para controle multi-tenant, faturamento, acesso e RH.
+            Painel administrativo para controle multi-tenant, faturamento, integrações e RH.
           </p>
         </div>
       </div>
@@ -54,6 +56,13 @@ export default function Settings() {
           >
             <CreditCard className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Fatura
+          </TabsTrigger>
+          <TabsTrigger
+            value="whatsapp"
+            className="data-[state=active]:text-emerald-600 group py-2 shrink-0"
+          >
+            <MessageCircle className="w-4 h-4 mr-2 group-data-[state=active]:text-emerald-600 shrink-0" />
+            WhatsApp API
           </TabsTrigger>
           <TabsTrigger
             value="tenants"
@@ -87,6 +96,9 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="billing" className="mt-0 outline-none">
           <BillingTab />
+        </TabsContent>
+        <TabsContent value="whatsapp" className="mt-0 outline-none">
+          <WhatsAppTab />
         </TabsContent>
         <TabsContent value="tenants" className="mt-0 outline-none">
           <TenantsTab />

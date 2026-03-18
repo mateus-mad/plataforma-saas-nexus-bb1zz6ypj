@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   User,
   Building2,
@@ -24,7 +24,9 @@ import {
   Share2,
   UserMinus,
   UserCheck,
+  MessageCircle,
 } from 'lucide-react'
+import { db } from '@/lib/database'
 
 type Props = { open: boolean; onOpenChange: (open: boolean) => void; onEdit?: () => void }
 
@@ -55,6 +57,17 @@ const Section = ({ t, icon: Icon, children }: any) => (
 export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }: Props) {
   const { toast } = useToast()
   const [status, setStatus] = useState<'Ativo' | 'Desligado'>('Ativo')
+  const [hasWhatsApp, setHasWhatsApp] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      db.get('whatsapp_config').then((conf) => {
+        if (conf && conf.isUnlocked) {
+          setHasWhatsApp(true)
+        }
+      })
+    }
+  }, [open])
 
   const handleToggleStatus = () => {
     const isDismissing = status === 'Ativo'
@@ -97,6 +110,13 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
       description: 'Link seguro do perfil copiado para a área de transferência.',
     })
     navigator.clipboard.writeText(window.location.origin + '/share/colaborador/123')
+  }
+
+  const sendDirectWhatsApp = () => {
+    toast({
+      title: 'Aviso Enviado',
+      description: 'Uma mensagem direta via API Oficial foi encaminhada ao colaborador.',
+    })
   }
 
   return (
@@ -159,20 +179,31 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
             >
               <Share2 className="w-4 h-4" />
             </Button>
+            {hasWhatsApp && (
+              <Button
+                variant="outline"
+                onClick={sendDirectWhatsApp}
+                className="border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-semibold shadow-sm"
+                title="Enviar Notificação via WhatsApp API"
+              >
+                <MessageCircle className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">WhatsApp</span>
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={printDoc}
-              className="border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
             >
               <Printer className="w-4 h-4 md:mr-2" />{' '}
-              <span className="hidden md:inline">Exportar PDF</span>
+              <span className="hidden md:inline">Exportar</span>
             </Button>
             <Button
               variant={status === 'Ativo' ? 'outline' : 'default'}
               onClick={handleToggleStatus}
               className={
                 status === 'Ativo'
-                  ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
+                  ? 'border-rose-200 text-rose-600 hover:bg-rose-50 shadow-sm'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
               }
             >
@@ -190,7 +221,7 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
             </Button>
             <Button
               onClick={onEdit}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20 font-semibold"
             >
               <Edit className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Editar</span>
             </Button>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import {
   FileText,
   Plus,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   FileCheck,
+  PenTool,
 } from 'lucide-react'
 import {
   Dialog,
@@ -27,6 +29,8 @@ export default function SupplierContractsTab({ data, updateData }: any) {
   const contratos = data?.contratos?.lista || []
   const { toast } = useToast()
 
+  const complianceValid = data.dados?.complianceStatus === 'valid'
+
   const addFile = (file: File, nameAlias?: string) => {
     updateData('contratos', 'lista', [
       ...contratos,
@@ -35,10 +39,13 @@ export default function SupplierContractsTab({ data, updateData }: any) {
         nome: nameAlias || file.name,
         data: new Date().toLocaleDateString('pt-BR'),
         size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        status: 'Assinado',
+        status: 'Anexado',
       },
     ])
-    toast({ title: 'Documento Anexado', description: 'O arquivo foi salvo com sucesso.' })
+    toast({
+      title: 'Documento Salvo',
+      description: 'O arquivo foi sincronizado com a base de dados.',
+    })
   }
 
   const rem = (id: number) =>
@@ -47,6 +54,17 @@ export default function SupplierContractsTab({ data, updateData }: any) {
       'lista',
       contratos.filter((c: any) => c.id !== id),
     )
+
+  const handleSendSignature = (id: number) => {
+    const updated = contratos.map((c: any) =>
+      c.id === id ? { ...c, signatureStatus: 'Enviado para Assinatura' } : c,
+    )
+    updateData('contratos', 'lista', updated)
+    toast({
+      title: 'Assinatura Digital Iniciada',
+      description: 'O documento foi encaminhado via API de assinatura digital.',
+    })
+  }
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -66,18 +84,17 @@ export default function SupplierContractsTab({ data, updateData }: any) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-            <FileCheck className="w-5 h-5 text-blue-600" /> Contratos & Documentação Legal
+            <FileCheck className="w-5 h-5 text-blue-600" /> Contratos & Assinaturas Digitais
           </h3>
           <p className="text-sm text-slate-500 mt-0.5">
-            Anexe vias assinadas de contratos, propostas e NDAs. Suporta Drag & Drop (arrastar e
-            soltar).
+            Gerencie contratos, aditivos e envie minutas para assinatura digital automatizada.
           </p>
         </div>
         <Button
           onClick={() => setModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-sm px-6 h-10"
+          className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-sm px-6 h-10 font-semibold"
         >
-          <Plus className="w-4 h-4 mr-2" /> Adicionar Documento
+          <Plus className="w-4 h-4 mr-2" /> Novo Documento
         </Button>
       </div>
 
@@ -105,7 +122,8 @@ export default function SupplierContractsTab({ data, updateData }: any) {
           Arraste e solte o contrato em PDF aqui
         </h4>
         <p className="text-sm text-slate-500 font-medium">
-          Ou clique em qualquer lugar para selecionar os arquivos (Max 20MB)
+          Ou clique em qualquer lugar para selecionar os arquivos (Max 20MB). Salva automaticamente
+          na nuvem.
         </p>
         <input
           type="file"
@@ -117,55 +135,70 @@ export default function SupplierContractsTab({ data, updateData }: any) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {contratos.map((c: any) => (
           <div
             key={c.id}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow group"
+            className="flex flex-col p-4 sm:p-5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow group"
           >
-            <div className="w-12 h-12 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
-              <FileText className="w-6 h-6 text-rose-500" />
-            </div>
-            <div className="flex-1 min-w-0 w-full">
-              <p className="font-bold text-slate-800 truncate" title={c.nome}>
-                {c.nome}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-slate-500 font-medium truncate">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
+                <FileText className="w-6 h-6 text-rose-500" />
+              </div>
+              <div className="flex-1 min-w-0 w-full">
+                <p className="font-bold text-slate-800 truncate" title={c.nome}>
+                  {c.nome}
+                </p>
+                <p className="text-xs text-slate-500 font-medium truncate mt-1">
                   {c.data} • {c.size || '0.0 MB'}
                 </p>
-                {c.status === 'Assinado' && (
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded">
-                    <CheckCircle2 className="w-3 h-3" /> Validado
-                  </span>
-                )}
               </div>
             </div>
-            <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 text-blue-600 border-blue-200 hover:bg-blue-50"
-                title="Download"
-              >
-                <Download className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => rem(c.id)}
-                className="h-8 w-8 text-rose-500 border-rose-200 hover:bg-rose-50"
-                title="Excluir Documento"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+            <div className="flex items-center gap-2 w-full justify-between mt-auto pt-3 border-t border-slate-100">
+              {c.signatureStatus ? (
+                <Badge className="bg-blue-50 text-blue-700 border-blue-200 shadow-none hover:bg-blue-100 px-2 py-1">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Status: {c.signatureStatus}
+                </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleSendSignature(c.id)}
+                  disabled={!complianceValid}
+                  title={
+                    !complianceValid
+                      ? 'Valide o Compliance na aba Identificação primeiro'
+                      : 'Iniciar Fluxo de Assinatura'
+                  }
+                  className="h-8 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                >
+                  <PenTool className="w-3 h-3 mr-1.5" /> Assinatura Digital
+                </Button>
+              )}
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-slate-500 hover:bg-slate-100"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => rem(c.id)}
+                  className="h-8 w-8 text-rose-500 hover:bg-rose-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}
         {contratos.length === 0 && (
-          <div className="md:col-span-2 lg:col-span-3 text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <div className="md:col-span-2 xl:col-span-3 text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
             <p className="text-slate-500 font-medium text-sm">
-              Nenhum contrato anexado para este fornecedor até o momento.
+              Nenhum documento anexado. Utilize o upload acima.
             </p>
           </div>
         )}
@@ -184,7 +217,7 @@ export default function SupplierContractsTab({ data, updateData }: any) {
           <div className="space-y-5 py-4">
             <div className="space-y-2">
               <Label className="font-semibold">Nome / Apelido do Documento</Label>
-              <Input placeholder="Ex: Contrato Fornecimento 2026_Assinado.pdf" className="h-11" />
+              <Input placeholder="Ex: Contrato Fornecimento 2026.pdf" className="h-11 shadow-sm" />
             </div>
             <div className="space-y-2">
               <Label className="font-semibold">Arquivo (PDF ou DOCX)</Label>
@@ -192,14 +225,14 @@ export default function SupplierContractsTab({ data, updateData }: any) {
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={handleManualUpload}
-                className="h-11 cursor-pointer file:cursor-pointer"
+                className="h-11 cursor-pointer file:cursor-pointer shadow-sm"
               />
             </div>
 
             <div className="relative flex items-center py-4">
               <span className="flex-grow border-t border-slate-200"></span>
               <span className="mx-4 text-xs text-slate-400 font-bold uppercase tracking-wider">
-                Integração Futura
+                Automação de Minutas
               </span>
               <span className="flex-grow border-t border-slate-200"></span>
             </div>
@@ -209,7 +242,7 @@ export default function SupplierContractsTab({ data, updateData }: any) {
               className="w-full text-blue-700 border-blue-200 bg-blue-50/50 hover:bg-blue-100 h-11 font-semibold"
               disabled
             >
-              <ShieldCheck className="w-4 h-4 mr-2" /> Gerar Minuta no Módulo Doc (Em Breve)
+              <ShieldCheck className="w-4 h-4 mr-2" /> Gerar via Módulo de Documentos (Em Breve)
             </Button>
           </div>
         </DialogContent>
