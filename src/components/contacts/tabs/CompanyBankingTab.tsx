@@ -97,15 +97,29 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
               >
                 <div className="flex-1 min-w-[150px]">
                   <LabelT l="Banco" />
-                  <Input
+                  <Select
                     value={c.banco}
-                    onChange={(e) => {
+                    disabled={readOnly}
+                    onValueChange={(v) => {
                       const nc = [...contas]
-                      nc[i].banco = e.target.value
+                      nc[i].banco = v
                       onChange('contas', nc)
                     }}
-                    disabled={readOnly}
-                  />
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Itaú (341)">Itaú (341)</SelectItem>
+                      <SelectItem value="Bradesco (237)">Bradesco (237)</SelectItem>
+                      <SelectItem value="Banco do Brasil (001)">Banco do Brasil (001)</SelectItem>
+                      <SelectItem value="Caixa Econômica (104)">Caixa Econômica (104)</SelectItem>
+                      <SelectItem value="Santander (033)">Santander (033)</SelectItem>
+                      <SelectItem value="Nubank (260)">Nubank (260)</SelectItem>
+                      <SelectItem value="Inter (077)">Inter (077)</SelectItem>
+                      <SelectItem value="BTG Pactual (208)">BTG Pactual (208)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="w-[120px]">
                   <LabelT l="Tipo" />
@@ -118,7 +132,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       onChange('contas', nc)
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -137,6 +151,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       onChange('contas', nc)
                     }}
                     disabled={readOnly}
+                    className="bg-white"
                   />
                 </div>
                 <div className="w-[140px]">
@@ -149,6 +164,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       onChange('contas', nc)
                     }}
                     disabled={readOnly}
+                    className="bg-white"
                   />
                 </div>
                 {!readOnly && (
@@ -156,7 +172,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     variant="ghost"
                     size="icon"
                     onClick={() => removeConta(i)}
-                    className="text-rose-500"
+                    className="text-rose-500 hover:bg-rose-50 h-10 w-10 shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -200,7 +216,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       onChange('pix', np)
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,6 +237,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       onChange('pix', np)
                     }}
                     disabled={readOnly}
+                    className="bg-white font-mono"
                   />
                 </div>
                 {!readOnly && (
@@ -228,7 +245,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     variant="ghost"
                     size="icon"
                     onClick={() => removePix(i)}
-                    className="text-rose-500"
+                    className="text-rose-500 hover:bg-rose-50 h-10 w-10 shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -251,20 +268,20 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
           icon={DollarSign}
           color={{ bg: 'bg-blue-50', text: 'text-blue-600' }}
           title="Total Compras"
-          val="R$ 20,00"
+          val="R$ 150.000,00"
         />
         <StatCard
           icon={TrendingUp}
           color={{ bg: 'bg-emerald-50', text: 'text-emerald-600' }}
           title="Total Pago"
-          val="R$ 20,00"
+          val="R$ 125.000,00"
           valClass="text-emerald-600"
         />
         <StatCard
           icon={Clock}
           color={{ bg: 'bg-amber-50', text: 'text-amber-600' }}
           title="Pendente"
-          val="R$ 0,00"
+          val="R$ 25.000,00"
           valClass="text-amber-600"
         />
         <StatCard
@@ -277,11 +294,11 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
 
         <div className="col-span-2 md:col-span-1 grid grid-rows-2 gap-3">
           <div className="bg-white border border-slate-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-sm font-bold text-slate-800">1</div>
-            <div className="text-[9px] text-slate-500 uppercase">Transações</div>
+            <div className="text-sm font-bold text-slate-800">12</div>
+            <div className="text-[9px] text-slate-500 uppercase">Faturas Pagas</div>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-sm font-bold text-emerald-600">-30 dias</div>
+            <div className="text-sm font-bold text-emerald-600">-2 dias</div>
             <div className="text-[9px] text-slate-500 uppercase">Média Pgto vs Venc</div>
           </div>
         </div>
@@ -303,12 +320,12 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
             <ArrowUpRight className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-emerald-700">1</p>
+            <p className="text-xl font-bold text-emerald-700">8</p>
             <p className="text-xs text-emerald-600 font-medium mt-1">Antecipados</p>
           </div>
           <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center">
             <CheckCircle2 className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-blue-700">0</p>
+            <p className="text-xl font-bold text-blue-700">4</p>
             <p className="text-xs text-blue-600 font-medium mt-1">No Prazo</p>
           </div>
           <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-4 text-center">
@@ -319,56 +336,52 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-        <h3 className="font-semibold text-slate-800 flex items-center gap-2 mb-4">
-          <CreditCard className="w-4 h-4 text-slate-400" /> Formas de Pagamento Utilizadas
-        </h3>
-        <Badge variant="outline" className="px-3 py-1.5 text-sm bg-slate-50 border-slate-200">
-          PIX: 1x
-        </Badge>
-      </div>
-
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100">
           <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-slate-400" /> Histórico de Pagamentos
+            <DollarSign className="w-4 h-4 text-slate-400" /> Histórico de Pagamentos Recentes
           </h3>
         </div>
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
-              <TableHead>Descrição</TableHead>
+              <TableHead>Descrição da Fatura</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Vencimento</TableHead>
               <TableHead>Pagamento</TableHead>
               <TableHead>Método</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow>
               <TableCell>
-                <div className="font-medium text-slate-800">Serviço de consultoria</div>
-                <div className="text-[10px] text-slate-500">Doc: CP-MMBJ</div>
+                <div className="font-medium text-slate-800">Serviço de Logística Mensal</div>
+                <div className="text-[10px] text-slate-500">NF-e: 4892</div>
               </TableCell>
-              <TableCell className="font-bold">R$ 20,00</TableCell>
-              <TableCell>04/03/2026</TableCell>
-              <TableCell>02/02/2026</TableCell>
+              <TableCell className="font-bold">R$ 12.500,00</TableCell>
+              <TableCell>10/03/2026</TableCell>
+              <TableCell>08/03/2026</TableCell>
               <TableCell>PIX</TableCell>
               <TableCell>
                 <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-none">
-                  Pago
+                  Liquidado
                 </Badge>
               </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-slate-400 hover:text-blue-600"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
+            </TableRow>
+            <TableRow>
+              <TableCell>
+                <div className="font-medium text-slate-800">Serviço de Logística Mensal</div>
+                <div className="text-[10px] text-slate-500">NF-e: 4721</div>
+              </TableCell>
+              <TableCell className="font-bold">R$ 12.500,00</TableCell>
+              <TableCell>10/02/2026</TableCell>
+              <TableCell>10/02/2026</TableCell>
+              <TableCell>TED</TableCell>
+              <TableCell>
+                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-none">
+                  Liquidado
+                </Badge>
               </TableCell>
             </TableRow>
           </TableBody>

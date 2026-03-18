@@ -1,34 +1,8 @@
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import {
-  DollarSign,
-  ThumbsUp,
-  ThumbsDown,
-  CheckCircle2,
-  Clock,
-  FileText,
-  TrendingUp,
-  Calendar,
-  AlertTriangle,
-  Filter,
-  Search,
-  FileSignature,
-  Upload,
-  Download,
-  Trash2,
-  Eye,
-  ShieldAlert,
-} from 'lucide-react'
+import { ShieldAlert, Clock } from 'lucide-react'
 import { LabelT } from './CompanyTabs'
 import useSecurityStore from '@/stores/useSecurityStore'
-import { useState, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -91,7 +65,7 @@ export function CompanyFinanceiroTab({ data, type, onChange, errors, readOnly }:
           )}
         >
           <div className="flex justify-between items-center mb-1.5">
-            <LabelT l="Limite de Crédito (R$)" />
+            <LabelT l="Limite de Crédito Ativo (R$)" />
             {data.pendingLimite && !isAdminMode && (
               <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm">
                 <Clock className="w-3 h-3" /> Aguardando Review
@@ -135,7 +109,7 @@ export function CompanyFinanceiroTab({ data, type, onChange, errors, readOnly }:
           )}
         >
           <div className="flex justify-between items-center mb-1.5">
-            <LabelT l="Prazo de Pagamento (dias)" />
+            <LabelT l="Prazo de Pagamento Padrão (dias)" />
             {data.pendingPrazo && !isAdminMode && (
               <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm">
                 <Clock className="w-3 h-3" /> Aguardando Review
@@ -169,61 +143,6 @@ export function CompanyFinanceiroTab({ data, type, onChange, errors, readOnly }:
           )}
         </div>
       </div>
-
-      {type === 'supplier' && (
-        <div className="mt-8 pt-6 border-t border-slate-100">
-          <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-slate-400" /> Dados Bancários (Pagamento)
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-            <div className="space-y-1.5">
-              <LabelT l="Banco" req />
-              <Input
-                value={data.banco || ''}
-                onChange={(e) => onChange('banco', e.target.value)}
-                disabled={readOnly}
-                className={err('banco')}
-                placeholder="Ex: Itaú (341)"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <LabelT l="Agência" req />
-              <Input
-                value={data.agConta || ''}
-                onChange={(e) => onChange('agConta', e.target.value)}
-                disabled={readOnly}
-                className={err('agConta')}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <LabelT l="Conta" req />
-              <Input
-                value={data.conta || ''}
-                onChange={(e) => onChange('conta', e.target.value)}
-                disabled={readOnly}
-                className={err('conta')}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <LabelT l="Chave PIX" />
-              <Input
-                value={data.pix || ''}
-                onChange={(e) => onChange('pix', e.target.value)}
-                disabled={readOnly}
-                className={err('pix')}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
-}
-
-export function CompanyHistoricoTab() {
-  return null // Deprecated - Used inside Profile Modal now
-}
-
-export function CompanyContratosTab() {
-  return null // Deprecated - Used inside Profile Modal now
 }

@@ -12,13 +12,16 @@ import {
   CreditCard,
   UsersRound,
   FileText,
+  DollarSign,
+  FileSignature,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-import { CompanyDadosTab, CompanyContatoTab } from './tabs/CompanyTabs'
+import { CompanyDadosTab, CompanyContatoTab, CompanyAddressTab } from './tabs/CompanyTabs'
 import { CompanyFinanceiroTab } from './tabs/CompanyFinancialTabs'
+import { CompanyBankingTab } from './tabs/CompanyBankingTab'
+import { CompanyAgreementsTab } from './tabs/CompanyAgreementsTab'
 import { CompanyRelacionamentoTab } from './tabs/CompanyRelationshipTabs'
-import { AddressTab } from './tabs/FormTabs1'
 import AttachmentsTab from './tabs/AttachmentsTab'
 import { useCompanyForm } from '@/hooks/useCompanyForm'
 
@@ -40,7 +43,20 @@ export default function CompanyModal({
     { id: 'dados', label: 'Identificação', prog: progress.dados, icon: Users },
     { id: 'endereco', label: 'Endereço', prog: progress.endereco, icon: MapPin },
     { id: 'contato', label: 'Contato', prog: progress.contato, icon: Phone },
-    { id: 'financeiro', label: 'Financeiro', prog: progress.financeiro, icon: CreditCard },
+    { id: 'financeiro', label: 'Financeiro', prog: progress.financeiro, icon: DollarSign },
+    ...(type === 'supplier'
+      ? [{ id: 'bancario', label: 'Bancário / PIX', prog: progress.bancario, icon: CreditCard }]
+      : []),
+    ...(type === 'supplier'
+      ? [
+          {
+            id: 'acordos',
+            label: 'Acordos & Prazos',
+            prog: progress.acordos,
+            icon: FileSignature,
+          },
+        ]
+      : []),
     {
       id: 'relacionamento',
       label: 'Relacionamento',
@@ -55,11 +71,11 @@ export default function CompanyModal({
       toast({
         variant: 'destructive',
         title: 'Erros Encontrados',
-        description: 'Verifique os campos obrigatórios marcados em vermelho.',
+        description: 'Verifique os campos obrigatórios marcados em vermelho nas abas.',
       })
       return
     }
-    toast({ title: 'Sucesso', description: 'Registro atualizado com sucesso.' })
+    toast({ title: 'Cadastro Salvo', description: 'O registro foi atualizado com sucesso.' })
     onOpenChange(false)
   }
 
@@ -67,7 +83,7 @@ export default function CompanyModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1000px] w-[95vw] h-[90vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-2xl shadow-2xl overflow-hidden [&>button]:hidden">
+      <DialogContent className="max-w-[1100px] w-[95vw] h-[95vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-2xl shadow-2xl overflow-hidden [&>button]:hidden">
         <div className="p-5 pb-0 bg-white border-b border-slate-200 shrink-0 relative z-10">
           <button
             onClick={() => onOpenChange(false)}
@@ -106,7 +122,7 @@ export default function CompanyModal({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 pb-4 mt-6">
+          <div className="flex overflow-x-auto gap-2 pb-4 mt-6 custom-scrollbar">
             {TABS.map((tab) => {
               const tabHasError = Object.keys(errors).some((k) => k.startsWith(tab.id))
               return (
@@ -114,7 +130,7 @@ export default function CompanyModal({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex flex-col min-w-[120px] px-3 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 relative overflow-hidden',
+                    'flex flex-col min-w-[140px] px-3 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 relative overflow-hidden',
                     activeTab === tab.id
                       ? 'bg-blue-600 text-white shadow-md border-transparent'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800',
@@ -172,8 +188,8 @@ export default function CompanyModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
-          <div className="bg-transparent min-h-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 custom-scrollbar">
+          <div className="bg-transparent min-h-full max-w-5xl mx-auto">
             {activeTab === 'dados' && (
               <CompanyDadosTab
                 data={data.dados}
@@ -184,7 +200,7 @@ export default function CompanyModal({
               />
             )}
             {activeTab === 'endereco' && (
-              <AddressTab
+              <CompanyAddressTab
                 data={data.endereco}
                 onChange={(f: string, v: any) => updateData('endereco', f, v)}
                 errors={errors}
@@ -205,6 +221,20 @@ export default function CompanyModal({
                 type={type}
                 onChange={(f: string, v: any) => updateData('financeiro', f, v)}
                 errors={errors}
+                readOnly={false}
+              />
+            )}
+            {activeTab === 'bancario' && type === 'supplier' && (
+              <CompanyBankingTab
+                data={data.bancario}
+                onChange={(f: string, v: any) => updateData('bancario', f, v)}
+                readOnly={false}
+              />
+            )}
+            {activeTab === 'acordos' && type === 'supplier' && (
+              <CompanyAgreementsTab
+                data={data.acordos}
+                onChange={(f: string, v: any) => updateData('acordos', f, v)}
                 readOnly={false}
               />
             )}

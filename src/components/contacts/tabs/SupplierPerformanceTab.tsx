@@ -1,7 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
-import { CheckCircle2, Truck, PackageCheck, AlertTriangle, ShieldCheck } from 'lucide-react'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+} from 'recharts'
+import { CheckCircle2, Truck, PackageCheck, AlertTriangle, ShieldCheck, Box } from 'lucide-react'
 
 const leadTimeData = [
   { month: 'Jan', days: 5 },
@@ -24,52 +33,49 @@ const qualityData = [
 export default function SupplierPerformanceTab() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-sm border-slate-200">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-              <Truck className="w-6 h-6 text-blue-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="shadow-sm border-slate-200 hover:border-blue-300 transition-colors">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0 shadow-inner">
+              <Truck className="w-7 h-7 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Lead Time Médio</p>
-              <h3 className="text-2xl font-bold text-slate-800">
-                4.3 <span className="text-sm font-normal text-slate-500">dias</span>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Prazo de Entrega
+              </p>
+              <h3 className="text-3xl font-black text-slate-800 mt-1">
+                4.3 <span className="text-base font-medium text-slate-500">Dias</span>
               </h3>
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-sm border-slate-200">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6 text-emerald-600" />
+
+        <Card className="shadow-sm border-slate-200 hover:border-emerald-300 transition-colors">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0 shadow-inner">
+              <ShieldCheck className="w-7 h-7 text-emerald-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Qualidade de Entrega</p>
-              <h3 className="text-2xl font-bold text-slate-800">98%</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-slate-200">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Qualidade Produto</p>
-              <h3 className="text-2xl font-bold text-slate-800">99.5%</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-slate-200">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Ocorrências / SLA</p>
-              <h3 className="text-2xl font-bold text-slate-800">
-                2 <span className="text-sm font-normal text-slate-500">/ ano</span>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Qualidade da Entrega
+              </p>
+              <h3 className="text-3xl font-black text-slate-800 mt-1">
+                98% <span className="text-base font-medium text-emerald-600 ml-1">SLA</span>
               </h3>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-slate-200 hover:border-purple-300 transition-colors">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0 shadow-inner">
+              <CheckCircle2 className="w-7 h-7 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Qualidade dos Produtos
+              </p>
+              <h3 className="text-3xl font-black text-slate-800 mt-1">99.5%</h3>
             </div>
           </CardContent>
         </Card>
@@ -77,104 +83,146 @@ export default function SupplierPerformanceTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-slate-700 flex items-center gap-2">
-              Evolução do Lead Time (Dias)
+          <CardHeader className="pb-2 border-b border-slate-100 mb-4">
+            <CardTitle className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <Truck className="w-4 h-4 text-blue-500" /> Evolução do Lead Time (Dias)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer
-              config={{ days: { label: 'Dias', color: 'hsl(var(--primary))' } }}
-              className="h-[200px] w-full"
+              config={{ days: { label: 'Dias de Entrega', color: 'hsl(var(--primary))' } }}
+              className="h-[220px] w-full"
             >
-              <BarChart data={leadTimeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid
-                  vertical={false}
-                  strokeDasharray="3 3"
-                  className="stroke-slate-200"
-                />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-slate-500"
-                />
-                <YAxis tickLine={false} axisLine={false} className="text-xs text-slate-500" />
-                <ChartTooltip
-                  cursor={{ fill: 'var(--color-slate-50)' }}
-                  content={<ChartTooltipContent />}
-                />
-                <Bar dataKey="days" fill="var(--color-days)" radius={[4, 4, 0, 0]} />
-              </BarChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={leadTimeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid
+                    vertical={false}
+                    strokeDasharray="3 3"
+                    className="stroke-slate-200"
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    className="text-xs font-medium text-slate-500"
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    className="text-xs font-medium text-slate-500"
+                  />
+                  <ChartTooltip
+                    cursor={{ fill: 'var(--color-slate-50)' }}
+                    content={<ChartTooltipContent />}
+                  />
+                  <Bar dataKey="days" fill="var(--color-days)" radius={[4, 4, 0, 0]} barSize={30} />
+                </BarChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-slate-700 flex items-center gap-2">
-              Índice de Qualidade na Entrega (%)
+          <CardHeader className="pb-2 border-b border-slate-100 mb-4">
+            <CardTitle className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" /> Índice de Qualidade Geral (%)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer
-              config={{ rate: { label: 'Taxa (%)', color: '#10b981' } }}
-              className="h-[200px] w-full"
+              config={{ rate: { label: 'Taxa de Qualidade (%)', color: '#10b981' } }}
+              className="h-[220px] w-full"
             >
-              <LineChart data={qualityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid
-                  vertical={false}
-                  strokeDasharray="3 3"
-                  className="stroke-slate-200"
-                />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-slate-500"
-                />
-                <YAxis
-                  domain={[90, 100]}
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-slate-500"
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line
-                  type="monotone"
-                  dataKey="rate"
-                  stroke="var(--color-rate)"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
-                />
-              </LineChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={qualityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid
+                    vertical={false}
+                    strokeDasharray="3 3"
+                    className="stroke-slate-200"
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    className="text-xs font-medium text-slate-500"
+                  />
+                  <YAxis
+                    domain={[90, 100]}
+                    tickLine={false}
+                    axisLine={false}
+                    className="text-xs font-medium text-slate-500"
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line
+                    type="monotone"
+                    dataKey="rate"
+                    stroke="var(--color-rate)"
+                    strokeWidth={4}
+                    dot={{ r: 5, fill: '#fff', strokeWidth: 3 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-slate-200 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base text-slate-700 flex items-center gap-2">
-              <PackageCheck className="w-5 h-5 text-blue-500" /> Aderência ao Catálogo do Fornecedor
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-slate-600 font-medium">
-                Itens comprados vs Total disponível no catálogo
-              </span>
-              <span className="font-bold text-slate-800 text-lg">37.5%</span>
-            </div>
-            <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
-              <div className="h-full bg-blue-500 w-[37.5%] transition-all duration-1000" />
-            </div>
-            <div className="flex justify-between items-center mt-4 text-xs text-slate-500">
-              <p>
-                O fornecedor possui <strong>1.200 itens</strong> catalogados.
-              </p>
-              <p>
-                Atualmente compramos <strong>450 itens</strong> ativamente.
-              </p>
+        <Card className="shadow-sm border-slate-200 lg:col-span-2 bg-gradient-to-r from-slate-50 to-white">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1 w-full space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <PackageCheck className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">
+                      Aderência ao Catálogo (Share of Wallet)
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Visualização de Produtos no Catálogo vs Produtos Comprados
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="text-slate-700 font-semibold flex items-center gap-2">
+                      <Box className="w-4 h-4 text-slate-400" /> Penetração de Portfólio
+                    </span>
+                    <span className="font-black text-blue-600 text-lg">37.5%</span>
+                  </div>
+                  <div className="h-5 w-full bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
+                    <div className="h-full bg-blue-600 w-[37.5%] transition-all duration-1000 relative">
+                      <div className="absolute inset-0 bg-white/20 w-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm text-center">
+                    <p className="text-xs font-bold text-slate-500 uppercase">
+                      Produtos no Catálogo
+                    </p>
+                    <p className="text-2xl font-black text-slate-800 mt-1">1.200</p>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl shadow-sm text-center">
+                    <p className="text-xs font-bold text-blue-600 uppercase">Produtos Comprados</p>
+                    <p className="text-2xl font-black text-blue-700 mt-1">450</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full md:w-72 shrink-0 bg-white border border-amber-200 rounded-xl p-5 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 rounded-bl-full -z-10" />
+                <AlertTriangle className="w-6 h-6 text-amber-500 mb-3" />
+                <h4 className="font-bold text-slate-800 mb-2">Atenção ao Risco</h4>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  O fornecedor concentra <b>37.5%</b> do volume total de compras de suprimentos na
+                  categoria "Ferramentas". Recomenda-se diversificação para evitar dependência
+                  logística.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

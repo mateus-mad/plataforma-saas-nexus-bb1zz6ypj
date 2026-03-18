@@ -5,49 +5,65 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   const [data, setData] = useState<any>({
     dados: {
       tipoPessoa: 'PJ',
-      nomeRazao: 'DIRECAO GERAL',
-      fantasia: '',
+      nomeRazao: 'DIRECAO GERAL SA',
+      fantasia: 'Direção Geral',
       documento: '12.345.678/0001-90',
-      ie: '',
+      ie: '123.456.789.012',
       im: '',
-      setor: 'Serviços',
+      setor: 'Tecnologia e Serviços',
       dataNascimento: '',
       genero: '',
       ativo: true,
-      logo: '',
+      logo: 'https://img.usecurling.com/i?q=company&color=blue',
     },
     endereco: {
       cep: '01001-000',
       logradouro: 'Praça da Sé',
       numero: '123',
-      comp: '',
+      comp: 'Andar 5',
       bairro: 'Sé',
       cidade: 'São Paulo',
       estado: 'SP',
     },
     contato: {
-      responsavel: 'João Silva',
+      responsavel: 'João Silva', // Mantido para compatibilidade com outros módulos
       cargo: 'Gerente de Contas',
       email: 'contato@direcaogeral.com',
       telefone: '(11) 3333-3333',
+      pessoas: [
+        {
+          id: 1,
+          nome: 'João Silva',
+          cargo: 'Gerente Comercial',
+          email: 'joao@direcaogeral.com',
+          telefone: '(11) 98888-7777',
+        },
+        {
+          id: 2,
+          nome: 'Ana Costa',
+          cargo: 'Analista Financeiro',
+          email: 'ana.financeiro@direcaogeral.com',
+          telefone: '(11) 97777-6666',
+        },
+      ],
       whatsapp: '11999999999',
       emailCobranca: 'financeiro@direcaogeral.com',
       website: 'https://direcaogeral.com',
     },
     financeiro: {
-      limiteCredito: '0,00',
+      limiteCredito: '50.000,00',
       prazoPagamento: '30',
       pendingLimite: null,
       pendingPrazo: null,
     },
     bancario: {
-      contas: [],
+      contas: [{ banco: 'Itaú (341)', tipo: 'Corrente', agencia: '0001', conta: '12345-6' }],
       pix: [{ tipo: 'CNPJ', chave: '12.345.678/0001-90' }],
     },
     acordos: {
-      desconto: '5% em serviços',
-      negociacao: 'Pagamento 30 dias',
-      observacoes: '',
+      desconto: '5% em toda a linha de serviços',
+      negociacao: 'Pagamento 30 dias após emissão da NF',
+      observacoes: 'Contrato exige renovação anual de limites de SLA de entrega.',
     },
     relacionamento: {
       clienteDesde: '',
@@ -113,5 +129,5 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     setErrors({})
   }
 
-  return { data, updateData, progress, globalProgress, errors, autofillCNPJ }
+  return { data, updateData, progress, globalProgress, errors, validate: () => true, autofillCNPJ }
 }
