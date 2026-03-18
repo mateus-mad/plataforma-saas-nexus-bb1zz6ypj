@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Users, Search, Plus, Trash2 } from 'lucide-react'
+import { Users, Search, Plus, Trash2, Mail, Phone, Briefcase } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function SupplierContactsTab({ data, updateData }: any) {
@@ -9,20 +9,23 @@ export default function SupplierContactsTab({ data, updateData }: any) {
   const pessoas = data?.contato?.pessoas || []
 
   const handleAutoFill = () => {
-    toast({ title: 'Sincronizando...', description: 'Buscando contatos na Receita Federal.' })
+    toast({
+      title: 'Sincronizando com Receita Federal',
+      description: 'Buscando Quadro Societário...',
+    })
     setTimeout(() => {
       updateData('contato', 'pessoas', [
         ...pessoas,
         {
           id: Date.now(),
           nome: 'Sócio Administrador',
-          cargo: 'Diretoria',
-          email: 'diretoria@empresa.com',
-          telefone: '(11) 9999-9999',
+          cargo: 'Sócio / Diretoria',
+          email: 'diretoria@empresa.com.br',
+          telefone: '(11) 99999-9999',
         },
       ])
-      toast({ title: 'Sucesso', description: 'Contatos sincronizados da base pública.' })
-    }, 1000)
+      toast({ title: 'Sucesso', description: 'Contatos sincronizados e adicionados à lista.' })
+    }, 1200)
   }
 
   const add = () =>
@@ -30,12 +33,14 @@ export default function SupplierContactsTab({ data, updateData }: any) {
       ...pessoas,
       { id: Date.now(), nome: '', cargo: '', email: '', telefone: '' },
     ])
+
   const remove = (id: number) =>
     updateData(
       'contato',
       'pessoas',
       pessoas.filter((p: any) => p.id !== id),
     )
+
   const update = (id: number, field: string, val: string) => {
     updateData(
       'contato',
@@ -46,28 +51,28 @@ export default function SupplierContactsTab({ data, updateData }: any) {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-blue-50/80 p-5 rounded-xl border border-blue-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div>
-          <h3 className="font-bold text-blue-900 flex items-center gap-2 text-lg">
-            <Users className="w-5 h-5" /> Contatos Estratégicos
+          <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+            <Users className="w-5 h-5 text-blue-600" /> Contatos Estratégicos
           </h3>
-          <p className="text-sm text-blue-800/80 mt-1">
-            Gerencie os principais pontos de contato deste fornecedor.
+          <p className="text-sm text-slate-500 mt-1">
+            Gerencie os principais pontos de contato, gestores e diretoria deste fornecedor.
           </p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={handleAutoFill}
-            className="bg-white flex-1 sm:flex-none border-blue-200 text-blue-700 hover:bg-blue-50"
+            className="bg-blue-50 flex-1 sm:flex-none border-blue-200 text-blue-700 hover:bg-blue-100"
           >
-            <Search className="w-4 h-4 mr-2" /> CNPJ Auto-Fill
+            <Search className="w-4 h-4 mr-2" /> Buscar CNPJ
           </Button>
           <Button
             onClick={add}
-            className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none shadow-sm"
           >
-            <Plus className="w-4 h-4 mr-2" /> Novo
+            <Plus className="w-4 h-4 mr-2" /> Novo Contato
           </Button>
         </div>
       </div>
@@ -76,7 +81,7 @@ export default function SupplierContactsTab({ data, updateData }: any) {
         {pessoas.map((p: any) => (
           <div
             key={p.id}
-            className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm relative group hover:border-blue-200 transition-colors"
+            className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm relative group hover:border-blue-300 transition-colors"
           >
             <Button
               variant="ghost"
@@ -88,44 +93,62 @@ export default function SupplierContactsTab({ data, updateData }: any) {
             </Button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pr-10">
               <div className="space-y-2">
-                <Label className="text-slate-600 font-semibold">Nome Completo</Label>
+                <Label className="text-slate-600 font-semibold flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" /> Nome Completo
+                </Label>
                 <Input
                   value={p.nome}
                   onChange={(e) => update(p.id, 'nome', e.target.value)}
-                  className="bg-slate-50 border-slate-200 focus:bg-white"
+                  className="bg-slate-50 focus:bg-white"
+                  placeholder="Ex: João da Silva"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-600 font-semibold">Cargo / Função</Label>
+                <Label className="text-slate-600 font-semibold flex items-center gap-1.5">
+                  <Briefcase className="w-3.5 h-3.5" /> Cargo / Função
+                </Label>
                 <Input
                   value={p.cargo}
                   onChange={(e) => update(p.id, 'cargo', e.target.value)}
-                  className="bg-slate-50 border-slate-200 focus:bg-white"
+                  className="bg-slate-50 focus:bg-white"
+                  placeholder="Ex: Gerente de Contas"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-600 font-semibold">E-mail Direto</Label>
+                <Label className="text-slate-600 font-semibold flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5" /> E-mail Direto
+                </Label>
                 <Input
+                  type="email"
                   value={p.email}
                   onChange={(e) => update(p.id, 'email', e.target.value)}
-                  className="bg-slate-50 border-slate-200 focus:bg-white"
+                  className="bg-slate-50 focus:bg-white"
+                  placeholder="joao@empresa.com"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-600 font-semibold">Telefone / WhatsApp</Label>
+                <Label className="text-slate-600 font-semibold flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" /> Telefone / WhatsApp
+                </Label>
                 <Input
                   value={p.telefone}
                   onChange={(e) => update(p.id, 'telefone', e.target.value)}
-                  className="bg-slate-50 border-slate-200 focus:bg-white"
+                  className="bg-slate-50 focus:bg-white"
+                  placeholder="(11) 90000-0000"
                 />
               </div>
             </div>
           </div>
         ))}
         {pessoas.length === 0 && (
-          <div className="text-center p-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
-            <Users className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Nenhum contato estratégico cadastrado.</p>
+          <div className="text-center p-12 bg-white border-2 border-dashed border-slate-300 rounded-xl">
+            <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-700 font-semibold mb-1">
+              Nenhum contato estratégico cadastrado.
+            </p>
+            <p className="text-sm text-slate-500">
+              Clique em "Buscar CNPJ" ou adicione manualmente.
+            </p>
           </div>
         )}
       </div>

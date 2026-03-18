@@ -61,23 +61,39 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       pix: [{ tipo: 'CNPJ', chave: '12.345.678/0001-90' }],
     },
     acordos: {
-      desconto: '5% em toda a linha de serviços',
-      negociacao: 'Pagamento 30 dias após emissão da NF',
-      observacoes: 'Contrato exige renovação anual de limites de SLA de entrega.',
+      lista: [
+        {
+          id: 1,
+          descricao: 'Acordo SLA Padrão 2026',
+          desconto: '5%',
+          prazo: '45 dias',
+          dataFim: '2026-12-31',
+        },
+      ],
+    },
+    contratos: {
+      lista: [],
     },
     relacionamento: {
-      clienteDesde: '',
+      clienteDesde: '2022-04-10',
       segmento: '',
       observacoes: '',
+      problemas: [],
+      elogios: [],
     },
   })
 
-  const updateData = (section: string, field: string, value: any) => {
-    setData((prev: any) => ({
-      ...prev,
-      [section]: { ...prev[section], [field]: value },
-    }))
-    if (errors[`${section}.${field}`]) {
+  const updateData = (section: string, field: string | null, value: any) => {
+    setData((prev: any) => {
+      if (field === null) {
+        return { ...prev, [section]: value }
+      }
+      return {
+        ...prev,
+        [section]: { ...prev[section], [field]: value },
+      }
+    })
+    if (field && errors[`${section}.${field}`]) {
       const newE = { ...errors }
       delete newE[`${section}.${field}`]
       setErrors(newE)
@@ -110,23 +126,40 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     Object.values(progress).reduce((a, b) => a + b, 0) / totalSections,
   )
 
-  const autofillCNPJ = () => {
-    setData((prev: any) => ({
-      ...prev,
-      dados: {
-        ...prev.dados,
-        nomeRazao: 'FORNECEDOR LOGÍSTICA S.A.',
-        fantasia: 'ForneceLog Transportes',
-        logo: 'https://img.usecurling.com/i?q=logistics&color=blue',
-      },
-      endereco: {
-        ...prev.endereco,
-        logradouro: 'Av Paulista',
-        cidade: 'São Paulo',
-        estado: 'SP',
-      },
-    }))
-    setErrors({})
+  const autofillCNPJ = async (cnpj?: string) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setData((prev: any) => {
+          const current = prev.dados || {}
+          return {
+            ...prev,
+            dados: {
+              ...current,
+              documento: cnpj || current.documento || '12.345.678/0001-90',
+              nomeRazao:
+                current.nomeRazao && current.nomeRazao !== 'DIRECAO GERAL SA'
+                  ? current.nomeRazao
+                  : 'NEXUS LOGÍSTICA S.A.',
+              fantasia:
+                current.fantasia && current.fantasia !== 'Direção Geral'
+                  ? current.fantasia
+                  : 'NexusLog Transporte',
+              logo: current.logo || 'https://img.usecurling.com/i?q=logistics&color=blue',
+              segmento: current.segmento || 'Logística',
+              dataNascimento: current.dataNascimento || '2015-08-20',
+            },
+            endereco: {
+              ...prev.endereco,
+              logradouro: prev.endereco?.logradouro || 'Av Paulista',
+              cidade: prev.endereco?.cidade || 'São Paulo',
+              estado: prev.endereco?.estado || 'SP',
+            },
+          }
+        })
+        setErrors({})
+        resolve(true)
+      }, 800)
+    })
   }
 
   return { data, updateData, progress, globalProgress, errors, validate: () => true, autofillCNPJ }

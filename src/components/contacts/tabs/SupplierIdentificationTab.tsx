@@ -10,12 +10,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Building2, User, Plus } from 'lucide-react'
+import { Building2, User, Plus, Search } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
-export default function SupplierIdentificationTab({ data, updateData }: any) {
+export default function SupplierIdentificationTab({ data, updateData, onAutofill }: any) {
   const d = data.dados || {}
   const isPJ = d.tipoPessoa === 'PJ'
   const [newSeg, setNewSeg] = useState('')
+  const [loadingCnpj, setLoadingCnpj] = useState(false)
   const [segments, setSegments] = useState([
     'Tecnologia',
     'Logística',
@@ -23,6 +25,7 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
     'Serviços',
     'Varejo',
   ])
+  const { toast } = useToast()
 
   const handleAddSeg = () => {
     if (newSeg && !segments.includes(newSeg)) setSegments([...segments, newSeg])
@@ -30,23 +33,39 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
     setNewSeg('')
   }
 
+  const handleCnpjSearch = async () => {
+    if (!d.documento) {
+      toast({ variant: 'destructive', title: 'Aviso', description: 'Informe o CNPJ primeiro.' })
+      return
+    }
+    setLoadingCnpj(true)
+    toast({ title: 'Buscando CNPJ', description: 'Consultando base da Receita Federal...' })
+    if (onAutofill) {
+      await onAutofill(d.documento)
+      toast({ title: 'Sucesso', description: 'Dados sincronizados. Alterações manuais mantidas.' })
+    }
+    setLoadingCnpj(false)
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <Button
-          variant={isPJ ? 'default' : 'outline'}
-          onClick={() => updateData('dados', 'tipoPessoa', 'PJ')}
-          className="w-full sm:w-auto"
-        >
-          <Building2 className="w-4 h-4 mr-2" /> Pessoa Jurídica
-        </Button>
-        <Button
-          variant={!isPJ ? 'default' : 'outline'}
-          onClick={() => updateData('dados', 'tipoPessoa', 'PF')}
-          className="w-full sm:w-auto"
-        >
-          <User className="w-4 h-4 mr-2" /> Pessoa Física
-        </Button>
+        <div className="flex w-full sm:w-auto gap-2">
+          <Button
+            variant={isPJ ? 'default' : 'outline'}
+            onClick={() => updateData('dados', 'tipoPessoa', 'PJ')}
+            className="flex-1 sm:flex-none"
+          >
+            <Building2 className="w-4 h-4 mr-2" /> Pessoa Jurídica
+          </Button>
+          <Button
+            variant={!isPJ ? 'default' : 'outline'}
+            onClick={() => updateData('dados', 'tipoPessoa', 'PF')}
+            className="flex-1 sm:flex-none"
+          >
+            <User className="w-4 h-4 mr-2" /> Pessoa Física
+          </Button>
+        </div>
         <div className="sm:ml-auto flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 w-full sm:w-auto justify-between sm:justify-start">
           <Label className="font-bold text-slate-700">Status Ativo</Label>
           <Switch checked={d.ativo} onCheckedChange={(v) => updateData('dados', 'ativo', v)} />
@@ -56,11 +75,25 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div className="space-y-2">
           <Label className="font-semibold text-slate-700">{isPJ ? 'CNPJ' : 'CPF'}</Label>
-          <Input
-            value={d.documento || ''}
-            onChange={(e) => updateData('dados', 'documento', e.target.value)}
-            className="font-mono"
-          />
+          <div className="flex gap-2">
+            <Input
+              value={d.documento || ''}
+              onChange={(e) => updateData('dados', 'documento', e.target.value)}
+              className="font-mono flex-1"
+              placeholder={isPJ ? '00.000.000/0001-00' : '000.000.000-00'}
+            />
+            {isPJ && (
+              <Button
+                variant="outline"
+                onClick={handleCnpjSearch}
+                disabled={loadingCnpj}
+                className="shrink-0 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                title="Sincronizar com Receita Federal"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-2 lg:col-span-2">
           <Label className="font-semibold text-slate-700">
@@ -89,6 +122,7 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
               <Input
                 value={d.ie || ''}
                 onChange={(e) => updateData('dados', 'ie', e.target.value)}
+                placeholder="ISENTO ou Número"
               />
             </div>
             <div className="space-y-2">
@@ -118,12 +152,13 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
             </Select>
             <div className="flex items-center gap-2">
               <Input
-                placeholder="Adicionar novo..."
+                placeholder="Ou digite um novo..."
                 value={newSeg}
                 onChange={(e) => setNewSeg(e.target.value)}
-                className="h-10 text-sm max-w-[200px]"
+                className="h-10 text-sm w-full sm:max-w-[200px]"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddSeg()}
               />
-              <Button onClick={handleAddSeg} className="h-10 shrink-0">
+              <Button onClick={handleAddSeg} className="h-10 shrink-0" variant="secondary">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

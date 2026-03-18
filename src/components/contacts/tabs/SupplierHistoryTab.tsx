@@ -1,4 +1,12 @@
-import { FileText, MessageSquare, Truck, DollarSign, PhoneCall } from 'lucide-react'
+import {
+  FileText,
+  MessageSquare,
+  Truck,
+  DollarSign,
+  PhoneCall,
+  RefreshCcw,
+  ShieldAlert,
+} from 'lucide-react'
 
 const history = [
   {
@@ -6,10 +14,11 @@ const history = [
     type: 'order',
     date: '14/03/2026 - 10:30',
     title: 'Pedido #4928 Recebido',
-    desc: 'Mercadorias entregues sem avarias e no prazo (Nota Fiscal #88321).',
+    desc: 'Mercadorias entregues sem avarias e no prazo acordado (Nota Fiscal #88321).',
     icon: Truck,
     color: 'text-emerald-600',
     bg: 'bg-emerald-100',
+    border: 'border-emerald-200',
   },
   {
     id: 2,
@@ -20,6 +29,7 @@ const history = [
     icon: DollarSign,
     color: 'text-blue-600',
     bg: 'bg-blue-100',
+    border: 'border-blue-200',
   },
   {
     id: 3,
@@ -28,11 +38,23 @@ const history = [
     title: 'Reunião de Alinhamento (Q1)',
     desc: 'Ajuste de escopo e renegociação de prazos com a diretoria comercial. Fornecedor concordou em manter SLA de 4 dias.',
     icon: PhoneCall,
-    color: 'text-amber-600',
-    bg: 'bg-amber-100',
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-100',
+    border: 'border-indigo-200',
   },
   {
     id: 4,
+    type: 'status',
+    date: '15/02/2026 - 16:20',
+    title: 'Atualização de Status',
+    desc: 'O status do fornecedor foi alterado de "Em Análise" para "Ativo - Aprovado" pela auditoria de compliance.',
+    icon: ShieldAlert,
+    color: 'text-amber-600',
+    bg: 'bg-amber-100',
+    border: 'border-amber-200',
+  },
+  {
+    id: 5,
     type: 'contract',
     date: '01/02/2026 - 11:20',
     title: 'Renovação de Contrato Comercial',
@@ -40,9 +62,10 @@ const history = [
     icon: FileText,
     color: 'text-purple-600',
     bg: 'bg-purple-100',
+    border: 'border-purple-200',
   },
   {
-    id: 5,
+    id: 6,
     type: 'issue',
     date: '15/12/2025 - 16:40',
     title: 'Registro de Ocorrência (Atraso de Entrega)',
@@ -50,6 +73,18 @@ const history = [
     icon: MessageSquare,
     color: 'text-rose-600',
     bg: 'bg-rose-100',
+    border: 'border-rose-200',
+  },
+  {
+    id: 7,
+    type: 'sync',
+    date: '10/11/2025 - 08:15',
+    title: 'Sincronização de Cadastro',
+    desc: 'Dados societários e endereço atualizados automaticamente via integração com a Receita Federal.',
+    icon: RefreshCcw,
+    color: 'text-slate-600',
+    bg: 'bg-slate-100',
+    border: 'border-slate-200',
   },
 ]
 
@@ -65,7 +100,7 @@ export default function SupplierHistoryTab() {
               <FileText className="w-5 h-5 text-blue-600" /> Histórico Completo de Interações
             </h3>
             <p className="text-sm text-slate-500 mt-1">
-              Timeline de eventos, compras, pagamentos e comunicações com este fornecedor.
+              Timeline unificada de eventos, compras, pagamentos, ocorrências e atualizações.
             </p>
           </div>
         </div>
@@ -78,7 +113,9 @@ export default function SupplierHistoryTab() {
               >
                 <h.icon className={`w-4 h-4 ${h.color}`} />
               </div>
-              <div className="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-100 hover:border-slate-200 hover:bg-white transition-colors hover:shadow-md">
+              <div
+                className={`bg-slate-50 rounded-xl p-4 sm:p-5 border ${h.border} hover:bg-white transition-colors hover:shadow-md`}
+              >
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
                   <h4 className="text-base font-bold text-slate-800">{h.title}</h4>
                   <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200 whitespace-nowrap shadow-sm">
@@ -92,8 +129,8 @@ export default function SupplierHistoryTab() {
 
           <div className="relative group pt-4">
             <div className="absolute -left-[35px] sm:-left-[43px] top-4 w-7 h-7 rounded-full flex items-center justify-center border-4 border-white bg-slate-200 shadow-sm" />
-            <p className="text-sm text-slate-400 italic">
-              Início do relacionamento com o fornecedor
+            <p className="text-sm text-slate-400 font-medium italic">
+              Início do relacionamento com o fornecedor no sistema.
             </p>
           </div>
         </div>
