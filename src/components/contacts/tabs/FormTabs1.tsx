@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Search, Info, UploadCloud } from 'lucide-react'
+import { Search, Info } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -10,9 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useState, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -41,26 +38,6 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
 )
 
 export function DocsTab({ data, onChange, errors, readOnly }: Props) {
-  const [ocrLoading, setOcrLoading] = useState(false)
-  const { toast } = useToast()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const handleOcrSimulate = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) {
-      setOcrLoading(true)
-      setTimeout(() => {
-        onChange('docType', 'RG')
-        onChange('cpf', '123.456.789-00')
-        onChange('docIssueDate', '2020-05-15')
-        setOcrLoading(false)
-        toast({
-          title: 'Documento Processado',
-          description: 'Dados extraídos com sucesso via Inteligência Artificial (OCR).',
-        })
-      }, 1500)
-    }
-  }
-
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '')
     if (v.length > 11) v = v.slice(0, 11)
@@ -75,36 +52,6 @@ export function DocsTab({ data, onChange, errors, readOnly }: Props) {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      {!readOnly && (
-        <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50/50 transition-colors">
-          <div className="bg-blue-100 p-3 rounded-full mb-3">
-            <UploadCloud className="w-6 h-6 text-blue-600" />
-          </div>
-          <h4 className="font-semibold text-slate-800 mb-1">
-            Upload Automático de Documento (OCR)
-          </h4>
-          <p className="text-xs text-slate-500 mb-4 max-w-md">
-            Faça upload da foto do RG, CNH ou CTPS para preencher os campos automaticamente com a
-            nossa inteligência artificial.
-          </p>
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*,.pdf"
-            onChange={handleOcrSimulate}
-          />
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={ocrLoading}
-            variant="outline"
-            className="bg-white"
-          >
-            {ocrLoading ? 'Analisando Documento...' : 'Anexar Documento para Leitura'}
-          </Button>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div>
           <LabelT l="Tipo de Documento" t="Selecione o documento principal" />

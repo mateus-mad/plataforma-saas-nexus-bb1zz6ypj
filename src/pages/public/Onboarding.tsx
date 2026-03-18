@@ -4,19 +4,39 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Building, UploadCloud, CheckCircle, ShieldAlert } from 'lucide-react'
+import {
+  Building,
+  UploadCloud,
+  CheckCircle,
+  ShieldAlert,
+  ScanLine,
+  Loader2,
+  Image as ImageIcon,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function Onboarding() {
   const { token } = useParams()
   const { toast } = useToast()
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false)
+  const [extractedPhoto, setExtractedPhoto] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     nome: '',
     cpf: '',
+    rg: '',
+    dataNascimento: '',
+    nomeMae: '',
+    nomePai: '',
     email: '',
     telefone: '',
     cep: '',
     logradouro: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
   })
 
   // Simulates a checking process to see if the token has already been used
@@ -65,7 +85,6 @@ export default function Onboarding() {
       return
     }
 
-    // Simulate submission
     toast({
       title: 'Enviando dados...',
       description: 'Processando as informações de forma segura.',
@@ -78,15 +97,28 @@ export default function Onboarding() {
 
   const handleOcrSimulate = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
-      toast({ title: 'Lendo Documento', description: 'Extraindo dados via IA...' })
+      setIsProcessingOCR(true)
+      toast({ title: 'Lendo Documento', description: 'Extraindo dados e foto via IA...' })
       setTimeout(() => {
         setFormData((prev) => ({
           ...prev,
           nome: 'João Silva Oliveira',
           cpf: '123.456.789-00',
+          rg: '12.345.678-9',
+          dataNascimento: '1990-05-15',
+          nomeMae: 'Maria Silva Oliveira',
+          nomePai: 'Carlos Oliveira',
+          cep: '01001-000',
+          logradouro: 'Praça da Sé',
+          numero: '123',
+          bairro: 'Sé',
+          cidade: 'São Paulo',
+          estado: 'SP',
         }))
-        toast({ title: 'Sucesso', description: 'Nome e CPF extraídos do documento.' })
-      }, 1500)
+        setExtractedPhoto('https://img.usecurling.com/ppl/medium?gender=male&seed=15')
+        setIsProcessingOCR(false)
+        toast({ title: 'Sucesso', description: 'Dados e foto extraídos com sucesso.' })
+      }, 2500)
     }
   }
 
@@ -109,12 +141,12 @@ export default function Onboarding() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
-            <div className="bg-blue-50/50 border border-blue-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50 transition-colors">
-              <UploadCloud className="w-8 h-8 text-blue-500 mb-3" />
-              <h4 className="font-semibold text-slate-800 mb-1">Dica: Preenchimento Automático</h4>
+            <div className="bg-blue-50/50 border border-blue-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50 transition-colors relative overflow-hidden group">
+              <ScanLine className="w-8 h-8 text-blue-500 mb-3" />
+              <h4 className="font-semibold text-slate-800 mb-1">Preenchimento Automático (OCR)</h4>
               <p className="text-xs text-slate-500 mb-4 max-w-md">
-                Faça o upload do seu RG ou CNH (frente e verso) para preencher os dados
-                automaticamente usando inteligência artificial.
+                Faça o upload de uma foto do seu RG ou CNH para extrairmos sua foto e dados
+                automaticamente, facilitando o preenchimento.
               </p>
               <Input
                 type="file"
@@ -122,52 +154,175 @@ export default function Onboarding() {
                 id="auto-upload"
                 onChange={handleOcrSimulate}
                 accept="image/*,.pdf"
+                disabled={isProcessingOCR}
               />
-              <Button asChild variant="outline" className="bg-white cursor-pointer">
-                <label htmlFor="auto-upload">Selecionar Documento</label>
+              <Button
+                asChild
+                variant="outline"
+                className={cn(
+                  'bg-white cursor-pointer hover:bg-slate-50 shadow-sm transition-all',
+                  isProcessingOCR && 'pointer-events-none opacity-50',
+                )}
+              >
+                <label htmlFor="auto-upload">
+                  {isProcessingOCR ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analisando Documento...
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="w-4 h-4 mr-2 text-blue-600" /> Selecionar Documento
+                    </>
+                  )}
+                </label>
               </Button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">
                 1. Dados Pessoais
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>
-                    Nome Completo <span className="text-rose-500">*</span>
-                  </Label>
+
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="shrink-0 flex flex-col items-center gap-3">
+                  <div className="w-32 h-32 rounded-full border-4 border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden shadow-sm">
+                    {extractedPhoto ? (
+                      <img
+                        src={extractedPhoto}
+                        alt="Perfil Extraído"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="w-10 h-10 text-slate-300" />
+                    )}
+                  </div>
+                  {extractedPhoto && (
+                    <span className="text-[10px] bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">
+                      Foto Extraída
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>
+                      Nome Completo <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      placeholder="Seu nome completo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      CPF <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      value={formData.cpf}
+                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                      placeholder="000.000.000-00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>RG</Label>
+                    <Input
+                      value={formData.rg}
+                      onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
+                      placeholder="Número do RG"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data de Nascimento</Label>
+                    <Input
+                      type="date"
+                      value={formData.dataNascimento}
+                      onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nome da Mãe</Label>
+                    <Input
+                      value={formData.nomeMae}
+                      onChange={(e) => setFormData({ ...formData, nomeMae: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Nome do Pai</Label>
+                    <Input
+                      value={formData.nomePai}
+                      onChange={(e) => setFormData({ ...formData, nomePai: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>E-mail</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="exemplo@email.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Telefone / WhatsApp</Label>
+                    <Input
+                      value={formData.telefone}
+                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">
+                2. Endereço
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>CEP</Label>
                   <Input
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    placeholder="Seu nome completo"
+                    value={formData.cep}
+                    onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                    placeholder="00000-000"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    CPF <span className="text-rose-500">*</span>
-                  </Label>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Logradouro</Label>
                   <Input
-                    value={formData.cpf}
-                    onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                    placeholder="000.000.000-00"
+                    value={formData.logradouro}
+                    onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                    placeholder="Rua, Avenida, etc."
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>E-mail</Label>
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Número</Label>
                   <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="exemplo@email.com"
+                    value={formData.numero}
+                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                    placeholder="Nº"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Telefone / WhatsApp</Label>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Bairro</Label>
                   <Input
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                    placeholder="(00) 00000-0000"
+                    value={formData.bairro}
+                    onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Cidade</Label>
+                  <Input
+                    value={formData.cidade}
+                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-1">
+                  <Label>Estado</Label>
+                  <Input
+                    value={formData.estado}
+                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                    placeholder="UF"
                   />
                 </div>
               </div>

@@ -12,26 +12,15 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
+type Props = {
+  data: any[]
+  onChange: (v: any[]) => void
+  readOnly?: boolean
+}
+
+export default function AttachmentsTab({ data = [], onChange, readOnly }: Props) {
   const [previewFile, setPreviewFile] = useState<any>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [files, setFiles] = useState([
-    { id: 1, name: 'RG_Frente_Verso.pdf', size: '2.4 MB', date: '12/10/2025', type: 'pdf' },
-    {
-      id: 2,
-      name: 'Comprovante_Residencia.jpg',
-      size: '1.1 MB',
-      date: '12/10/2025',
-      type: 'image',
-    },
-    {
-      id: 3,
-      name: 'Contrato_Trabalho_Assinado.pdf',
-      size: '3.5 MB',
-      date: '15/10/2025',
-      type: 'pdf',
-    },
-  ])
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -51,13 +40,13 @@ export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
         date: new Date().toLocaleDateString('pt-BR'),
         type,
       }
-      setFiles([...files, newFile])
+      onChange([...data, newFile])
     }
   }
 
   const handleDelete = (id: number) => {
     if (readOnly) return
-    setFiles(files.filter((f) => f.id !== id))
+    onChange(data.filter((f: any) => f.id !== id))
   }
 
   const getIcon = (type: string) => {
@@ -120,17 +109,17 @@ export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
         <h4 className="font-semibold text-slate-700 flex items-center gap-2">
           Arquivos Anexados{' '}
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs">
-            {files.length}
+            {data.length}
           </span>
         </h4>
 
-        {files.length === 0 ? (
+        {data.length === 0 ? (
           <div className="text-center p-6 text-slate-500 text-sm border border-slate-100 rounded-xl bg-slate-50/50">
             Nenhum arquivo anexado.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {files.map((file) => (
+            {data.map((file: any) => (
               <div
                 key={file.id}
                 className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow"

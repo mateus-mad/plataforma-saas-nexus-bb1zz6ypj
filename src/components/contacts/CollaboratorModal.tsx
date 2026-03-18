@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,9 @@ import {
   Eye,
   Edit2,
   AlertTriangle,
+  ScanLine,
+  UploadCloud,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCollaboratorForm } from '@/hooks/useCollaboratorForm'
@@ -41,8 +44,20 @@ export default function CollaboratorModal({
 }) {
   const [activeTab, setActiveTab] = useState('pessoal')
   const [isEditing, setIsEditing] = useState(true)
-  const { data, updateData, progress, globalProgress, errors, validate } = useCollaboratorForm()
+  const {
+    data,
+    updateData,
+    progress,
+    globalProgress,
+    errors,
+    validate,
+    processOCR,
+    isProcessingOCR,
+    fetchESocial,
+    isFetchingESocial,
+  } = useCollaboratorForm()
   const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const TABS = [
     { id: 'pessoal', label: 'Pessoal', prog: progress.pessoal, icon: User },
@@ -71,6 +86,26 @@ export default function CollaboratorModal({
     }
     toast({ title: 'Dados Atualizados', description: 'O registro foi salvo com sucesso.' })
     setIsEditing(false)
+  }
+
+  const handleOCRUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      const file = e.target.files[0]
+      const success = await processOCR(file)
+      if (success) {
+        toast({
+          title: 'Documento Processado',
+          description: 'Dados e foto extraídos via OCR e arquivo salvo nos anexos.',
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Leitura',
+          description: 'Não foi possível extrair os dados do documento.',
+        })
+      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   const getProgressColor = (prog: number | null) => {
@@ -167,90 +202,146 @@ export default function CollaboratorModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50">
-          <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm min-h-full">
-            {activeTab === 'pessoal' && (
-              <PersonalInfoTab
-                data={data.pessoal}
-                onChange={(f, v) => updateData('pessoal', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50 custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
+            {isEditing && (
+              <div className="bg-white border border-blue-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+                <div className="absolute top-0 right-0 w-64 h-full bg-blue-50/50 -skew-x-12 translate-x-10 -z-10 group-hover:bg-blue-100/50 transition-colors"></div>
+
+                <div className="flex items-center gap-4 pl-2 z-10 w-full sm:w-auto">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0 shadow-inner">
+                    <ScanLine className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-base">
+                      Preenchimento Inteligente (OCR)
+                    </h4>
+                    <p className="text-sm text-slate-500">
+                      Faça upload de CNH/RG ou comprovante para extrair foto e dados.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="z-10 w-full sm:w-auto">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md transition-all"
+                    disabled={isProcessingOCR}
+                  >
+                    {isProcessingOCR ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-4 h-4 mr-2" /> Enviar Documento
+                      </>
+                    )}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleOCRUpload}
+                  />
+                </div>
+              </div>
             )}
-            {activeTab === 'docs' && (
-              <DocsTab
-                data={data.docs}
-                onChange={(f, v) => updateData('docs', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'endereco' && (
-              <AddressTab
-                data={data.endereco}
-                onChange={(f, v) => updateData('endereco', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'contato' && (
-              <ContactTab
-                data={data.contato}
-                onChange={(f, v) => updateData('contato', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'trabalho' && (
-              <WorkTab
-                data={data.trabalho}
-                onChange={(f, v) => updateData('trabalho', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'salario' && (
-              <SalaryTab
-                data={data.salario}
-                onChange={(f, v) => updateData('salario', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'beneficios' && (
-              <BenefitsTab
-                data={data.beneficios}
-                onChange={(f, v) => updateData('beneficios', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'encargos' && (
-              <ChargesTab
-                data={data.encargos}
-                onChange={(f, v) => updateData('encargos', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'ferias' && (
-              <VacationTab
-                data={data.ferias}
-                onChange={(f, v) => updateData('ferias', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'esocial' && (
-              <ESocialTab
-                data={data.esocial}
-                onChange={(f, v) => updateData('esocial', f, v)}
-                errors={errors}
-                readOnly={!isEditing}
-              />
-            )}
-            {activeTab === 'historico' && <HistoryTab />}
-            {activeTab === 'anexos' && <AttachmentsTab readOnly={!isEditing} />}
+
+            <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm min-h-full">
+              {activeTab === 'pessoal' && (
+                <PersonalInfoTab
+                  data={data.pessoal}
+                  onChange={(f, v) => updateData('pessoal', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'docs' && (
+                <DocsTab
+                  data={data.docs}
+                  onChange={(f, v) => updateData('docs', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'endereco' && (
+                <AddressTab
+                  data={data.endereco}
+                  onChange={(f, v) => updateData('endereco', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'contato' && (
+                <ContactTab
+                  data={data.contato}
+                  onChange={(f, v) => updateData('contato', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'trabalho' && (
+                <WorkTab
+                  data={data.trabalho}
+                  onChange={(f, v) => updateData('trabalho', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'salario' && (
+                <SalaryTab
+                  data={data.salario}
+                  onChange={(f, v) => updateData('salario', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'beneficios' && (
+                <BenefitsTab
+                  data={data.beneficios}
+                  onChange={(f, v) => updateData('beneficios', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'encargos' && (
+                <ChargesTab
+                  data={data.encargos}
+                  onChange={(f, v) => updateData('encargos', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'ferias' && (
+                <VacationTab
+                  data={data.ferias}
+                  onChange={(f, v) => updateData('ferias', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                />
+              )}
+              {activeTab === 'esocial' && (
+                <ESocialTab
+                  data={data.esocial}
+                  onChange={(f, v) => updateData('esocial', f, v)}
+                  errors={errors}
+                  readOnly={!isEditing}
+                  onFetchESocial={fetchESocial}
+                  isFetchingESocial={isFetchingESocial}
+                />
+              )}
+              {activeTab === 'historico' && <HistoryTab />}
+              {activeTab === 'anexos' && (
+                <AttachmentsTab
+                  data={data.anexos}
+                  onChange={(v) => updateData('anexos', 'all', v)}
+                  readOnly={!isEditing}
+                />
+              )}
+            </div>
           </div>
         </div>
 

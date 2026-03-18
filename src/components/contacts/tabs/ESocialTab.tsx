@@ -7,7 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Info } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Info, Database, Loader2, RefreshCw } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +17,8 @@ type Props = {
   onChange: (f: string, v: string) => void
   errors?: Record<string, string>
   readOnly?: boolean
+  onFetchESocial?: () => void
+  isFetchingESocial?: boolean
 }
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
@@ -36,19 +39,42 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export default function ESocialTab({ data, onChange, errors, readOnly }: Props) {
+export default function ESocialTab({
+  data,
+  onChange,
+  errors,
+  readOnly,
+  onFetchESocial,
+  isFetchingESocial,
+}: Props) {
   const err = (f: string) =>
     errors?.[`esocial.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
-      <div className="flex items-start gap-3 bg-blue-50/50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">
-        <Info className="w-5 h-5 shrink-0 mt-0.5 text-blue-500" />
-        <p className="leading-relaxed">
-          <span className="font-semibold text-blue-900">Dados do eSocial:</span> Informações
-          obrigatórias para o envio de eventos ao eSocial (S-2200, S-2206, etc). O preenchimento
-          incorreto gera recusa nos lotes.
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-blue-50/50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm shadow-sm mb-6 relative overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+        <div className="flex gap-3 pl-2">
+          <Database className="w-5 h-5 shrink-0 mt-0.5 text-blue-600" />
+          <p className="leading-relaxed">
+            <span className="font-semibold text-blue-900">Integração com eSocial:</span> Busque
+            dados vinculados ao CPF do colaborador diretamente da base governamental para evitar
+            inconsistências e auto-preencher os campos.
+          </p>
+        </div>
+        <Button
+          onClick={onFetchESocial}
+          disabled={isFetchingESocial || readOnly}
+          variant="outline"
+          className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50 whitespace-nowrap w-full sm:w-auto shadow-sm"
+        >
+          {isFetchingESocial ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
+          {isFetchingESocial ? 'Sincronizando...' : 'Consultar Base'}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

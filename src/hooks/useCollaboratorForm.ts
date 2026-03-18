@@ -109,10 +109,14 @@ const formSchema = z.object({
   }),
   beneficios: z.any(),
   encargos: z.any(),
+  anexos: z.any(),
 })
 
 export function useCollaboratorForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false)
+  const [isFetchingESocial, setIsFetchingESocial] = useState(false)
+
   const [data, setData] = useState({
     pessoal: {
       name: 'Mateus amorim dias',
@@ -197,12 +201,26 @@ export function useCollaboratorForm() {
     encargos: { inss: '318.82', irrf: '95.74', fgts: '280.00', depIr: '0', depSf: '0' },
     ferias: { inicio: '2026-02-07', fim: '2027-02-06', direito: '30', tirados: '0', prox: '' },
     esocial: { matricula: '', categoria: '', cbo: '', sefip: '', natureza: '', admissao: '' },
+    anexos: [
+      { id: 1, name: 'RG_Frente_Verso.pdf', size: '2.4 MB', date: '12/10/2025', type: 'pdf' },
+      {
+        id: 2,
+        name: 'Comprovante_Residencia.jpg',
+        size: '1.1 MB',
+        date: '12/10/2025',
+        type: 'image',
+      },
+    ],
   })
 
   const updateData = (section: keyof typeof data, field: string, value: any) => {
+    if (section === 'anexos') {
+      setData((prev) => ({ ...prev, anexos: value }))
+      return
+    }
     setData((prev) => ({
       ...prev,
-      [section]: { ...prev[section], [field]: value },
+      [section]: { ...(prev[section] as any), [field]: value },
     }))
     if (errors[`${section}.${field}`]) {
       const newErrors = { ...errors }
@@ -228,7 +246,84 @@ export function useCollaboratorForm() {
     }
   }
 
+  const processOCR = async (file: File) => {
+    setIsProcessingOCR(true)
+    try {
+      await new Promise((r) => setTimeout(r, 2500))
+
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+      let type = 'archive'
+      if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) type = 'image'
+      if (ext === 'pdf') type = 'pdf'
+
+      const newFile = {
+        id: Date.now(),
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        date: new Date().toLocaleDateString('pt-BR'),
+        type,
+      }
+
+      setData((prev) => ({
+        ...prev,
+        pessoal: {
+          ...prev.pessoal,
+          name: 'João Silva Oliveira',
+          nascimento: '1990-05-15',
+          mae: 'Maria Silva Oliveira',
+          pai: 'Carlos Oliveira',
+          foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=15',
+        },
+        docs: {
+          ...prev.docs,
+          cpf: '123.456.789-00',
+          docType: 'RG',
+          docIssueDate: '2015-08-20',
+        },
+        endereco: {
+          ...prev.endereco,
+          cep: '01001-000',
+          logradouro: 'Praça da Sé',
+          numero: '123',
+          bairro: 'Sé',
+          cidade: 'São Paulo',
+          estado: 'SP',
+        },
+        anexos: [...prev.anexos, newFile],
+      }))
+      return true
+    } catch (e) {
+      return false
+    } finally {
+      setIsProcessingOCR(false)
+    }
+  }
+
+  const fetchESocial = async () => {
+    setIsFetchingESocial(true)
+    try {
+      await new Promise((r) => setTimeout(r, 1500))
+      setData((prev) => ({
+        ...prev,
+        esocial: {
+          ...prev.esocial,
+          matricula: 'ES987654321',
+          categoria: '101',
+          cbo: '2142-05',
+          natureza: 'urbana',
+          admissao: '1',
+        },
+      }))
+      return true
+    } catch (e) {
+      return false
+    } finally {
+      setIsFetchingESocial(false)
+    }
+  }
+
   const getProgress = (section: keyof typeof data) => {
+    if (section === 'anexos') return null
     const fields = Object.values(data[section])
     if (!fields.length) return 0
     const filled = fields.filter((v) => {
@@ -253,13 +348,25 @@ export function useCollaboratorForm() {
 
   let totalFields = 0
   let totalFilled = 0
-  Object.values(data).forEach((sec) => {
-    Object.values(sec).forEach((v) => {
+  Object.entries(data).forEach(([secName, sec]) => {
+    if (secName === 'anexos') return
+    Object.values(sec as Record<string, any>).forEach((v) => {
       totalFields++
       if (typeof v === 'boolean' || String(v).trim() !== '') totalFilled++
     })
   })
   const globalProgress = Math.round((totalFilled / totalFields) * 100)
 
-  return { data, updateData, progress, globalProgress, errors, validate }
+  return {
+    data,
+    updateData,
+    progress,
+    globalProgress,
+    errors,
+    validate,
+    processOCR,
+    isProcessingOCR,
+    fetchESocial,
+    isFetchingESocial,
+  }
 }
