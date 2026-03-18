@@ -57,7 +57,7 @@ export default function SupplierBankingDashTab({ data, updateData }: any) {
           <Input
             value={f.limiteCredito || ''}
             onChange={(e) => updateData('financeiro', 'limiteCredito', e.target.value)}
-            className="bg-white font-black text-2xl h-14 text-emerald-900 border-emerald-200 shadow-sm"
+            className="bg-white font-black text-2xl h-14 text-emerald-900 border-emerald-200 shadow-sm focus-visible:ring-emerald-500"
             placeholder="0,00"
           />
         </div>
@@ -82,7 +82,9 @@ export default function SupplierBankingDashTab({ data, updateData }: any) {
               <h4 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                 <Wallet className="w-5 h-5 text-blue-600" /> Contas Bancárias
               </h4>
-              <p className="text-xs text-slate-500 mt-1">Contas para transferências TED/DOC.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Contas cadastradas para transferências TED/DOC.
+              </p>
             </div>
             <Button size="sm" variant="outline" onClick={addC} className="bg-slate-50 shrink-0">
               <Plus className="w-4 h-4 mr-1" /> Nova Conta
@@ -92,50 +94,70 @@ export default function SupplierBankingDashTab({ data, updateData }: any) {
             {b.contas?.map((c: any) => (
               <div
                 key={c.id}
-                className="flex flex-col gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 relative group hover:border-blue-300 transition-colors"
+                className="flex flex-col gap-4 p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 relative group hover:border-blue-300 transition-colors shadow-sm"
               >
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => remC(c.id)}
-                  className="absolute right-2 top-2 h-8 w-8 text-rose-500 opacity-0 group-hover:opacity-100 bg-white shadow-sm"
+                  className="absolute right-2 top-2 h-8 w-8 text-rose-500 opacity-0 group-hover:opacity-100 bg-white shadow-sm transition-opacity"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
-                <div className="space-y-1 pr-8">
-                  <Label className="text-xs text-slate-500">Banco / Instituição</Label>
-                  <Input
-                    placeholder="Nome ou Código do Banco (ex: Itaú - 341)"
-                    value={c.banco}
-                    onChange={(e) => updateC(c.id, 'banco', e.target.value)}
-                    className="w-full bg-white font-medium"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <div className="space-y-1 flex-1">
-                    <Label className="text-xs text-slate-500">Agência</Label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-6">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-slate-500 font-semibold">
+                      Banco / Instituição
+                    </Label>
+                    <Input
+                      placeholder="Nome ou Código do Banco (ex: Itaú - 341)"
+                      value={c.banco}
+                      onChange={(e) => updateC(c.id, 'banco', e.target.value)}
+                      className="w-full bg-white font-medium shadow-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500 font-semibold">Tipo de Conta</Label>
+                    <Select value={c.tipo} onValueChange={(v) => updateC(c.id, 'tipo', v)}>
+                      <SelectTrigger className="w-full bg-white shadow-sm">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Corrente">Conta Corrente</SelectItem>
+                        <SelectItem value="Poupanca">Conta Poupança</SelectItem>
+                        <SelectItem value="Pagamento">Conta de Pagamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500 font-semibold">Agência</Label>
                     <Input
                       placeholder="0000"
                       value={c.agencia}
                       onChange={(e) => updateC(c.id, 'agencia', e.target.value)}
-                      className="bg-white font-mono"
+                      className="bg-white font-mono shadow-sm"
                     />
                   </div>
-                  <div className="space-y-1 flex-[2]">
-                    <Label className="text-xs text-slate-500">Conta com Dígito</Label>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-slate-500 font-semibold">Conta com Dígito</Label>
                     <Input
                       placeholder="00000-0"
                       value={c.conta}
                       onChange={(e) => updateC(c.id, 'conta', e.target.value)}
-                      className="bg-white font-mono"
+                      className="bg-white font-mono shadow-sm"
                     />
                   </div>
                 </div>
               </div>
             ))}
             {(!b.contas || b.contas.length === 0) && (
-              <div className="flex items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm">
-                Nenhuma conta bancária cadastrada.
+              <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm">
+                <Wallet className="w-6 h-6 text-slate-300 mb-2" />
+                Nenhuma conta bancária registrada.
               </div>
             )}
           </div>
@@ -147,7 +169,9 @@ export default function SupplierBankingDashTab({ data, updateData }: any) {
               <h4 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                 <CreditCard className="w-5 h-5 text-purple-600" /> Chaves PIX
               </h4>
-              <p className="text-xs text-slate-500 mt-1">Chaves diretas para pagamentos rápidos.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Chaves diretas para pagamentos e liquidações rápidas.
+              </p>
             </div>
             <Button size="sm" variant="outline" onClick={addP} className="bg-slate-50 shrink-0">
               <Plus className="w-4 h-4 mr-1" /> Nova Chave
@@ -157,44 +181,49 @@ export default function SupplierBankingDashTab({ data, updateData }: any) {
             {b.pix?.map((p: any) => (
               <div
                 key={p.id}
-                className="flex flex-col gap-3 p-4 bg-purple-50/30 rounded-xl border border-purple-100 relative group hover:border-purple-300 transition-colors"
+                className="flex flex-col gap-4 p-4 sm:p-5 bg-purple-50/30 rounded-xl border border-purple-100 relative group hover:border-purple-300 transition-colors shadow-sm"
               >
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => remP(p.id)}
-                  className="absolute right-2 top-2 h-8 w-8 text-rose-500 opacity-0 group-hover:opacity-100 bg-white shadow-sm"
+                  className="absolute right-2 top-2 h-8 w-8 text-rose-500 opacity-0 group-hover:opacity-100 bg-white shadow-sm transition-opacity"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
-                <div className="space-y-1 pr-8">
-                  <Label className="text-xs text-slate-500">Tipo de Chave</Label>
-                  <Select value={p.tipo} onValueChange={(v) => updateP(p.id, 'tipo', v)}>
-                    <SelectTrigger className="w-full bg-white">
-                      <SelectValue placeholder="Selecione o tipo..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CNPJ">CNPJ / CPF</SelectItem>
-                      <SelectItem value="Email">E-mail</SelectItem>
-                      <SelectItem value="Celular">Celular</SelectItem>
-                      <SelectItem value="Aleatoria">Chave Aleatória</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-500">Valor da Chave</Label>
-                  <Input
-                    placeholder="Chave completa"
-                    value={p.chave}
-                    onChange={(e) => updateP(p.id, 'chave', e.target.value)}
-                    className="w-full bg-white font-mono text-sm"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-6">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-slate-500 font-semibold">Tipo de Chave</Label>
+                    <Select value={p.tipo} onValueChange={(v) => updateP(p.id, 'tipo', v)}>
+                      <SelectTrigger className="w-full bg-white shadow-sm">
+                        <SelectValue placeholder="Selecione o tipo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CNPJ">CNPJ / CPF</SelectItem>
+                        <SelectItem value="Email">E-mail</SelectItem>
+                        <SelectItem value="Celular">Celular</SelectItem>
+                        <SelectItem value="Aleatoria">Chave Aleatória</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-slate-500 font-semibold">
+                      Valor da Chave PIX
+                    </Label>
+                    <Input
+                      placeholder="Insira a chave correspondente"
+                      value={p.chave}
+                      onChange={(e) => updateP(p.id, 'chave', e.target.value)}
+                      className="w-full bg-white font-mono text-sm shadow-sm"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
             {(!b.pix || b.pix.length === 0) && (
-              <div className="flex items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm">
-                Nenhuma chave PIX cadastrada.
+              <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm">
+                <CreditCard className="w-6 h-6 text-slate-300 mb-2" />
+                Nenhuma chave PIX registrada.
               </div>
             )}
           </div>

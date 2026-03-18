@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 import CompanyModal from './CompanyModal'
-import CompanyProfileModal from './CompanyProfileModal'
+import SupplierProfileView from './SupplierProfileView'
 
 const MOCK_SUPPLIERS = [
   {
@@ -212,15 +212,7 @@ export default function ContactsSuppliers() {
                   onClick={() => openProfile(c)}
                   className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 h-9"
                 >
-                  <Eye className="w-4 h-4 mr-2" /> Ficha
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setModalState({ isOpen: true, type: 'edit' })}
-                  className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 h-9"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" /> Editar
+                  <Eye className="w-4 h-4 mr-2" /> Ficha Completa
                 </Button>
 
                 <DropdownMenu>
@@ -259,11 +251,10 @@ export default function ContactsSuppliers() {
         type="supplier"
       />
 
-      <CompanyProfileModal
+      <SupplierProfileView
         open={profileOpen}
         onOpenChange={setProfileOpen}
         onEdit={() => setModalState({ isOpen: true, type: 'edit' })}
-        type="supplier"
         companyData={selectedSupplier}
       />
     </div>

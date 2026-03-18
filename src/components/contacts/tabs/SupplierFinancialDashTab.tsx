@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import {
   DollarSign,
   AlertCircle,
@@ -10,6 +10,7 @@ import {
   Receipt,
   FileText,
   CalendarDays,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -17,6 +18,12 @@ const punctData = [
   { name: 'No Prazo', value: 80, fill: '#10b981' },
   { name: 'Atrasado', value: 15, fill: '#f43f5e' },
   { name: 'Antecipado', value: 5, fill: '#3b82f6' },
+]
+
+const paymentMethods = [
+  { name: 'PIX', value: 65, fill: '#8b5cf6' },
+  { name: 'TED', value: 25, fill: '#3b82f6' },
+  { name: 'Boleto', value: 10, fill: '#f59e0b' },
 ]
 
 const histData = [
@@ -29,15 +36,15 @@ const histData = [
 
 const KpiCard = ({ title, val, icon: Icon, color }: any) => (
   <Card className="shadow-sm border-slate-200">
-    <CardContent className="p-4 flex items-center gap-4">
+    <CardContent className="p-4 flex items-center gap-4 h-full">
       <div className={`p-3 rounded-xl ${color} shrink-0`}>
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">
+        <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1 leading-tight">
           {title}
         </p>
-        <h4 className="text-xl font-black text-slate-800 leading-none">{val}</h4>
+        <h4 className="text-lg sm:text-xl font-black text-slate-800 leading-none">{val}</h4>
       </div>
     </CardContent>
   </Card>
@@ -46,7 +53,7 @@ const KpiCard = ({ title, val, icon: Icon, color }: any) => (
 export default function SupplierFinancialDashTab({ data }: any) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
         <KpiCard
           title="Confiabilidade"
           val="98%"
@@ -77,11 +84,36 @@ export default function SupplierFinancialDashTab({ data }: any) {
           icon={AlertCircle}
           color="bg-rose-100 text-rose-600"
         />
+
         <KpiCard
           title="Faturas Pagas"
           val="18"
           icon={Receipt}
           color="bg-purple-100 text-purple-600"
+        />
+        <KpiCard
+          title="Média vs Venc."
+          val="-2 Dias"
+          icon={CalendarDays}
+          color="bg-teal-100 text-teal-600"
+        />
+        <KpiCard
+          title="Dias de Atraso"
+          val="0"
+          icon={AlertCircle}
+          color="bg-rose-100 text-rose-600"
+        />
+        <KpiCard
+          title="Dias Adiant."
+          val="12"
+          icon={TrendingUp}
+          color="bg-blue-100 text-blue-600"
+        />
+        <KpiCard
+          title="Forma Principal"
+          val="PIX"
+          icon={CreditCard}
+          color="bg-indigo-100 text-indigo-600"
         />
       </div>
 
@@ -101,7 +133,7 @@ export default function SupplierFinancialDashTab({ data }: any) {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
+                  innerRadius={45}
                   outerRadius={75}
                   paddingAngle={2}
                 >
@@ -112,7 +144,7 @@ export default function SupplierFinancialDashTab({ data }: any) {
                 <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
             </ChartContainer>
-            <div className="flex gap-4 mt-2 text-xs font-semibold text-slate-600">
+            <div className="flex gap-4 mt-2 text-[11px] font-semibold text-slate-600">
               <span className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" /> Prazo
               </span>
@@ -129,7 +161,7 @@ export default function SupplierFinancialDashTab({ data }: any) {
         <Card className="shadow-sm border-slate-200 lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-slate-800">
-              Histórico de Faturamento (Pago vs Pendente)
+              Histórico de Faturamento Mensal
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[260px]">
@@ -162,35 +194,70 @@ export default function SupplierFinancialDashTab({ data }: any) {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-slate-200 lg:col-span-1 flex flex-col bg-gradient-to-br from-blue-50 to-white">
-          <CardHeader className="pb-2 border-b border-blue-100">
-            <CardTitle className="text-sm font-bold text-blue-900">Última Compra</CardTitle>
+        <Card className="shadow-sm border-slate-200 lg:col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold text-slate-800">Formas de Pagamento</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 p-5 flex flex-col justify-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-200">
+          <CardContent className="flex flex-col items-center justify-center h-[260px] pb-4">
+            <ChartContainer config={{}} className="w-full h-44">
+              <PieChart>
+                <Pie
+                  data={paymentMethods}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={75}
+                  paddingAngle={2}
+                >
+                  {paymentMethods.map((e, i) => (
+                    <Cell key={i} fill={e.fill} />
+                  ))}
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent />} />
+              </PieChart>
+            </ChartContainer>
+            <div className="flex gap-4 mt-2 text-[11px] font-semibold text-slate-600 flex-wrap justify-center">
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-purple-500" /> PIX
+              </span>
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-blue-500" /> TED
+              </span>
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-amber-500" /> Boleto
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-slate-200 lg:col-span-4 flex flex-col sm:flex-row bg-gradient-to-r from-blue-50 to-white overflow-hidden">
+          <CardContent className="flex-1 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-200">
                 <FileText className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">
-                  Pedido #4928
+              <div className="space-y-1">
+                <p className="text-xs text-blue-700 font-bold uppercase tracking-wider">
+                  Análise da Última Compra (Pedido #4928)
                 </p>
-                <p className="text-xl font-black text-slate-800">R$ 12.450,00</p>
-              </div>
-            </div>
-            <div className="space-y-2 mt-2">
-              <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
-                <CalendarDays className="w-4 h-4 text-slate-400" /> Emitido: 14/03/2026
-              </div>
-              <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
-                <CheckCircle2 className="w-4 h-4" /> Entregue sem ocorrências
+                <p className="text-2xl font-black text-slate-800">R$ 12.450,00</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                  <span className="flex items-center gap-1.5 text-sm text-slate-600 font-medium">
+                    <CalendarDays className="w-4 h-4 text-slate-400" /> Emitido: 14/03/2026
+                  </span>
+                  <span className="flex items-center gap-1.5 text-sm text-emerald-600 font-semibold">
+                    <CheckCircle2 className="w-4 h-4" /> Entregue no prazo sem ocorrências
+                  </span>
+                </div>
               </div>
             </div>
             <Button
               variant="outline"
-              className="w-full mt-auto text-blue-700 border-blue-200 bg-white hover:bg-blue-50 shadow-sm"
+              className="w-full sm:w-auto text-blue-700 border-blue-200 bg-white hover:bg-blue-50 shadow-sm font-semibold h-11 px-6 shrink-0"
             >
-              Detalhes do Pedido
+              Abrir Detalhes do Pedido
             </Button>
           </CardContent>
         </Card>

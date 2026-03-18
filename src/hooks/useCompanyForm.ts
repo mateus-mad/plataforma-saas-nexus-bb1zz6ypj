@@ -57,8 +57,8 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       pendingPrazo: null,
     },
     bancario: {
-      contas: [{ banco: 'Itaú (341)', tipo: 'Corrente', agencia: '0001', conta: '12345-6' }],
-      pix: [{ tipo: 'CNPJ', chave: '12.345.678/0001-90' }],
+      contas: [{ id: 1, banco: 'Itaú (341)', tipo: 'Corrente', agencia: '0001', conta: '12345-6' }],
+      pix: [{ id: 1, tipo: 'CNPJ', chave: '12.345.678/0001-90' }],
     },
     acordos: {
       lista: [
@@ -126,41 +126,5 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     Object.values(progress).reduce((a, b) => a + b, 0) / totalSections,
   )
 
-  const autofillCNPJ = async (cnpj?: string) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setData((prev: any) => {
-          const current = prev.dados || {}
-          return {
-            ...prev,
-            dados: {
-              ...current,
-              documento: cnpj || current.documento || '12.345.678/0001-90',
-              nomeRazao:
-                current.nomeRazao && current.nomeRazao !== 'DIRECAO GERAL SA'
-                  ? current.nomeRazao
-                  : 'NEXUS LOGÍSTICA S.A.',
-              fantasia:
-                current.fantasia && current.fantasia !== 'Direção Geral'
-                  ? current.fantasia
-                  : 'NexusLog Transporte',
-              logo: current.logo || 'https://img.usecurling.com/i?q=logistics&color=blue',
-              segmento: current.segmento || 'Logística',
-              dataNascimento: current.dataNascimento || '2015-08-20',
-            },
-            endereco: {
-              ...prev.endereco,
-              logradouro: prev.endereco?.logradouro || 'Av Paulista',
-              cidade: prev.endereco?.cidade || 'São Paulo',
-              estado: prev.endereco?.estado || 'SP',
-            },
-          }
-        })
-        setErrors({})
-        resolve(true)
-      }, 800)
-    })
-  }
-
-  return { data, updateData, progress, globalProgress, errors, validate: () => true, autofillCNPJ }
+  return { data, updateData, progress, globalProgress, errors, validate: () => true }
 }

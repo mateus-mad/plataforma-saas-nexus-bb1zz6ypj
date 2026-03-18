@@ -14,17 +14,23 @@ export default function SupplierContactsTab({ data, updateData }: any) {
       description: 'Buscando Quadro Societário...',
     })
     setTimeout(() => {
-      updateData('contato', 'pessoas', [
-        ...pessoas,
+      const novosContatos = [
         {
           id: Date.now(),
-          nome: 'Sócio Administrador',
+          nome: 'Sócio Administrador (RFB)',
           cargo: 'Sócio / Diretoria',
           email: 'diretoria@empresa.com.br',
           telefone: '(11) 99999-9999',
         },
-      ])
-      toast({ title: 'Sucesso', description: 'Contatos sincronizados e adicionados à lista.' })
+      ]
+
+      // Preserve existing manual contacts, only append new synced ones to avoid overwriting
+      updateData('contato', 'pessoas', [...pessoas, ...novosContatos])
+      toast({
+        title: 'Sucesso',
+        description:
+          'Contatos societários sincronizados e adicionados sem sobrescrever dados manuais.',
+      })
     }, 1200)
   }
 
@@ -66,7 +72,7 @@ export default function SupplierContactsTab({ data, updateData }: any) {
             onClick={handleAutoFill}
             className="bg-blue-50 flex-1 sm:flex-none border-blue-200 text-blue-700 hover:bg-blue-100"
           >
-            <Search className="w-4 h-4 mr-2" /> Buscar CNPJ
+            <Search className="w-4 h-4 mr-2" /> Sincronizar RFB
           </Button>
           <Button
             onClick={add}
@@ -88,6 +94,7 @@ export default function SupplierContactsTab({ data, updateData }: any) {
               size="icon"
               onClick={() => remove(p.id)}
               className="absolute top-3 right-3 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity bg-rose-50 hover:bg-rose-100"
+              title="Remover Contato"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -147,7 +154,7 @@ export default function SupplierContactsTab({ data, updateData }: any) {
               Nenhum contato estratégico cadastrado.
             </p>
             <p className="text-sm text-slate-500">
-              Clique em "Buscar CNPJ" ou adicione manualmente.
+              Clique em "Sincronizar RFB" ou adicione manualmente.
             </p>
           </div>
         )}
