@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   FileText,
@@ -11,9 +10,11 @@ import {
   FileArchive,
   Eye,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
   const [previewFile, setPreviewFile] = useState<any>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const [files, setFiles] = useState([
     { id: 1, name: 'RG_Frente_Verso.pdf', size: '2.4 MB', date: '12/10/2025', type: 'pdf' },
     {
@@ -31,6 +32,28 @@ export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
       type: 'pdf',
     },
   ])
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (readOnly) return
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0]
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+      let type = 'archive'
+      if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) type = 'image'
+      if (ext === 'pdf') type = 'pdf'
+
+      const newFile = {
+        id: Date.now(),
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        date: new Date().toLocaleDateString('pt-BR'),
+        type,
+      }
+      setFiles([...files, newFile])
+    }
+  }
 
   const handleDelete = (id: number) => {
     if (readOnly) return
@@ -51,15 +74,45 @@ export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
       {!readOnly && (
-        <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 bg-slate-50 flex flex-col items-center justify-center text-center hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer group relative">
-          <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Upload className="w-6 h-6 text-blue-500" />
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setIsDragging(true)
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={onDrop}
+          className={cn(
+            'border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group relative',
+            isDragging
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300',
+          )}
+        >
+          <div
+            className={cn(
+              'w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 transition-transform',
+              isDragging ? 'scale-110' : 'group-hover:scale-110',
+            )}
+          >
+            <Upload className={cn('w-6 h-6', isDragging ? 'text-blue-600' : 'text-blue-500')} />
           </div>
           <h3 className="font-semibold text-slate-700 text-base mb-1">
-            Clique para fazer upload ou arraste arquivos
+            Arraste e solte arquivos aqui ou clique para selecionar
           </h3>
           <p className="text-sm text-slate-500">PDF, JPG, PNG, DOCX (Max 10MB)</p>
-          <Input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+          <input
+            type="file"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                const ev = {
+                  preventDefault: () => {},
+                  dataTransfer: { files: e.target.files },
+                } as any
+                onDrop(ev)
+              }
+            }}
+          />
         </div>
       )}
 
@@ -84,7 +137,9 @@ export default function AttachmentsTab({ readOnly }: { readOnly?: boolean }) {
               >
                 <div className="shrink-0">{getIcon(file.type)}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-slate-800 truncate">{file.name}</p>
+                  <p className="font-semibold text-sm text-slate-800 truncate" title={file.name}>
+                    {file.name}
+                  </p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {file.size} • Anexado em {file.date}
                   </p>

@@ -7,72 +7,181 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import {
-  Plus,
-  Trash2,
-  Wallet,
-  TrendingUp,
-  Clock,
-  AlertTriangle,
-  Activity,
-  DollarSign,
-  ArrowUpRight,
-  CheckCircle2,
-  ArrowDownRight,
-  CreditCard,
-  Eye,
-} from 'lucide-react'
+import { Plus, Trash2, Wallet, CreditCard, ShieldAlert, Clock } from 'lucide-react'
 import { LabelT } from './CompanyTabs'
+import useSecurityStore from '@/stores/useSecurityStore'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
-const StatCard = ({ icon: Icon, color, title, val, sub, valClass }: any) => (
-  <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
-    <div
-      className={cn(
-        'w-8 h-8 rounded-full flex items-center justify-center mb-2',
-        color.bg,
-        color.text,
-      )}
-    >
-      <Icon className="w-4 h-4" />
-    </div>
-    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
-      {title}
-    </span>
-    <span className={cn('text-lg font-bold', valClass || 'text-slate-800')}>{val}</span>
-    {sub && <span className="text-[10px] text-slate-400 mt-1">{sub}</span>}
-  </div>
-)
-
 export function CompanyBankingTab({ data, onChange, readOnly }: any) {
-  const contas = data?.contas || []
-  const pixKeys = data?.pix || []
+  const { isAdminMode } = useSecurityStore()
+  const { toast } = useToast()
+
+  const limitData = data?.financeiro || {}
+  const contas = data?.bancario?.contas || []
+  const pixKeys = data?.bancario?.pix || []
+
+  const updateFin = (field: string, value: any) => {
+    if (isAdminMode) {
+      onChange('financeiro', {
+        ...limitData,
+        [field]: value,
+        [`pending${field.charAt(0).toUpperCase() + field.slice(1)}`]: null,
+      })
+    } else {
+      onChange('financeiro', {
+        ...limitData,
+        [`pending${field.charAt(0).toUpperCase() + field.slice(1)}`]: value,
+      })
+      toast({
+        title: 'Aprovação Necessária',
+        description: 'Sua permissão é Operacional. Alteração enviada para aprovação.',
+      })
+    }
+  }
+
+  const approveChange = (field: string) => {
+    const pendingVal = limitData[`pending${field.charAt(0).toUpperCase() + field.slice(1)}`]
+    if (pendingVal !== null && pendingVal !== undefined) {
+      onChange('financeiro', {
+        ...limitData,
+        [field]: pendingVal,
+        [`pending${field.charAt(0).toUpperCase() + field.slice(1)}`]: null,
+      })
+      toast({ title: 'Aprovado', description: 'Valor atualizado.' })
+    }
+  }
 
   const addConta = () =>
-    onChange('contas', [...contas, { banco: '', tipo: 'Corrente', agencia: '', conta: '' }])
+    onChange('bancario', {
+      ...data.bancario,
+      contas: [...contas, { banco: '', tipo: 'Corrente', agencia: '', conta: '' }],
+    })
   const removeConta = (i: number) =>
-    onChange(
-      'contas',
-      contas.filter((_: any, idx: number) => idx !== i),
-    )
-  const addPix = () => onChange('pix', [...pixKeys, { tipo: 'CNPJ', chave: '' }])
+    onChange('bancario', {
+      ...data.bancario,
+      contas: contas.filter((_: any, idx: number) => idx !== i),
+    })
+  const addPix = () =>
+    onChange('bancario', { ...data.bancario, pix: [...pixKeys, { tipo: 'CNPJ', chave: '' }] })
   const removePix = (i: number) =>
-    onChange(
-      'pix',
-      pixKeys.filter((_: any, idx: number) => idx !== i),
-    )
+    onChange('bancario', {
+      ...data.bancario,
+      pix: pixKeys.filter((_: any, idx: number) => idx !== i),
+    })
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+      <div className="bg-blue-50/80 border border-blue-200 text-blue-800 p-4 rounded-xl flex gap-3 items-start text-sm shadow-sm">
+        <ShieldAlert className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+        <div>
+          <p className="font-semibold text-blue-900">Governança Financeira (RBAC)</p>
+          <p className="leading-relaxed text-blue-800 mt-1">
+            Você está operando como{' '}
+            <span className="font-bold">{isAdminMode ? 'Administrador' : 'Operacional'}</span>.
+            {isAdminMode
+              ? ' Mudanças de Limite e Prazo aplicam-se imediatamente.'
+              : ' Mudanças de Limite e Prazo requerem aprovação.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div
+          className={cn(
+            'space-y-1.5 p-4 rounded-xl shadow-sm transition-all',
+            limitData.pendingLimite
+              ? 'bg-amber-50/50 border-2 border-amber-200'
+              : 'bg-white border border-slate-200',
+          )}
+        >
+          <div className="flex justify-between items-center mb-1.5">
+            <LabelT l="Limite de Crédito Ativo (R$)" />
+            {limitData.pendingLimite && !isAdminMode && (
+              <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Aguardando
+              </span>
+            )}
+          </div>
+          <Input
+            value={
+              limitData.pendingLimite !== null && limitData.pendingLimite !== undefined
+                ? limitData.pendingLimite
+                : limitData.limiteCredito || ''
+            }
+            onChange={(e) => updateFin('limiteCredito', e.target.value)}
+            disabled={readOnly}
+            className={cn(
+              limitData.pendingLimite
+                ? 'border-amber-300 font-bold text-amber-700'
+                : 'font-semibold',
+            )}
+            placeholder="0,00"
+          />
+          {limitData.pendingLimite && isAdminMode && (
+            <div className="mt-3 flex items-center justify-between bg-amber-100/50 p-2 rounded-lg border border-amber-200">
+              <span className="text-xs text-amber-800 font-bold">
+                Novo: R$ {limitData.pendingLimite}
+              </span>
+              <Button
+                size="sm"
+                onClick={() => approveChange('limiteCredito')}
+                className="h-7 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              >
+                Aprovar
+              </Button>
+            </div>
+          )}
+        </div>
+        <div
+          className={cn(
+            'space-y-1.5 p-4 rounded-xl shadow-sm transition-all',
+            limitData.pendingPrazo
+              ? 'bg-amber-50/50 border-2 border-amber-200'
+              : 'bg-white border border-slate-200',
+          )}
+        >
+          <div className="flex justify-between items-center mb-1.5">
+            <LabelT l="Prazo de Pagamento Padrão (dias)" />
+            {limitData.pendingPrazo && !isAdminMode && (
+              <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Aguardando
+              </span>
+            )}
+          </div>
+          <Input
+            type="number"
+            value={
+              limitData.pendingPrazo !== null && limitData.pendingPrazo !== undefined
+                ? limitData.pendingPrazo
+                : limitData.prazoPagamento || ''
+            }
+            onChange={(e) => updateFin('prazoPagamento', e.target.value)}
+            disabled={readOnly}
+            className={cn(
+              limitData.pendingPrazo
+                ? 'border-amber-300 font-bold text-amber-700'
+                : 'font-semibold',
+            )}
+            placeholder="30"
+          />
+          {limitData.pendingPrazo && isAdminMode && (
+            <div className="mt-3 flex items-center justify-between bg-amber-100/50 p-2 rounded-lg border border-amber-200">
+              <span className="text-xs text-amber-800 font-bold">
+                Novo: {limitData.pendingPrazo} dias
+              </span>
+              <Button
+                size="sm"
+                onClick={() => approveChange('prazoPagamento')}
+                className="h-7 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              >
+                Aprovar
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold text-slate-800 flex items-center gap-2">
@@ -80,13 +189,13 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
           </h3>
           {!readOnly && (
             <Button variant="outline" size="sm" onClick={addConta}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Conta
+              <Plus className="w-4 h-4 mr-2" /> Nova Conta
             </Button>
           )}
         </div>
         {contas.length === 0 ? (
           <div className="py-6 text-center text-slate-500 text-sm bg-slate-50 rounded-xl border border-slate-100">
-            Nenhum dado bancário cadastrado
+            Nenhum dado bancário.
           </div>
         ) : (
           <div className="space-y-3">
@@ -103,7 +212,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     onValueChange={(v) => {
                       const nc = [...contas]
                       nc[i].banco = v
-                      onChange('contas', nc)
+                      onChange('bancario', { ...data.bancario, contas: nc })
                     }}
                   >
                     <SelectTrigger className="bg-white">
@@ -113,11 +222,6 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       <SelectItem value="Itaú (341)">Itaú (341)</SelectItem>
                       <SelectItem value="Bradesco (237)">Bradesco (237)</SelectItem>
                       <SelectItem value="Banco do Brasil (001)">Banco do Brasil (001)</SelectItem>
-                      <SelectItem value="Caixa Econômica (104)">Caixa Econômica (104)</SelectItem>
-                      <SelectItem value="Santander (033)">Santander (033)</SelectItem>
-                      <SelectItem value="Nubank (260)">Nubank (260)</SelectItem>
-                      <SelectItem value="Inter (077)">Inter (077)</SelectItem>
-                      <SelectItem value="BTG Pactual (208)">BTG Pactual (208)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -129,7 +233,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     onValueChange={(v) => {
                       const nc = [...contas]
                       nc[i].tipo = v
-                      onChange('contas', nc)
+                      onChange('bancario', { ...data.bancario, contas: nc })
                     }}
                   >
                     <SelectTrigger className="bg-white">
@@ -148,7 +252,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     onChange={(e) => {
                       const nc = [...contas]
                       nc[i].agencia = e.target.value
-                      onChange('contas', nc)
+                      onChange('bancario', { ...data.bancario, contas: nc })
                     }}
                     disabled={readOnly}
                     className="bg-white"
@@ -161,7 +265,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     onChange={(e) => {
                       const nc = [...contas]
                       nc[i].conta = e.target.value
-                      onChange('contas', nc)
+                      onChange('bancario', { ...data.bancario, contas: nc })
                     }}
                     disabled={readOnly}
                     className="bg-white"
@@ -172,7 +276,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     variant="ghost"
                     size="icon"
                     onClick={() => removeConta(i)}
-                    className="text-rose-500 hover:bg-rose-50 h-10 w-10 shrink-0"
+                    className="text-rose-500 hover:bg-rose-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -190,13 +294,13 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
           </h3>
           {!readOnly && (
             <Button variant="outline" size="sm" onClick={addPix}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar PIX
+              <Plus className="w-4 h-4 mr-2" /> Novo PIX
             </Button>
           )}
         </div>
         {pixKeys.length === 0 ? (
           <div className="py-6 text-center text-slate-500 text-sm bg-slate-50 rounded-xl border border-slate-100">
-            Nenhuma chave PIX cadastrada
+            Nenhuma chave PIX.
           </div>
         ) : (
           <div className="space-y-3">
@@ -213,7 +317,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     onValueChange={(v) => {
                       const np = [...pixKeys]
                       np[i].tipo = v
-                      onChange('pix', np)
+                      onChange('bancario', { ...data.bancario, pix: np })
                     }}
                   >
                     <SelectTrigger className="bg-white">
@@ -223,7 +327,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                       <SelectItem value="CNPJ">CNPJ/CPF</SelectItem>
                       <SelectItem value="Email">E-mail</SelectItem>
                       <SelectItem value="Telefone">Telefone</SelectItem>
-                      <SelectItem value="Aleatoria">Chave Aleatória</SelectItem>
+                      <SelectItem value="Aleatoria">Aleatória</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -234,7 +338,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     onChange={(e) => {
                       const np = [...pixKeys]
                       np[i].chave = e.target.value
-                      onChange('pix', np)
+                      onChange('bancario', { ...data.bancario, pix: np })
                     }}
                     disabled={readOnly}
                     className="bg-white font-mono"
@@ -245,7 +349,7 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
                     variant="ghost"
                     size="icon"
                     onClick={() => removePix(i)}
-                    className="text-rose-500 hover:bg-rose-50 h-10 w-10 shrink-0"
+                    className="text-rose-500 hover:bg-rose-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -254,138 +358,6 @@ export function CompanyBankingTab({ data, onChange, readOnly }: any) {
             ))}
           </div>
         )}
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <div className="col-span-2 md:col-span-1 bg-white border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
-          <Activity className="w-8 h-8 text-emerald-500 mb-2" />
-          <span className="text-2xl font-bold text-emerald-600">100%</span>
-          <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold mt-1">
-            Confiabilidade
-          </span>
-        </div>
-        <StatCard
-          icon={DollarSign}
-          color={{ bg: 'bg-blue-50', text: 'text-blue-600' }}
-          title="Total Compras"
-          val="R$ 150.000,00"
-        />
-        <StatCard
-          icon={TrendingUp}
-          color={{ bg: 'bg-emerald-50', text: 'text-emerald-600' }}
-          title="Total Pago"
-          val="R$ 125.000,00"
-          valClass="text-emerald-600"
-        />
-        <StatCard
-          icon={Clock}
-          color={{ bg: 'bg-amber-50', text: 'text-amber-600' }}
-          title="Pendente"
-          val="R$ 25.000,00"
-          valClass="text-amber-600"
-        />
-        <StatCard
-          icon={AlertTriangle}
-          color={{ bg: 'bg-rose-50', text: 'text-rose-600' }}
-          title="Vencido"
-          val="R$ 0,00"
-          valClass="text-rose-600"
-        />
-
-        <div className="col-span-2 md:col-span-1 grid grid-rows-2 gap-3">
-          <div className="bg-white border border-slate-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-sm font-bold text-slate-800">12</div>
-            <div className="text-[9px] text-slate-500 uppercase">Faturas Pagas</div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-sm font-bold text-emerald-600">-2 dias</div>
-            <div className="text-[9px] text-slate-500 uppercase">Média Pgto vs Venc</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h3 className="font-semibold text-slate-800 flex items-center gap-2 mb-4">
-          <Clock className="w-4 h-4 text-blue-600" /> Análise de Pontualidade nos Pagamentos
-        </h3>
-        <div className="mb-6">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-slate-600">Taxa de pagamento no prazo ou antecipado</span>
-            <span className="font-bold text-slate-800">100%</span>
-          </div>
-          <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-500 w-full" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-center">
-            <ArrowUpRight className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-emerald-700">8</p>
-            <p className="text-xs text-emerald-600 font-medium mt-1">Antecipados</p>
-          </div>
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center">
-            <CheckCircle2 className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-blue-700">4</p>
-            <p className="text-xs text-blue-600 font-medium mt-1">No Prazo</p>
-          </div>
-          <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-4 text-center">
-            <ArrowDownRight className="w-5 h-5 text-rose-500 mx-auto mb-2" />
-            <p className="text-xl font-bold text-rose-700">0</p>
-            <p className="text-xs text-rose-600 font-medium mt-1">Atrasados</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-slate-400" /> Histórico de Pagamentos Recentes
-          </h3>
-        </div>
-        <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow>
-              <TableHead>Descrição da Fatura</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead>Pagamento</TableHead>
-              <TableHead>Método</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium text-slate-800">Serviço de Logística Mensal</div>
-                <div className="text-[10px] text-slate-500">NF-e: 4892</div>
-              </TableCell>
-              <TableCell className="font-bold">R$ 12.500,00</TableCell>
-              <TableCell>10/03/2026</TableCell>
-              <TableCell>08/03/2026</TableCell>
-              <TableCell>PIX</TableCell>
-              <TableCell>
-                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-none">
-                  Liquidado
-                </Badge>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium text-slate-800">Serviço de Logística Mensal</div>
-                <div className="text-[10px] text-slate-500">NF-e: 4721</div>
-              </TableCell>
-              <TableCell className="font-bold">R$ 12.500,00</TableCell>
-              <TableCell>10/02/2026</TableCell>
-              <TableCell>10/02/2026</TableCell>
-              <TableCell>TED</TableCell>
-              <TableCell>
-                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-none">
-                  Liquidado
-                </Badge>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
       </div>
     </div>
   )

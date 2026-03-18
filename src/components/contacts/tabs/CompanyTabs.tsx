@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Info, Search, Building, User, Upload, Plus, Trash2, Users } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -29,13 +38,34 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
   const isPJ = data.tipoPessoa === 'PJ'
   const err = (f: string) => (errors?.[`dados.${f}`] ? 'border-rose-500 bg-rose-50/30' : '')
 
+  const [segments, setSegments] = useState([
+    'Tecnologia e Serviços',
+    'Varejo',
+    'Indústria',
+    'Logística',
+  ])
+  const [showNewSeg, setShowNewSeg] = useState(false)
+  const [newSeg, setNewSeg] = useState('')
+
   const handleSearchDoc = () => {
     if (!isPJ) return
     toast({ title: 'Buscando dados...', description: 'Consultando base da Receita e Website.' })
     setTimeout(() => {
       if (onAutofill) onAutofill()
-      toast({ title: 'Encontrado', description: 'Dados e logotipo preenchidos com sucesso.' })
+      toast({
+        title: 'Encontrado',
+        description: 'Dados, contatos e logotipo preenchidos com sucesso.',
+      })
     }, 1500)
+  }
+
+  const handleAddSegment = () => {
+    if (newSeg.trim() && !segments.includes(newSeg.trim())) {
+      setSegments([...segments, newSeg.trim()])
+      onChange('segmento', newSeg.trim())
+      setShowNewSeg(false)
+      setNewSeg('')
+    }
   }
 
   return (
@@ -58,9 +88,7 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
         </div>
         <div>
           <h4 className="text-sm font-semibold text-slate-800">Logo ou Marca da Empresa</h4>
-          <p className="text-xs text-slate-500 mb-2">
-            Formatos suportados: JPG ou PNG (Tamanho máximo de 2MB)
-          </p>
+          <p className="text-xs text-slate-500 mb-2">Formatos suportados: JPG ou PNG (Max 2MB)</p>
           {!readOnly && (
             <Button
               size="sm"
@@ -69,33 +97,47 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
               onClick={handleSearchDoc}
               className="h-8 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 shadow-sm"
             >
-              <Search className="w-3.5 h-3.5 mr-1.5" /> Busca Automática via Base de Dados
+              <Search className="w-3.5 h-3.5 mr-1.5" /> Busca Automática via Receita Federal
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
-        <button
-          type="button"
-          onClick={() => onChange('tipoPessoa', 'PJ')}
-          className={cn(
-            'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
-            isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
-          )}
-        >
-          <Building className="w-4 h-4" /> Pessoa Jurídica
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange('tipoPessoa', 'PF')}
-          className={cn(
-            'px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2',
-            !isPJ ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700',
-          )}
-        >
-          <User className="w-4 h-4" /> Pessoa Física
-        </button>
+      <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onChange('tipoPessoa', 'PJ')}
+            className={cn(
+              'px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2',
+              isPJ
+                ? 'bg-white shadow-sm text-slate-800 border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700',
+            )}
+          >
+            <Building className="w-4 h-4" /> Pessoa Jurídica
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange('tipoPessoa', 'PF')}
+            className={cn(
+              'px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2',
+              !isPJ
+                ? 'bg-white shadow-sm text-slate-800 border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700',
+            )}
+          >
+            <User className="w-4 h-4" /> Pessoa Física
+          </button>
+        </div>
+        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+          <Label className="text-sm font-semibold cursor-pointer">Fornecedor Ativo</Label>
+          <Switch
+            checked={data.ativo}
+            onCheckedChange={(v) => onChange('ativo', v)}
+            disabled={readOnly}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,22 +151,15 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
               className={cn('font-mono', err('documento'))}
             />
             {!readOnly && isPJ && (
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={handleSearchDoc}
-                      className="shrink-0 text-blue-600 hover:text-blue-700 bg-blue-50 border-blue-200"
-                    >
-                      <Search className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Autocompletar via CNPJ</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleSearchDoc}
+                className="shrink-0 text-blue-600 hover:text-blue-700 bg-blue-50 border-blue-200"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
             )}
           </div>
         </div>
@@ -147,6 +182,92 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
             />
           </div>
         )}
+        {isPJ && (
+          <>
+            <div className="space-y-1.5">
+              <LabelT l="Inscrição Estadual (IE)" />
+              <Input
+                value={data.ie || ''}
+                onChange={(e) => onChange('ie', e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <LabelT l="Inscrição Municipal (IM)" />
+              <Input
+                value={data.im || ''}
+                onChange={(e) => onChange('im', e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+          </>
+        )}
+        <div className="space-y-1.5">
+          <LabelT l={isPJ ? 'Data de Abertura' : 'Data de Nascimento'} />
+          <Input
+            type="date"
+            value={isPJ ? data.dataAbertura || '' : data.dataNascimento || ''}
+            onChange={(e) => onChange(isPJ ? 'dataAbertura' : 'dataNascimento', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+          <LabelT l="Segmento de Atuação" />
+          {showNewSeg && !readOnly ? (
+            <div className="flex gap-2 animate-in fade-in">
+              <Input
+                autoFocus
+                value={newSeg}
+                onChange={(e) => setNewSeg(e.target.value)}
+                placeholder="Novo segmento"
+                className="bg-white"
+              />
+              <Button
+                type="button"
+                onClick={handleAddSegment}
+                className="bg-blue-600 hover:bg-blue-700 text-white shrink-0"
+              >
+                Salvar
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewSeg(false)}
+                className="shrink-0"
+              >
+                Cancelar
+              </Button>
+            </div>
+          ) : (
+            <Select
+              value={data.segmento}
+              onValueChange={(v) => {
+                if (v === 'ADD_NEW') setShowNewSeg(true)
+                else onChange('segmento', v)
+              }}
+              disabled={readOnly}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                {segments.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+                {!readOnly && (
+                  <SelectItem
+                    value="ADD_NEW"
+                    className="text-blue-600 font-bold bg-blue-50/50 mt-1 cursor-pointer"
+                  >
+                    + Adicionar Novo Segmento
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -155,19 +276,16 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
 export function CompanyContatoTab({ data, onChange, readOnly }: any) {
   const pessoas = data?.pessoas || []
 
-  const addPessoa = () => {
+  const addPessoa = () =>
     onChange('pessoas', [
       ...pessoas,
       { id: Date.now(), nome: '', cargo: '', email: '', telefone: '' },
     ])
-  }
-
-  const removePessoa = (i: number) => {
+  const removePessoa = (i: number) =>
     onChange(
       'pessoas',
       pessoas.filter((_: any, idx: number) => idx !== i),
     )
-  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
@@ -177,7 +295,7 @@ export function CompanyContatoTab({ data, onChange, readOnly }: any) {
             <Users className="w-4 h-4" /> Pessoas de Contato Estratégico ({pessoas.length})
           </h4>
           <p className="text-xs text-blue-800/80">
-            Cadastre os responsáveis pelo relacionamento em diferentes áreas da empresa parceira.
+            Cadastre os responsáveis pelo relacionamento em diferentes áreas.
           </p>
         </div>
         {!readOnly && (
