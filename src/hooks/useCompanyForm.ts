@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { z } from 'zod'
 
 export function useCompanyForm(type: 'client' | 'supplier') {
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -98,8 +97,18 @@ export function useCompanyForm(type: 'client' | 'supplier') {
   const autofillCNPJ = () => {
     setData((prev: any) => ({
       ...prev,
-      dados: { ...prev.dados, nomeRazao: 'EMPRESA BUSCADA SA', fantasia: 'Empresa Buscada' },
-      endereco: { ...prev.endereco, logradouro: 'Av Paulista', cidade: 'São Paulo', estado: 'SP' },
+      dados: {
+        ...prev.dados,
+        nomeRazao: 'FORNECEDOR LOGÍSTICA S.A.',
+        fantasia: 'ForneceLog Transportes',
+        logo: 'https://img.usecurling.com/i?q=logistics&color=blue',
+      },
+      endereco: {
+        ...prev.endereco,
+        logradouro: 'Av Paulista',
+        cidade: 'São Paulo',
+        estado: 'SP',
+      },
     }))
     setErrors({})
   }

@@ -1,16 +1,8 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Info, Search, Building, User, Upload } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
@@ -39,21 +31,21 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
 
   const handleSearchDoc = () => {
     if (!isPJ) return
-    toast({ title: 'Buscando dados...', description: 'Consultando base da Receita.' })
+    toast({ title: 'Buscando dados...', description: 'Consultando base da Receita e Website.' })
     setTimeout(() => {
       if (onAutofill) onAutofill()
-      toast({ title: 'Encontrado', description: 'Dados preenchidos com sucesso.' })
-    }, 1000)
+      toast({ title: 'Encontrado', description: 'Dados e logotipo preenchidos com sucesso.' })
+    }, 1500)
   }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="flex gap-6 items-center mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
-        <div className="relative w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center hover:border-blue-500 overflow-hidden shrink-0">
+        <div className="relative w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center hover:border-blue-500 overflow-hidden shrink-0 group">
           {data.logo ? (
-            <img src={data.logo} className="w-full h-full object-cover" />
+            <img src={data.logo} className="w-full h-full object-contain p-1 bg-white" />
           ) : (
-            <Upload className="w-6 h-6 text-slate-400" />
+            <Upload className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
           )}
           <input
             type="file"
@@ -66,7 +58,9 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
         </div>
         <div>
           <h4 className="text-sm font-semibold text-slate-800">Logo ou Marca da Empresa</h4>
-          <p className="text-xs text-slate-500 mb-2">JPG ou PNG (Max 2MB)</p>
+          <p className="text-xs text-slate-500 mb-2">
+            Formatos suportados: JPG ou PNG (Tamanho máximo de 2MB)
+          </p>
           {!readOnly && (
             <Button
               size="sm"
@@ -75,7 +69,7 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
               onClick={handleSearchDoc}
               className="h-8 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 shadow-sm"
             >
-              <Search className="w-3.5 h-3.5 mr-1.5" /> Buscar Automático via CNPJ/Site
+              <Search className="w-3.5 h-3.5 mr-1.5" /> Busca Automática via Base de Dados
             </Button>
           )}
         </div>
@@ -107,12 +101,32 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
           <LabelT l={isPJ ? 'CNPJ' : 'CPF'} req />
-          <Input
-            value={data.documento || ''}
-            onChange={(e) => onChange('documento', e.target.value)}
-            disabled={readOnly}
-            className={cn('font-mono', err('documento'))}
-          />
+          <div className="flex gap-2">
+            <Input
+              value={data.documento || ''}
+              onChange={(e) => onChange('documento', e.target.value)}
+              disabled={readOnly}
+              className={cn('font-mono', err('documento'))}
+            />
+            {!readOnly && isPJ && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleSearchDoc}
+                      className="shrink-0 text-blue-600 hover:text-blue-700 bg-blue-50 border-blue-200"
+                    >
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Autocompletar via CNPJ</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
         <div className="space-y-1.5">
           <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />

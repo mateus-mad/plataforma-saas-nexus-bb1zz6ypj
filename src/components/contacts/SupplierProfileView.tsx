@@ -10,15 +10,9 @@ import { CompanyDadosTab, CompanyContatoTab, CompanyAddressTab } from './tabs/Co
 import { CompanyFinanceiroTab } from './tabs/CompanyFinancialTabs'
 import { CompanyBankingTab } from './tabs/CompanyBankingTab'
 import { CompanyAgreementsTab } from './tabs/CompanyAgreementsTab'
-import { CompanyRelacionamentoTab } from './tabs/CompanyRelationshipTabs'
 import AttachmentsTab from './tabs/AttachmentsTab'
-import HistoryTab from './tabs/HistoryTab'
-
-const generateValidPDF = () => {
-  const pdfContent =
-    '%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Count 1/Kids[3 0 R]>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R/Resources<<>>>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000015 00000 n\n0000000060 00000 n\n0000000117 00000 n\ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n187\n%%EOF'
-  return new Blob([pdfContent], { type: 'application/pdf' })
-}
+import SupplierHistoryTab from './tabs/SupplierHistoryTab'
+import SupplierPerformanceTab from './tabs/SupplierPerformanceTab'
 
 export default function SupplierProfileView({ onOpenChange }: any) {
   const { toast } = useToast()
@@ -34,27 +28,132 @@ export default function SupplierProfileView({ onOpenChange }: any) {
   }
 
   const exportDoc = () => {
-    toast({ title: 'Gerando PDF', description: 'O relatório será baixado em instantes.' })
+    toast({
+      title: 'Gerando Relatório',
+      description: 'Abrindo visualização para exportação em PDF.',
+    })
     setTimeout(() => {
-      const url = URL.createObjectURL(generateValidPDF())
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Ficha_Fornecedor.pdf`
-      a.click()
-    }, 1500)
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) return
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Ficha do Fornecedor - ${data.dados?.nomeRazao || 'Desconhecido'}</title>
+            <style>
+              body { font-family: ui-sans-serif, system-ui, sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; }
+              .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+              h1 { font-size: 24px; color: #0f172a; margin: 0 0 4px 0; }
+              p { margin: 0; color: #64748b; font-size: 14px; }
+              .logo { max-width: 120px; max-height: 60px; object-fit: contain; border-radius: 8px; }
+              .section { margin-bottom: 32px; page-break-inside: avoid; }
+              h2 { font-size: 16px; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px; }
+              .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+              .field strong { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+              .field span { font-size: 14px; font-weight: 500; color: #334155; }
+              table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+              th, td { padding: 10px 12px; border: 1px solid #e2e8f0; text-align: left; }
+              th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+              td { color: #334155; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div>
+                <h1>Ficha de Fornecedor</h1>
+                <p><strong>${data.dados?.nomeRazao || 'Empresa Não Identificada'}</strong> • ${data.dados?.documento || 'Sem Documento'}</p>
+              </div>
+              ${data.dados?.logo ? `<img src="${data.dados.logo}" class="logo" />` : ''}
+            </div>
+
+            <div class="section">
+              <h2>Dados de Contato Principais</h2>
+              <div class="grid">
+                <div class="field"><strong>Pessoa de Contato:</strong> <span>${data.contato?.responsavel || 'Não informado'}</span></div>
+                <div class="field"><strong>Cargo / Função:</strong> <span>${data.contato?.cargo || 'Não informado'}</span></div>
+                <div class="field"><strong>E-mail:</strong> <span>${data.contato?.email || 'Não informado'}</span></div>
+                <div class="field"><strong>Telefone:</strong> <span>${data.contato?.telefone || 'Não informado'}</span></div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2>Dados Bancários</h2>
+              <table>
+                <thead>
+                  <tr><th>Banco</th><th>Tipo</th><th>Agência</th><th>Conta</th></tr>
+                </thead>
+                <tbody>
+                  ${
+                    data.bancario?.contas?.length > 0
+                      ? data.bancario.contas
+                          .map(
+                            (c: any) =>
+                              `<tr><td>${c.banco}</td><td>${c.tipo}</td><td>${c.agencia}</td><td>${c.conta}</td></tr>`,
+                          )
+                          .join('')
+                      : '<tr><td colspan="4">Nenhuma conta cadastrada</td></tr>'
+                  }
+                </tbody>
+              </table>
+              
+              <h3 style="font-size: 13px; color: #64748b; margin: 20px 0 8px 0; text-transform: uppercase;">Chaves PIX Cadastradas</h3>
+              <table>
+                <thead>
+                  <tr><th>Tipo de Chave</th><th>Chave PIX</th></tr>
+                </thead>
+                <tbody>
+                  ${
+                    data.bancario?.pix?.length > 0
+                      ? data.bancario.pix
+                          .map((p: any) => `<tr><td>${p.tipo}</td><td>${p.chave}</td></tr>`)
+                          .join('')
+                      : '<tr><td colspan="2">Nenhuma chave PIX cadastrada</td></tr>'
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="section">
+              <h2>Acordos e Negociações Comerciais</h2>
+              <div class="grid">
+                <div class="field"><strong>Desconto Padrão Combinado:</strong> <span>${data.acordos?.desconto || 'Nenhum desconto registrado'}</span></div>
+                <div class="field"><strong>Termos / Negociação:</strong> <span>${data.acordos?.negociacao || 'Nenhum termo registrado'}</span></div>
+                <div class="field" style="grid-column: span 2;"><strong>Observações do Acordo:</strong> <span>${data.acordos?.observacoes || 'Nenhuma observação'}</span></div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2>Métricas de Desempenho e Qualidade</h2>
+              <div class="grid">
+                <div class="field"><strong>Lead Time de Entrega (Média):</strong> <span>4.3 Dias (Excelente)</span></div>
+                <div class="field"><strong>Qualidade de Entrega (SLA):</strong> <span>98% no Prazo</span></div>
+                <div class="field"><strong>Conformidade do Produto:</strong> <span>99.5% de Aprovação</span></div>
+                <div class="field"><strong>Sincronização de Catálogo:</strong> <span>Atualizado (Automático)</span></div>
+              </div>
+            </div>
+            
+            <script>
+              window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 500); }
+            </script>
+          </body>
+        </html>
+      `
+      printWindow.document.write(html)
+      printWindow.document.close()
+    }, 500)
   }
 
   const tabs = [
     { id: 'identificacao', label: 'Identificação', prog: progress.dados },
     { id: 'endereco', label: 'Endereço', prog: progress.endereco },
     { id: 'contato', label: 'Contato', prog: progress.contato },
+    { id: 'desempenho', label: 'Desempenho' },
     { id: 'financeiro', label: 'Financeiro', prog: progress.financeiro },
     { id: 'bancario', label: 'Bancário' },
-    { id: 'acordos', label: 'Acordos' },
-    { id: 'contratos', label: 'Contratos' },
-    { id: 'relacionamento', label: 'Relacionamento' },
+    { id: 'acordos', label: 'Acordos', prog: progress.acordos },
     { id: 'documentos', label: 'Documentos' },
-    { id: 'historico', label: 'Histórico' },
+    { id: 'historico', label: 'Histórico Completo' },
   ]
 
   const renderTab = () => {
@@ -81,6 +180,8 @@ export default function SupplierProfileView({ onOpenChange }: any) {
             onChange={(f: any, v: any) => updateData('contato', f, v)}
           />
         )
+      case 'desempenho':
+        return <SupplierPerformanceTab />
       case 'financeiro':
         return (
           <CompanyFinanceiroTab
@@ -103,19 +204,10 @@ export default function SupplierProfileView({ onOpenChange }: any) {
             onChange={(f: any, v: any) => updateData('acordos', f, v)}
           />
         )
-      case 'contratos':
-        return <AttachmentsTab />
-      case 'relacionamento':
-        return (
-          <CompanyRelacionamentoTab
-            data={data.relacionamento}
-            onChange={(f: any, v: any) => updateData('relacionamento', f, v)}
-          />
-        )
       case 'documentos':
         return <AttachmentsTab />
       case 'historico':
-        return <HistoryTab />
+        return <SupplierHistoryTab />
       default:
         return null
     }
@@ -131,10 +223,10 @@ export default function SupplierProfileView({ onOpenChange }: any) {
             </div>
             <div>
               <DialogTitle className="text-xl font-bold text-slate-800">
-                Editar Fornecedor
+                Ficha do Fornecedor
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-0.5">
-                Preencha os dados do fornecedor. Campos com * são obrigatórios.
+                Visão executiva e gestão do perfil do fornecedor.
               </DialogDescription>
             </div>
           </div>
@@ -196,17 +288,17 @@ export default function SupplierProfileView({ onOpenChange }: any) {
 
       <div className="bg-white border-t border-slate-200 p-4 px-6 flex justify-between items-center shrink-0 z-10">
         <Button variant="outline" onClick={exportDoc} className="hidden sm:flex text-slate-600">
-          Exportar Ficha (PDF)
+          Exportar Relatório (PDF)
         </Button>
         <div className="flex gap-3 w-full sm:w-auto justify-end">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="px-6">
-            Cancelar
+            Fechar
           </Button>
           <Button
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 shadow-sm"
             onClick={handleUpdate}
           >
-            Atualizar
+            Salvar Alterações
           </Button>
         </div>
       </div>
