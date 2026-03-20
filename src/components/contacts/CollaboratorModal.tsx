@@ -127,14 +127,23 @@ export default function CollaboratorModal({
     setIsDraggingOCR(false)
     if (e.dataTransfer.files?.length) {
       const file = e.dataTransfer.files[0]
-      const success = await processOCR(file)
-      if (success) {
-        toast({
-          title: 'Inteligência Artificial (OCR)',
-          description:
-            'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
-        })
-      } else {
+      try {
+        const success = await processOCR(file)
+        if (success) {
+          toast({
+            title: 'Inteligência Artificial (OCR)',
+            description:
+              'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
+          })
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Erro de Extração (OCR)',
+            description:
+              'Unable to read document. Please check the image quality or fill fields manually.',
+          })
+        }
+      } catch (err) {
         toast({
           variant: 'destructive',
           title: 'Erro de Extração (OCR)',
@@ -148,14 +157,23 @@ export default function CollaboratorModal({
   const handleOCRUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       const file = e.target.files[0]
-      const success = await processOCR(file)
-      if (success) {
-        toast({
-          title: 'Inteligência Artificial (OCR)',
-          description:
-            'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
-        })
-      } else {
+      try {
+        const success = await processOCR(file)
+        if (success) {
+          toast({
+            title: 'Inteligência Artificial (OCR)',
+            description:
+              'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
+          })
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Erro de Extração (OCR)',
+            description:
+              'Unable to read document. Please check the image quality or fill fields manually.',
+          })
+        }
+      } catch (err) {
         toast({
           variant: 'destructive',
           title: 'Erro de Extração (OCR)',

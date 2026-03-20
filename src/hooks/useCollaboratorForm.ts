@@ -5,6 +5,7 @@ import { getAttachments, createAttachment, deleteAttachment } from '@/services/a
 import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
+import { ClientResponseError } from 'pocketbase'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -315,53 +316,8 @@ export function useCollaboratorForm(entityId: string | null) {
 
   const processOCR = async (file: File) => {
     setIsProcessingOCR(true)
+    let ocrSuccess = true
     try {
-      const ocrResult = await processDocumentOCR(file)
-      let newData = { ...data }
-
-      if (ocrResult.name) {
-        newData.pessoal = {
-          ...newData.pessoal,
-          name: ocrResult.name || newData.pessoal.name,
-          nascimento: ocrResult.nascimento || newData.pessoal.nascimento,
-          mae: ocrResult.mae || newData.pessoal.mae,
-          nacionalidade: ocrResult.nacionalidade || newData.pessoal.nacionalidade,
-          cidade: ocrResult.cidadeNasc || newData.pessoal.cidade,
-          uf: ocrResult.ufNasc || newData.pessoal.uf,
-        }
-      }
-
-      if (ocrResult.document_number) {
-        newData.docs = {
-          ...newData.docs,
-          cpf: ocrResult.document_number || newData.docs.cpf,
-          docType: ocrResult.docType || newData.docs.docType,
-          docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
-          compliance: ocrResult.compliance || newData.docs.compliance,
-        }
-      }
-
-      if (ocrResult.address) {
-        const addr = ocrResult.address
-        newData.endereco = {
-          ...newData.endereco,
-          cep: addr.cep || newData.endereco.cep,
-          logradouro: addr.logradouro || newData.endereco.logradouro,
-          numero: addr.numero || newData.endereco.numero,
-          bairro: addr.bairro || newData.endereco.bairro,
-          cidade: addr.cidade || newData.endereco.cidade,
-          estado: addr.estado || newData.endereco.estado,
-        }
-      }
-
-      const faceFile = await cropFaceFromImage(file)
-      let photoFileToSave: File | null = null
-      if (faceFile) {
-        photoFileToSave = faceFile
-        newData.pessoal.photoFile = photoFileToSave
-        newData.pessoal.foto = URL.createObjectURL(photoFileToSave)
-      }
-
       const type = 'Documento de Identificação'
       let newAnexo: any = {
         id: Date.now(),
@@ -373,38 +329,109 @@ export function useCollaboratorForm(entityId: string | null) {
       }
 
       if (entityId) {
-        const fd = new FormData()
-        fd.append('file', file)
-        fd.append('relacionamento_id', entityId)
-        fd.append('category', type)
-        const created = await createAttachment(fd)
-        newAnexo.id = created.id
-        delete newAnexo.file
+        try {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('relacionamento_id', entityId)
+          fd.append('category', type)
+          const created = await createAttachment(fd)
+          newAnexo.id = created.id
+          delete newAnexo.file
+        } catch (attErr) {
+          console.error('Failed to create attachment during OCR process', attErr)
+        }
       }
 
+      let newData = { ...data }
       newData.anexos = [...newData.anexos, newAnexo]
+
+      let ocrResult = null
+      try {
+        ocrResult = await processDocumentOCR(file)
+      } catch (err: any) {
+        if (err instanceof ClientResponseError && err.status === 400) {
+          console.warn('OCR API returned 400 Bad Request: Unable to read document.', err)
+        } else {
+          console.error('OCR Error:', err)
+        }
+        ocrSuccess = false
+      }
+
+      if (ocrSuccess && ocrResult) {
+        if (ocrResult.name) {
+          newData.pessoal = {
+            ...newData.pessoal,
+            name: ocrResult.name || newData.pessoal.name,
+            nascimento: ocrResult.nascimento || newData.pessoal.nascimento,
+            mae: ocrResult.mae || newData.pessoal.mae,
+            nacionalidade: ocrResult.nacionalidade || newData.pessoal.nacionalidade,
+            cidade: ocrResult.cidadeNasc || newData.pessoal.cidade,
+            uf: ocrResult.ufNasc || newData.pessoal.uf,
+          }
+        }
+
+        if (ocrResult.document_number) {
+          newData.docs = {
+            ...newData.docs,
+            cpf: ocrResult.document_number || newData.docs.cpf,
+            docType: ocrResult.docType || newData.docs.docType,
+            docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
+            compliance: ocrResult.compliance || newData.docs.compliance,
+          }
+        }
+
+        if (ocrResult.address) {
+          const addr = ocrResult.address
+          newData.endereco = {
+            ...newData.endereco,
+            cep: addr.cep || newData.endereco.cep,
+            logradouro: addr.logradouro || newData.endereco.logradouro,
+            numero: addr.numero || newData.endereco.numero,
+            bairro: addr.bairro || newData.endereco.bairro,
+            cidade: addr.cidade || newData.endereco.cidade,
+            estado: addr.estado || newData.endereco.estado,
+          }
+        }
+
+        try {
+          const faceFile = await cropFaceFromImage(file)
+          if (faceFile) {
+            newData.pessoal.photoFile = faceFile
+            newData.pessoal.foto = URL.createObjectURL(faceFile)
+          }
+        } catch (cropErr) {
+          console.error('Error cropping face image', cropErr)
+        }
+      }
+
       setData(newData)
 
       if (entityId) {
-        const fd = new FormData()
-        const pd = { ...newData }
-        delete pd.anexos
-        if (pd.pessoal) delete pd.pessoal.photoFile
+        try {
+          const fd = new FormData()
+          const pd = { ...newData }
+          delete pd.anexos
+          if (pd.pessoal) delete pd.pessoal.photoFile
 
-        fd.append('data', JSON.stringify(pd))
-        if (ocrResult.name) fd.append('name', ocrResult.name)
-        if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
+          fd.append('data', JSON.stringify(pd))
+          if (ocrSuccess && ocrResult) {
+            if (ocrResult.name) fd.append('name', ocrResult.name)
+            if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
+          }
 
-        if (photoFileToSave) {
-          fd.append('photo', photoFileToSave)
+          if (newData.pessoal.photoFile) {
+            fd.append('photo', newData.pessoal.photoFile)
+          }
+
+          await updateEntity(entityId, fd)
+        } catch (updateErr) {
+          console.error('Failed to update entity with OCR/Attachment data', updateErr)
         }
-
-        await updateEntity(entityId, fd)
       }
 
-      return true
+      return ocrSuccess
     } catch (e: any) {
-      console.error(e)
+      console.error('Unhandled error in processOCR', e)
       return false
     } finally {
       setIsProcessingOCR(false)
