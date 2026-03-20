@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { getEntity, createEntity, updateEntity } from '@/services/entities'
 import { getAttachments, createAttachment, deleteAttachment } from '@/services/attachments'
+import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -198,7 +199,7 @@ export function useCollaboratorForm(entityId: string | null) {
       setSaveStatus('saving')
       const payloadData = { ...newData }
       delete payloadData.anexos
-      if (payloadData.pessoal) delete payloadData.pessoal.photoFile // Prevent circular JSON
+      if (payloadData.pessoal) delete payloadData.pessoal.photoFile
 
       const fd = new FormData()
       fd.append('data', JSON.stringify(payloadData))
@@ -249,7 +250,7 @@ export function useCollaboratorForm(entityId: string | null) {
 
       const payloadData = { ...data }
       delete payloadData.anexos
-      if (payloadData.pessoal) delete payloadData.pessoal.photoFile // Prevent circular JSON
+      if (payloadData.pessoal) delete payloadData.pessoal.photoFile
 
       fd.append('data', JSON.stringify(payloadData))
 
@@ -290,82 +291,50 @@ export function useCollaboratorForm(entityId: string | null) {
   const processOCR = async (file: File) => {
     setIsProcessingOCR(true)
     try {
-      await new Promise((r) => setTimeout(r, 2000))
-
-      const fileName = file.name.toLowerCase()
-      const isAddress =
-        fileName.includes('residencia') ||
-        fileName.includes('conta') ||
-        fileName.includes('endereco') ||
-        fileName.includes('comprovante')
+      const ocrResult = await processDocumentOCR(file)
 
       let newData = { ...data }
 
-      if (isAddress) {
-        newData.endereco = {
-          ...newData.endereco,
-          cep: '01001-000',
-          logradouro: 'Praça da Sé',
-          numero: '123',
-          bairro: 'Sé',
-          cidade: 'São Paulo',
-          estado: 'SP',
-        }
-      } else {
-        const isMale = Math.random() > 0.5
-        const extractedName = isMale ? 'Carlos Eduardo Silva' : 'Ana Paula Souza'
-        const extractedCpf = `${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}-${Math.floor(10 + Math.random() * 89)}`
-
+      if (ocrResult.name) {
         newData.pessoal = {
           ...newData.pessoal,
-          name: extractedName,
-          nascimento: '1985-10-22',
+          name: ocrResult.name,
+          nascimento: ocrResult.nascimento || newData.pessoal.nascimento,
+          mae: ocrResult.mae || newData.pessoal.mae,
+          nacionalidade: ocrResult.nacionalidade || newData.pessoal.nacionalidade,
+          cidade: ocrResult.cidadeNasc || newData.pessoal.cidade,
+          uf: ocrResult.ufNasc || newData.pessoal.uf,
         }
+      }
+
+      if (ocrResult.document_number) {
         newData.docs = {
           ...newData.docs,
-          cpf: extractedCpf,
-          docType: 'RG',
-          docIssueDate: '2015-08-20',
-          pis: '123.45678.90-1',
-          compliance: {
-            status: 'valid',
-            message: 'Documentos verificados com sucesso nas bases públicas.',
-          },
+          cpf: ocrResult.document_number,
+          docType: ocrResult.docType || newData.docs.docType,
+          docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
+          pis: ocrResult.pis || newData.docs.pis,
+          compliance: ocrResult.compliance || newData.docs.compliance,
         }
+      }
 
-        const ext = file.name.split('.').pop()?.toLowerCase() || ''
-        const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(ext)
-
-        let photoFileToSave: File | null = null
-
-        if (isImage) {
-          photoFileToSave = file
-          newData.pessoal.foto = URL.createObjectURL(file)
-        } else {
-          try {
-            // Simulate extracting face from PDF document
-            const seed = Math.floor(Math.random() * 100)
-            const gender = isMale ? 'male' : 'female'
-            const res = await fetch(
-              `https://img.usecurling.com/ppl/medium?gender=${gender}&seed=${seed}`,
-            )
-            if (!res.ok) throw new Error('Failed to fetch face image')
-            const blob = await res.blob()
-            photoFileToSave = new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' })
-            newData.pessoal.foto = URL.createObjectURL(photoFileToSave)
-          } catch (err) {
-            console.error('Failed to simulate face extraction', err)
-            toast({
-              variant: 'destructive',
-              title: 'Aviso de Extração',
-              description:
-                'A foto não pôde ser extraída do documento automaticamente. Preencha manualmente.',
-            })
-          }
+      if (ocrResult.address) {
+        newData.endereco = {
+          ...newData.endereco,
+          ...ocrResult.address,
         }
+      }
 
-        if (photoFileToSave) {
+      let photoFileToSave: File | null = null
+      if (ocrResult.photoUrl) {
+        try {
+          const res = await fetch(ocrResult.photoUrl)
+          const blob = await res.blob()
+          photoFileToSave = new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' })
           newData.pessoal.photoFile = photoFileToSave
+          newData.pessoal.foto = URL.createObjectURL(photoFileToSave)
+        } catch (err) {
+          console.error('Failed to simulated face extraction from OCR response', err)
         }
       }
 
@@ -400,14 +369,14 @@ export function useCollaboratorForm(entityId: string | null) {
         const fd = new FormData()
         const pd = { ...newData }
         delete pd.anexos
-        if (pd.pessoal) delete pd.pessoal.photoFile // Prevent circular JSON
+        if (pd.pessoal) delete pd.pessoal.photoFile
 
         fd.append('data', JSON.stringify(pd))
-        fd.append('name', newData.pessoal.name)
-        fd.append('document_number', newData.docs.cpf)
+        if (ocrResult.name) fd.append('name', ocrResult.name)
+        if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
 
-        if (newData.pessoal.photoFile) {
-          fd.append('photo', newData.pessoal.photoFile)
+        if (photoFileToSave) {
+          fd.append('photo', photoFileToSave)
         }
 
         await updateEntity(entityId, fd)
@@ -416,6 +385,11 @@ export function useCollaboratorForm(entityId: string | null) {
       return true
     } catch (e) {
       console.error(e)
+      toast({
+        variant: 'destructive',
+        title: 'Falha na Extração (OCR)',
+        description: 'Não foi possível extrair dados automaticamente deste arquivo.',
+      })
       return false
     } finally {
       setIsProcessingOCR(false)
@@ -461,7 +435,6 @@ export function useCollaboratorForm(entityId: string | null) {
   const getProgress = (section: string) => {
     if (section === 'anexos') return null
     const fields = Object.values(data[section] || {})
-    // Don't count photoFile in progress
     const cleanFields = fields.filter((v) => !(v instanceof File))
     if (!cleanFields.length) return 0
     const filled = cleanFields.filter((v) => {
