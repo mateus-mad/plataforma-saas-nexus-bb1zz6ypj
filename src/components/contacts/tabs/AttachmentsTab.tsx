@@ -39,12 +39,13 @@ export default function AttachmentsTab({ data = [], onChange, readOnly }: Props)
         size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
         date: new Date().toLocaleDateString('pt-BR'),
         type,
+        file: file,
       }
       onChange([...data, newFile])
     }
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: number | string) => {
     if (readOnly) return
     onChange(data.filter((f: any) => f.id !== id))
   }

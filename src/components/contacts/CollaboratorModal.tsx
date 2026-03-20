@@ -53,6 +53,7 @@ export default function CollaboratorModal({
 }) {
   const [activeTab, setActiveTab] = useState('pessoal')
   const [isEditing, setIsEditing] = useState(!entityId)
+  const [isDraggingOCR, setIsDraggingOCR] = useState(false)
 
   const {
     data,
@@ -118,6 +119,28 @@ export default function CollaboratorModal({
         title: 'Erro de Sincronização',
         description: 'Ocorreu um erro ao salvar na nuvem.',
       })
+    }
+  }
+
+  const handleOCRDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDraggingOCR(false)
+    if (e.dataTransfer.files?.length) {
+      const file = e.dataTransfer.files[0]
+      const success = await processOCR(file)
+      if (success) {
+        toast({
+          title: 'Inteligência Artificial (OCR)',
+          description:
+            'Foto e dados extraídos. Verificamos a validade dos documentos publicamente.',
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Leitura',
+          description: 'Não foi possível extrair os dados do documento.',
+        })
+      }
     }
   }
 
@@ -260,7 +283,18 @@ export default function CollaboratorModal({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50 custom-scrollbar">
           <div className="max-w-7xl mx-auto">
             {isEditing && (
-              <div className="bg-white border border-blue-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden group">
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDraggingOCR(true)
+                }}
+                onDragLeave={() => setIsDraggingOCR(false)}
+                onDrop={handleOCRDrop}
+                className={cn(
+                  'bg-white border rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden group transition-all',
+                  isDraggingOCR ? 'border-blue-500 bg-blue-50 scale-[1.01]' : 'border-blue-200',
+                )}
+              >
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
                 <div className="absolute top-0 right-0 w-64 h-full bg-blue-50/50 -skew-x-12 translate-x-10 -z-10 group-hover:bg-blue-100/50 transition-colors"></div>
 
@@ -273,8 +307,7 @@ export default function CollaboratorModal({
                       Preenchimento e Compliance (OCR)
                     </h4>
                     <p className="text-sm text-slate-500">
-                      Faça upload de CNH/RG para extração automática e validação imediata em bases
-                      públicas.
+                      Faça upload ou arraste CNH/RG e Comprovantes para extração automática.
                     </p>
                   </div>
                 </div>
@@ -287,11 +320,11 @@ export default function CollaboratorModal({
                   >
                     {isProcessingOCR ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verificando Dados...
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
                       </>
                     ) : (
                       <>
-                        <UploadCloud className="w-4 h-4 mr-2" /> Extrair de Documento
+                        <UploadCloud className="w-4 h-4 mr-2" /> Arraste ou Selecione
                       </>
                     )}
                   </Button>

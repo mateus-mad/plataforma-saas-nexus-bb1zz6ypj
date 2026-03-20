@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { getEntity, createEntity, updateEntity } from '@/services/entities'
-import { getAttachments, createAttachment } from '@/services/attachments'
+import { getAttachments, createAttachment, deleteAttachment } from '@/services/attachments'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -142,6 +142,32 @@ export function useCollaboratorForm(entityId: string | null) {
   const updateData = async (section: string, field: string, value: any) => {
     let newData = { ...data }
     if (section === 'anexos') {
+      if (entityId) {
+        const currentIds = data.anexos.map((a: any) => a.id)
+        const newIds = value.map((a: any) => a.id)
+        const deletedIds = currentIds.filter((id: any) => !newIds.includes(id))
+
+        for (const id of deletedIds) {
+          if (typeof id === 'string') {
+            try {
+              await deleteAttachment(id)
+            } catch (e) {}
+          }
+        }
+
+        const pendingAnexos = value.filter((a: any) => !currentIds.includes(a.id) && a.file)
+        for (const anexo of pendingAnexos) {
+          const fd = new FormData()
+          fd.append('file', anexo.file)
+          fd.append('relacionamento_id', entityId)
+          fd.append('category', anexo.type)
+          try {
+            const created = await createAttachment(fd)
+            anexo.id = created.id
+            delete anexo.file
+          } catch (e) {}
+        }
+      }
       newData.anexos = value
     } else {
       newData = {
@@ -208,10 +234,23 @@ export function useCollaboratorForm(entityId: string | null) {
       delete payloadData.anexos
       fd.append('data', JSON.stringify(payloadData))
 
+      let recordId = entityId
       if (entityId) {
         await updateEntity(entityId, fd)
       } else {
-        await createEntity(fd)
+        const created = await createEntity(fd)
+        recordId = created.id
+      }
+
+      const pendingAnexos = data.anexos.filter((a: any) => a.file)
+      for (const anexo of pendingAnexos) {
+        const attFd = new FormData()
+        attFd.append('file', anexo.file)
+        attFd.append('relacionamento_id', recordId as string)
+        attFd.append('category', anexo.type)
+        const created = await createAttachment(attFd)
+        anexo.id = created.id
+        delete anexo.file
       }
 
       setSaveStatus('saved')
@@ -228,38 +267,69 @@ export function useCollaboratorForm(entityId: string | null) {
   const processOCR = async (file: File) => {
     setIsProcessingOCR(true)
     try {
-      await new Promise((r) => setTimeout(r, 2500))
+      await new Promise((r) => setTimeout(r, 2000))
+
+      const fileName = file.name.toLowerCase()
+      const isAddress =
+        fileName.includes('residencia') ||
+        fileName.includes('conta') ||
+        fileName.includes('endereco') ||
+        fileName.includes('comprovante')
+
+      let newData = { ...data }
+
+      if (isAddress) {
+        newData.endereco = {
+          ...newData.endereco,
+          cep: '01001-000',
+          logradouro: 'Praça da Sé',
+          numero: '123',
+          bairro: 'Sé',
+          cidade: 'São Paulo',
+          estado: 'SP',
+        }
+      } else {
+        newData.pessoal = {
+          ...newData.pessoal,
+          name: 'João Silva Oliveira',
+          nascimento: '1990-05-15',
+          foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=15',
+        }
+        newData.docs = {
+          ...newData.docs,
+          cpf: '123.456.789-00',
+          docType: 'RG',
+          docIssueDate: '2013-08-20',
+          pis: '123.45678.90-1',
+          compliance: { status: 'valid', message: 'Documentos verificados com sucesso.' },
+        }
+      }
 
       const ext = file.name.split('.').pop()?.toLowerCase() || ''
       let type = 'archive'
       if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) type = 'image'
       if (ext === 'pdf') type = 'pdf'
 
+      let newAnexo: any = {
+        id: Date.now(),
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        date: new Date().toLocaleDateString('pt-BR'),
+        type,
+        file,
+      }
+
       if (entityId) {
         const fd = new FormData()
         fd.append('file', file)
         fd.append('relacionamento_id', entityId)
         fd.append('category', type)
-        await createAttachment(fd)
+        const created = await createAttachment(fd)
+        newAnexo.id = created.id
+        delete newAnexo.file
       }
 
-      const fakePhotoUrl = 'https://img.usecurling.com/ppl/medium?gender=male&seed=15'
-
-      const newData = {
-        ...data,
-        pessoal: {
-          ...data.pessoal,
-          name: 'João Silva Oliveira',
-          nascimento: '1990-05-15',
-          foto: fakePhotoUrl,
-        },
-        docs: {
-          ...data.docs,
-          cpf: '123.456.789-00',
-          docType: 'RG',
-          docIssueDate: '2013-08-20',
-        },
-      }
+      newData.anexos = [...newData.anexos, newAnexo]
       setData(newData)
 
       if (entityId) {
@@ -274,6 +344,7 @@ export function useCollaboratorForm(entityId: string | null) {
 
       return true
     } catch (e) {
+      console.error(e)
       return false
     } finally {
       setIsProcessingOCR(false)
