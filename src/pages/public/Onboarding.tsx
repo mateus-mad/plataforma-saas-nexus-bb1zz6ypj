@@ -108,7 +108,9 @@ export default function Onboarding() {
           const blob = await res.blob()
           setExtractedPhoto(URL.createObjectURL(blob))
           setExtractedPhotoBlob(blob)
-        } catch (err) {}
+        } catch (err) {
+          console.error('Falha ao extrair imagem mockada', err)
+        }
 
         setIsProcessingOCR(false)
         toast({ title: 'Sucesso', description: 'Dados e foto extraídos com sucesso.' })
