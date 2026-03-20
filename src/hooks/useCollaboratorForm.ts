@@ -151,7 +151,9 @@ export function useCollaboratorForm(entityId: string | null) {
           if (typeof id === 'string') {
             try {
               await deleteAttachment(id)
-            } catch (e) {}
+            } catch (e) {
+              console.error('Failed to delete attachment', e)
+            }
           }
         }
 
@@ -165,7 +167,9 @@ export function useCollaboratorForm(entityId: string | null) {
             const created = await createAttachment(fd)
             anexo.id = created.id
             delete anexo.file
-          } catch (e) {}
+          } catch (e) {
+            console.error('Failed to upload attachment', e)
+          }
         }
       }
       newData.anexos = value
