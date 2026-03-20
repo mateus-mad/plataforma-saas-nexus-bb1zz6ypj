@@ -87,6 +87,7 @@ const DEFAULT_DATA = {
     sangue: '',
     nascimento: '',
     foto: '',
+    photoFile: null as File | null,
   },
   docs: { docType: 'RG', docIssueDate: '', cpf: '', pis: '', compliance: { status: 'pending' } },
   endereco: { cep: '', logradouro: '', numero: '', comp: '', bairro: '', cidade: '', estado: '' },
@@ -120,6 +121,8 @@ export function useCollaboratorForm(entityId: string | null) {
     try {
       const record = await getEntity(id)
       const parsedData = record.data || { ...DEFAULT_DATA }
+      parsedData.pessoal = { ...DEFAULT_DATA.pessoal, ...parsedData.pessoal }
+
       if (record.photo) {
         parsedData.pessoal.foto = pb.files.getURL(record, record.photo)
       }
@@ -139,7 +142,7 @@ export function useCollaboratorForm(entityId: string | null) {
     }
   }
 
-  const updateData = async (section: string, field: string, value: any) => {
+  const updateData = async (section: string, field: string, value: any, file?: File) => {
     let newData = { ...data }
     if (section === 'anexos') {
       if (entityId) {
@@ -178,6 +181,9 @@ export function useCollaboratorForm(entityId: string | null) {
         ...data,
         [section]: { ...(data[section] as any), [field]: value },
       }
+      if (section === 'pessoal' && field === 'foto' && file) {
+        newData.pessoal.photoFile = file
+      }
     }
 
     setData(newData)
@@ -192,10 +198,17 @@ export function useCollaboratorForm(entityId: string | null) {
       setSaveStatus('saving')
       const payloadData = { ...newData }
       delete payloadData.anexos
+      if (payloadData.pessoal) delete payloadData.pessoal.photoFile // Prevent circular JSON
+
       const fd = new FormData()
       fd.append('data', JSON.stringify(payloadData))
-      fd.append('name', newData.pessoal.name)
-      fd.append('document_number', newData.docs.cpf)
+      fd.append('name', newData.pessoal.name || '')
+      fd.append('document_number', newData.docs.cpf || '')
+
+      if (section === 'pessoal' && field === 'foto' && file) {
+        fd.append('photo', file)
+      }
+
       try {
         await updateEntity(entityId, fd)
         setSaveStatus('saved')
@@ -236,7 +249,13 @@ export function useCollaboratorForm(entityId: string | null) {
 
       const payloadData = { ...data }
       delete payloadData.anexos
+      if (payloadData.pessoal) delete payloadData.pessoal.photoFile // Prevent circular JSON
+
       fd.append('data', JSON.stringify(payloadData))
+
+      if (data.pessoal.photoFile) {
+        fd.append('photo', data.pessoal.photoFile)
+      }
 
       let recordId = entityId
       if (entityId) {
@@ -293,19 +312,60 @@ export function useCollaboratorForm(entityId: string | null) {
           estado: 'SP',
         }
       } else {
+        const isMale = Math.random() > 0.5
+        const extractedName = isMale ? 'Carlos Eduardo Silva' : 'Ana Paula Souza'
+        const extractedCpf = `${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}-${Math.floor(10 + Math.random() * 89)}`
+
         newData.pessoal = {
           ...newData.pessoal,
-          name: 'João Silva Oliveira',
-          nascimento: '1990-05-15',
-          foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=15',
+          name: extractedName,
+          nascimento: '1985-10-22',
         }
         newData.docs = {
           ...newData.docs,
-          cpf: '123.456.789-00',
+          cpf: extractedCpf,
           docType: 'RG',
-          docIssueDate: '2013-08-20',
+          docIssueDate: '2015-08-20',
           pis: '123.45678.90-1',
-          compliance: { status: 'valid', message: 'Documentos verificados com sucesso.' },
+          compliance: {
+            status: 'valid',
+            message: 'Documentos verificados com sucesso nas bases públicas.',
+          },
+        }
+
+        const ext = file.name.split('.').pop()?.toLowerCase() || ''
+        const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(ext)
+
+        let photoFileToSave: File | null = null
+
+        if (isImage) {
+          photoFileToSave = file
+          newData.pessoal.foto = URL.createObjectURL(file)
+        } else {
+          try {
+            // Simulate extracting face from PDF document
+            const seed = Math.floor(Math.random() * 100)
+            const gender = isMale ? 'male' : 'female'
+            const res = await fetch(
+              `https://img.usecurling.com/ppl/medium?gender=${gender}&seed=${seed}`,
+            )
+            if (!res.ok) throw new Error('Failed to fetch face image')
+            const blob = await res.blob()
+            photoFileToSave = new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' })
+            newData.pessoal.foto = URL.createObjectURL(photoFileToSave)
+          } catch (err) {
+            console.error('Failed to simulate face extraction', err)
+            toast({
+              variant: 'destructive',
+              title: 'Aviso de Extração',
+              description:
+                'A foto não pôde ser extraída do documento automaticamente. Preencha manualmente.',
+            })
+          }
+        }
+
+        if (photoFileToSave) {
+          newData.pessoal.photoFile = photoFileToSave
         }
       }
 
@@ -340,9 +400,16 @@ export function useCollaboratorForm(entityId: string | null) {
         const fd = new FormData()
         const pd = { ...newData }
         delete pd.anexos
+        if (pd.pessoal) delete pd.pessoal.photoFile // Prevent circular JSON
+
         fd.append('data', JSON.stringify(pd))
         fd.append('name', newData.pessoal.name)
         fd.append('document_number', newData.docs.cpf)
+
+        if (newData.pessoal.photoFile) {
+          fd.append('photo', newData.pessoal.photoFile)
+        }
+
         await updateEntity(entityId, fd)
       }
 
@@ -375,6 +442,8 @@ export function useCollaboratorForm(entityId: string | null) {
         const fd = new FormData()
         const pd = { ...newData }
         delete pd.anexos
+        if (pd.pessoal) delete pd.pessoal.photoFile
+
         fd.append('data', JSON.stringify(pd))
         await updateEntity(entityId, fd)
         setSaveStatus('saved')
@@ -392,12 +461,14 @@ export function useCollaboratorForm(entityId: string | null) {
   const getProgress = (section: string) => {
     if (section === 'anexos') return null
     const fields = Object.values(data[section] || {})
-    if (!fields.length) return 0
-    const filled = fields.filter((v) => {
+    // Don't count photoFile in progress
+    const cleanFields = fields.filter((v) => !(v instanceof File))
+    if (!cleanFields.length) return 0
+    const filled = cleanFields.filter((v) => {
       if (typeof v === 'boolean') return true
       return String(v).trim() !== ''
     }).length
-    return Math.round((filled / fields.length) * 100)
+    return Math.round((filled / cleanFields.length) * 100)
   }
 
   const progress = {
@@ -418,6 +489,7 @@ export function useCollaboratorForm(entityId: string | null) {
   Object.entries(data).forEach(([secName, sec]) => {
     if (secName === 'anexos') return
     Object.values(sec as Record<string, any>).forEach((v) => {
+      if (v instanceof File) return
       totalFields++
       if (typeof v === 'boolean' || String(v).trim() !== '') totalFilled++
     })

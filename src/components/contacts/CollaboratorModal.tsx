@@ -132,7 +132,7 @@ export default function CollaboratorModal({
         toast({
           title: 'Inteligência Artificial (OCR)',
           description:
-            'Foto e dados extraídos. Verificamos a validade dos documentos publicamente.',
+            'Dados pessoais extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
         })
       } else {
         toast({
@@ -152,7 +152,7 @@ export default function CollaboratorModal({
         toast({
           title: 'Inteligência Artificial (OCR)',
           description:
-            'Foto e dados extraídos. Verificamos a validade dos documentos publicamente.',
+            'Dados pessoais extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
         })
       } else {
         toast({
@@ -343,7 +343,7 @@ export default function CollaboratorModal({
               {activeTab === 'pessoal' && (
                 <PersonalInfoTab
                   data={data.pessoal}
-                  onChange={(f, v) => updateData('pessoal', f, v)}
+                  onChange={(f, v, file) => updateData('pessoal', f, v, file)}
                   errors={errors}
                   readOnly={!isEditing}
                 />

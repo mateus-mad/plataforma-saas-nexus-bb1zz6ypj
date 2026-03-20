@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 
 type Props = {
   data: any
-  onChange: (f: string, v: string) => void
+  onChange: (f: string, v: string, file?: File) => void
   errors?: Record<string, string>
   readOnly?: boolean
 }
@@ -43,7 +43,7 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
     if (file) {
       const url = URL.createObjectURL(file)
       setPhotoPreview(url)
-      onChange('foto', url)
+      onChange('foto', url, file)
     }
   }
 
