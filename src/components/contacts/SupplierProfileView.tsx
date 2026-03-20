@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import pb from '@/lib/pocketbase/client'
 
 import {
   SupplierIdentificationTab,
@@ -33,17 +34,23 @@ import {
 } from './tabs/SupplierTabs'
 import SupplierContractsTab from './tabs/SupplierContractsTab'
 
-export default function SupplierProfileView({ open, onOpenChange, companyData }: any) {
+export default function SupplierProfileView({ open, onOpenChange, companyData, onEdit }: any) {
   const { toast } = useToast()
-  const { data, updateData, saveStatus, validateCompliance } = useCompanyForm('supplier')
+  const { data, updateData, saveStatus, validateCompliance, saveEntity } = useCompanyForm(
+    'supplier',
+    companyData?.id,
+  )
   const [activeTab, setActiveTab] = useState('identificacao')
 
-  const handleSave = () => {
-    toast({
-      title: 'Banco de Dados Sincronizado',
-      description: 'As alterações foram salvas definitivamente na nuvem corporativa.',
-    })
-    onOpenChange(false)
+  const handleSave = async () => {
+    const success = await saveEntity()
+    if (success) {
+      toast({
+        title: 'Banco de Dados Sincronizado',
+        description: 'As alterações foram salvas definitivamente na nuvem.',
+      })
+      onOpenChange(false)
+    }
   }
 
   const exportDoc = () => {
@@ -96,6 +103,10 @@ export default function SupplierProfileView({ open, onOpenChange, companyData }:
     }
   }
 
+  const avatar = companyData?.photo
+    ? pb.files.getURL(companyData, companyData.photo)
+    : data.dados?.logo || companyData?.avatar
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1300px] w-[96vw] h-[95vh] p-0 bg-slate-50 border-none shadow-2xl rounded-2xl flex flex-col overflow-hidden [&>button]:hidden">
@@ -104,10 +115,7 @@ export default function SupplierProfileView({ open, onOpenChange, companyData }:
             <div className="flex items-center gap-5">
               <div className="relative shrink-0">
                 <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-white shadow-md bg-white">
-                  <AvatarImage
-                    src={data.dados?.logo || companyData?.avatar}
-                    className="object-contain p-2"
-                  />
+                  <AvatarImage src={avatar} className="object-contain p-2" />
                   <AvatarFallback className="text-2xl font-bold bg-blue-50 text-blue-600">
                     {companyData?.name?.charAt(0) || data.dados?.nomeRazao?.charAt(0) || 'F'}
                   </AvatarFallback>

@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Hexagon, Layers } from 'lucide-react'
 import { UPCOMING_MODULES } from '@/config/modules'
 import { db } from '@/lib/database'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function PublicLayout() {
   const [lastRoute, setLastRoute] = useState('/app')
+  const { user } = useAuth()
 
   useEffect(() => {
     db.get('last_route').then((route) => {
@@ -43,7 +45,7 @@ export default function PublicLayout() {
               asChild
               className="hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(59,130,246,0.3)] border border-primary/50 text-white font-medium"
             >
-              <Link to={lastRoute}>Acessar Plataforma</Link>
+              <Link to={user ? lastRoute : '/login'}>{user ? 'Acessar Plataforma' : 'Entrar'}</Link>
             </Button>
           </div>
         </div>
@@ -70,17 +72,26 @@ export default function PublicLayout() {
             <h4 className="text-white font-semibold mb-4">Módulos Base</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to={lastRoute} className="hover:text-primary transition-colors">
+                <Link
+                  to={user ? lastRoute : '/login'}
+                  className="hover:text-primary transition-colors"
+                >
                   Dashboard Intelligence
                 </Link>
               </li>
               <li>
-                <Link to="/app/relacionamento" className="hover:text-primary transition-colors">
+                <Link
+                  to={user ? '/app/relacionamento' : '/login'}
+                  className="hover:text-primary transition-colors"
+                >
                   Gestão de Relacionamento
                 </Link>
               </li>
               <li>
-                <Link to="/app/financeiro" className="hover:text-primary transition-colors">
+                <Link
+                  to={user ? '/app/financeiro' : '/login'}
+                  className="hover:text-primary transition-colors"
+                >
                   Controle Financeiro
                 </Link>
               </li>

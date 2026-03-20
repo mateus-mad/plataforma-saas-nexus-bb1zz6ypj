@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { z } from 'zod'
-import { db } from '@/lib/database'
+import { getEntity, createEntity, updateEntity } from '@/services/entities'
+import { getAttachments, createAttachment } from '@/services/attachments'
+import { extractFieldErrors } from '@/lib/pocketbase/errors'
+import pb from '@/lib/pocketbase/client'
+import { useToast } from '@/hooks/use-toast'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -69,70 +73,73 @@ const formSchema = z.object({
   anexos: z.any(),
 })
 
-export function useCollaboratorForm() {
+const DEFAULT_DATA = {
+  pessoal: {
+    name: '',
+    nacionalidade: 'Brasileira',
+    genero: '',
+    civil: '',
+    escolaridade: '',
+    mae: '',
+    pai: '',
+    cidade: '',
+    uf: '',
+    sangue: '',
+    nascimento: '',
+    foto: '',
+  },
+  docs: { docType: 'RG', docIssueDate: '', cpf: '', pis: '', compliance: { status: 'pending' } },
+  endereco: { cep: '', logradouro: '', numero: '', comp: '', bairro: '', cidade: '', estado: '' },
+  contato: { telPrinc: '', whatsapp: '', email: '' },
+  trabalho: { matricula: '', setor: '', admissao: '', cargo: '' },
+  salario: { base: '', banco: '', agConta: '', conta: '' },
+  beneficios: { saude: '', vt: '', vr: '' },
+  encargos: { inss: '', irrf: '', fgts: '' },
+  ferias: { inicio: '', fim: '', direito: '' },
+  esocial: { matricula: '', categoria: '', cbo: '', natureza: '', admissao: '' },
+  anexos: [],
+}
+
+export function useCollaboratorForm(entityId: string | null) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isProcessingOCR, setIsProcessingOCR] = useState(false)
   const [isFetchingESocial, setIsFetchingESocial] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [data, setData] = useState<any>(DEFAULT_DATA)
+  const { toast } = useToast()
 
-  const [data, setData] = useState({
-    pessoal: {
-      name: 'Mateus amorim dias',
-      nacionalidade: 'Brasileira',
-      genero: 'Masculino',
-      civil: 'Casado(a)',
-      escolaridade: 'Superior Completo',
-      mae: 'Maria Silva',
-      pai: '',
-      cidade: 'São Paulo',
-      uf: 'SP',
-      sangue: 'A+',
-      nascimento: '1993-09-20',
-      foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=1',
-    },
-    docs: {
-      docType: 'RG',
-      docIssueDate: '2020-05-15',
-      cpf: '044.763.243-47',
-      pis: '123.45678.90-1',
-      compliance: { status: 'pending' },
-    },
-    endereco: {
-      cep: '01001-000',
-      logradouro: 'Praça da Sé',
-      numero: '123',
-      comp: '',
-      bairro: 'Sé',
-      cidade: 'São Paulo',
-      estado: 'SP',
-    },
-    contato: {
-      telPrinc: '(11) 99999-9999',
-      whatsapp: '',
-      email: 'mateus@exemplo.com',
-    },
-    trabalho: {
-      matricula: 'COL0001',
-      setor: 'Civil',
-      admissao: '2026-02-07',
-      cargo: 'Engenheiro Civil',
-    },
-    salario: {
-      base: '3500.00',
-      banco: '341',
-      agConta: '0001',
-      conta: '12345-6',
-    },
-    beneficios: { saude: '', vt: '', vr: '' },
-    encargos: { inss: '318.82', irrf: '95.74', fgts: '280.00' },
-    ferias: { inicio: '2026-02-07', fim: '2027-02-06', direito: '30' },
-    esocial: { matricula: '', categoria: '', cbo: '', natureza: '', admissao: '' },
-    anexos: [
-      { id: 1, name: 'RG_Frente_Verso.pdf', size: '2.4 MB', date: '12/10/2025', type: 'pdf' },
-    ],
-  })
+  useEffect(() => {
+    if (entityId) {
+      loadEntity(entityId)
+    } else {
+      setData(DEFAULT_DATA)
+    }
+  }, [entityId])
 
-  const updateData = async (section: keyof typeof data, field: string, value: any) => {
+  const loadEntity = async (id: string) => {
+    try {
+      const record = await getEntity(id)
+      const parsedData = record.data || { ...DEFAULT_DATA }
+      if (record.photo) {
+        parsedData.pessoal.foto = pb.files.getURL(record, record.photo)
+      }
+
+      const atts = await getAttachments(id)
+      parsedData.anexos = atts.map((a: any) => ({
+        id: a.id,
+        name: a.file,
+        size: '0 MB',
+        date: new Date(a.created).toLocaleDateString('pt-BR'),
+        type: a.category,
+      }))
+
+      setData(parsedData)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const updateData = async (section: string, field: string, value: any) => {
     let newData = { ...data }
     if (section === 'anexos') {
       newData.anexos = value
@@ -151,12 +158,22 @@ export function useCollaboratorForm() {
       setErrors(newErrors)
     }
 
-    setSaveStatus('saving')
-    await db.set('collaborators_data', newData)
-    setSaveStatus('saved')
-    setTimeout(() => {
-      setSaveStatus('idle')
-    }, 2000)
+    if (entityId && section !== 'anexos') {
+      setSaveStatus('saving')
+      const payloadData = { ...newData }
+      delete payloadData.anexos
+      const fd = new FormData()
+      fd.append('data', JSON.stringify(payloadData))
+      fd.append('name', newData.pessoal.name)
+      fd.append('document_number', newData.docs.cpf)
+      try {
+        await updateEntity(entityId, fd)
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+      } catch (e) {
+        setSaveStatus('idle')
+      }
+    }
   }
 
   const validate = () => {
@@ -176,6 +193,38 @@ export function useCollaboratorForm() {
     }
   }
 
+  const saveEntity = async () => {
+    setSaveStatus('saving')
+    try {
+      const fd = new FormData()
+      fd.append('name', data.pessoal.name || 'Sem Nome')
+      fd.append('type', 'colaborador')
+      fd.append('document_number', data.docs.cpf || '')
+      fd.append('email', data.contato.email || '')
+      fd.append('phone', data.contato.telPrinc || '')
+      fd.append('status', 'Ativo')
+
+      const payloadData = { ...data }
+      delete payloadData.anexos
+      fd.append('data', JSON.stringify(payloadData))
+
+      if (entityId) {
+        await updateEntity(entityId, fd)
+      } else {
+        await createEntity(fd)
+      }
+
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+      return true
+    } catch (err) {
+      const fieldErrors = extractFieldErrors(err)
+      setErrors((prev) => ({ ...prev, ...fieldErrors }))
+      setSaveStatus('idle')
+      return false
+    }
+  }
+
   const processOCR = async (file: File) => {
     setIsProcessingOCR(true)
     try {
@@ -186,13 +235,15 @@ export function useCollaboratorForm() {
       if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) type = 'image'
       if (ext === 'pdf') type = 'pdf'
 
-      const newFile = {
-        id: Date.now(),
-        name: file.name,
-        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        date: new Date().toLocaleDateString('pt-BR'),
-        type,
+      if (entityId) {
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('relacionamento_id', entityId)
+        fd.append('category', type)
+        await createAttachment(fd)
       }
+
+      const fakePhotoUrl = 'https://img.usecurling.com/ppl/medium?gender=male&seed=15'
 
       const newData = {
         ...data,
@@ -200,27 +251,26 @@ export function useCollaboratorForm() {
           ...data.pessoal,
           name: 'João Silva Oliveira',
           nascimento: '1990-05-15',
-          foto: 'https://img.usecurling.com/ppl/medium?gender=male&seed=15',
+          foto: fakePhotoUrl,
         },
         docs: {
           ...data.docs,
           cpf: '123.456.789-00',
           docType: 'RG',
           docIssueDate: '2013-08-20',
-          compliance: {
-            status: 'invalid',
-            message:
-              'Discrepância Encontrada: O RG extraído possui mais de 10 anos de emissão, exigindo renovação legal.',
-          },
         },
-        anexos: [...data.anexos, newFile],
       }
       setData(newData)
 
-      setSaveStatus('saving')
-      await db.set('collaborators_data', newData)
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 2000)
+      if (entityId) {
+        const fd = new FormData()
+        const pd = { ...newData }
+        delete pd.anexos
+        fd.append('data', JSON.stringify(pd))
+        fd.append('name', newData.pessoal.name)
+        fd.append('document_number', newData.docs.cpf)
+        await updateEntity(entityId, fd)
+      }
 
       return true
     } catch (e) {
@@ -245,10 +295,16 @@ export function useCollaboratorForm() {
       const newData = { ...data, esocial: esocialData }
       setData(newData)
 
-      setSaveStatus('saving')
-      await db.set('collaborators_data', newData)
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 2000)
+      if (entityId) {
+        setSaveStatus('saving')
+        const fd = new FormData()
+        const pd = { ...newData }
+        delete pd.anexos
+        fd.append('data', JSON.stringify(pd))
+        await updateEntity(entityId, fd)
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+      }
 
       return true
     } catch (e) {
@@ -258,9 +314,9 @@ export function useCollaboratorForm() {
     }
   }
 
-  const getProgress = (section: keyof typeof data) => {
+  const getProgress = (section: string) => {
     if (section === 'anexos') return null
-    const fields = Object.values(data[section])
+    const fields = Object.values(data[section] || {})
     if (!fields.length) return 0
     const filled = fields.filter((v) => {
       if (typeof v === 'boolean') return true
@@ -291,7 +347,7 @@ export function useCollaboratorForm() {
       if (typeof v === 'boolean' || String(v).trim() !== '') totalFilled++
     })
   })
-  const globalProgress = Math.round((totalFilled / totalFields) * 100)
+  const globalProgress = totalFields > 0 ? Math.round((totalFilled / totalFields) * 100) : 0
 
   return {
     data,
@@ -305,5 +361,6 @@ export function useCollaboratorForm() {
     fetchESocial,
     isFetchingESocial,
     saveStatus,
+    saveEntity,
   }
 }

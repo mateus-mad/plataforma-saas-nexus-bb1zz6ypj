@@ -6,11 +6,13 @@ import { ModuleProvider } from '@/stores/useModuleStore'
 import { TenantProvider } from '@/stores/useTenantStore'
 import { SecurityProvider } from '@/stores/useSecurityStore'
 import { ManagerProvider } from '@/stores/useManagerStore'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 
 import PublicLayout from '@/components/layouts/PublicLayout'
 import AppLayout from '@/components/layouts/AppLayout'
 
 import LandingPage from '@/pages/public/LandingPage'
+import Login from '@/pages/public/Login'
 import Onboarding from '@/pages/public/Onboarding'
 import Dashboard from '@/pages/app/Dashboard'
 import Relacionamento from '@/pages/app/Relacionamento'
@@ -30,62 +32,76 @@ import ManagerLicenses from '@/pages/manager/ManagerLicenses'
 import ManagerPayments from '@/pages/manager/ManagerPayments'
 import ManagerPricing from '@/pages/manager/ManagerPricing'
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
 const App = () => (
-  <TenantProvider>
-    <ModuleProvider>
-      <SecurityProvider>
-        <ManagerProvider>
-          <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route element={<PublicLayout />}>
-                  <Route path="/" element={<LandingPage />} />
-                </Route>
+  <AuthProvider>
+    <TenantProvider>
+      <ModuleProvider>
+        <SecurityProvider>
+          <ManagerProvider>
+            <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route element={<PublicLayout />}>
+                    <Route path="/" element={<LandingPage />} />
+                  </Route>
 
-                {/* Rota pública de admissão (fora do layout principal) */}
-                <Route path="/onboarding/:token" element={<Onboarding />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/onboarding/:token" element={<Onboarding />} />
 
-                <Route element={<AppLayout />}>
-                  <Route path="/app" element={<Dashboard />} />
-
-                  {/* Redirect deprecated 'contatos' routes to the new 'relacionamento' module */}
                   <Route
-                    path="/app/contatos"
-                    element={<Navigate to="/app/relacionamento" replace />}
-                  />
-                  <Route
-                    path="/app/contatos/:view"
-                    element={<Navigate to="/app/relacionamento" replace />}
-                  />
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="/app" element={<Dashboard />} />
 
-                  <Route path="/app/relacionamento" element={<Relacionamento />} />
-                  <Route path="/app/relacionamento/:view" element={<Relacionamento />} />
-                  <Route path="/app/financeiro" element={<Financial />} />
-                  <Route path="/app/configuracoes" element={<Settings />} />
-                  <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
-                  <Route path="/app/em-breve" element={<ComingSoon />} />
+                    <Route
+                      path="/app/contatos"
+                      element={<Navigate to="/app/relacionamento" replace />}
+                    />
+                    <Route
+                      path="/app/contatos/:view"
+                      element={<Navigate to="/app/relacionamento" replace />}
+                    />
 
-                  <Route path="/app/manager" element={<ManagerDashboard />} />
-                  <Route path="/app/manager/tickets" element={<ManagerTickets />} />
-                  <Route path="/app/manager/bugs" element={<ManagerBugs />} />
-                  <Route path="/app/manager/internal-chat" element={<ManagerInternalChat />} />
-                  <Route path="/app/manager/support-chat" element={<ManagerSupportChat />} />
-                  <Route path="/app/manager/feedback" element={<ManagerFeedback />} />
-                  <Route path="/app/manager/licenses" element={<ManagerLicenses />} />
-                  <Route path="/app/manager/payments" element={<ManagerPayments />} />
-                  <Route path="/app/manager/pricing" element={<ManagerPricing />} />
-                </Route>
+                    <Route path="/app/relacionamento" element={<Relacionamento />} />
+                    <Route path="/app/relacionamento/:view" element={<Relacionamento />} />
+                    <Route path="/app/financeiro" element={<Financial />} />
+                    <Route path="/app/configuracoes" element={<Settings />} />
+                    <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
+                    <Route path="/app/em-breve" element={<ComingSoon />} />
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
-          </BrowserRouter>
-        </ManagerProvider>
-      </SecurityProvider>
-    </ModuleProvider>
-  </TenantProvider>
+                    <Route path="/app/manager" element={<ManagerDashboard />} />
+                    <Route path="/app/manager/tickets" element={<ManagerTickets />} />
+                    <Route path="/app/manager/bugs" element={<ManagerBugs />} />
+                    <Route path="/app/manager/internal-chat" element={<ManagerInternalChat />} />
+                    <Route path="/app/manager/support-chat" element={<ManagerSupportChat />} />
+                    <Route path="/app/manager/feedback" element={<ManagerFeedback />} />
+                    <Route path="/app/manager/licenses" element={<ManagerLicenses />} />
+                    <Route path="/app/manager/payments" element={<ManagerPayments />} />
+                    <Route path="/app/manager/pricing" element={<ManagerPricing />} />
+                  </Route>
+
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </BrowserRouter>
+          </ManagerProvider>
+        </SecurityProvider>
+      </ModuleProvider>
+    </TenantProvider>
+  </AuthProvider>
 )
 
 export default App

@@ -44,12 +44,14 @@ export default function Relacionamento() {
   const [modalState, setModalState] = useState<{
     isOpen: boolean
     type: 'edit' | 'new' | 'profile'
-  }>({ isOpen: false, type: 'new' })
+    id: string | null
+  }>({ isOpen: false, type: 'new', id: null })
+
   const [aiOpen, setAiOpen] = useState(false)
   const { toast } = useToast()
 
-  const handleOpenModal = (type: 'edit' | 'new' | 'profile') =>
-    setModalState({ isOpen: true, type })
+  const handleOpenModal = (type: 'edit' | 'new' | 'profile', id: string | null = null) =>
+    setModalState({ isOpen: true, type, id })
   const handleCloseModal = () => setModalState((prev) => ({ ...prev, isOpen: false }))
 
   const generateOnboardingLink = () => {
@@ -154,15 +156,15 @@ export default function Relacionamento() {
                   <CollaboratorList
                     sectorFilter={sectorFilter}
                     search={search}
-                    onEdit={() => handleOpenModal('edit')}
-                    onProfile={() => handleOpenModal('profile')}
+                    onEdit={(id) => handleOpenModal('edit', id)}
+                    onProfile={(id) => handleOpenModal('profile', id)}
                   />
                 ) : (
                   <CollaboratorKanban
                     sectorFilter={sectorFilter}
                     search={search}
-                    onEdit={() => handleOpenModal('edit')}
-                    onProfile={() => handleOpenModal('profile')}
+                    onEdit={(id) => handleOpenModal('edit', id)}
+                    onProfile={(id) => handleOpenModal('profile', id)}
                   />
                 )}
               </div>
@@ -178,11 +180,13 @@ export default function Relacionamento() {
       <CollaboratorModal
         open={modalState.isOpen && (modalState.type === 'edit' || modalState.type === 'new')}
         onOpenChange={(open) => !open && handleCloseModal()}
+        entityId={modalState.id}
       />
       <CollaboratorProfileModal
         open={modalState.isOpen && modalState.type === 'profile'}
         onOpenChange={(open) => !open && handleCloseModal()}
-        onEdit={() => handleOpenModal('edit')}
+        onEdit={() => handleOpenModal('edit', modalState.id)}
+        entityId={modalState.id}
       />
       <AIEngineModal open={aiOpen} onOpenChange={setAiOpen} />
     </div>

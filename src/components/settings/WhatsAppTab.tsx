@@ -21,13 +21,14 @@ import {
   Send,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { db } from '@/lib/database'
+import { getWhatsAppConfig, saveWhatsAppConfig } from '@/services/whatsapp'
 
 export default function WhatsAppTab() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
+  const [existingId, setExistingId] = useState<string | null>(null)
 
   const [config, setConfig] = useState({
     isUnlocked: false,
@@ -38,9 +39,15 @@ export default function WhatsAppTab() {
 
   useEffect(() => {
     const loadConfig = async () => {
-      const data = await db.get('whatsapp_config')
+      const data = await getWhatsAppConfig()
       if (data) {
-        setConfig(data)
+        setConfig({
+          isUnlocked: data.status === 'active',
+          apiKey: data.api_key || '',
+          phoneNumber: data.phone_number || '',
+          testNumber: '',
+        })
+        setExistingId(data.id)
       }
       setIsLoading(false)
     }
@@ -58,14 +65,28 @@ export default function WhatsAppTab() {
     }
 
     setIsSaving(true)
-    const newConfig = { ...config, isUnlocked: true }
-    await db.set('whatsapp_config', newConfig)
-    setConfig(newConfig)
+    try {
+      const payload = {
+        api_key: config.apiKey,
+        phone_number: config.phoneNumber,
+        status: 'active',
+      }
 
-    toast({
-      title: 'WhatsApp Configurado',
-      description: 'A API do WhatsApp foi ativada com sucesso para sua conta.',
-    })
+      const record = await saveWhatsAppConfig(payload, existingId || undefined)
+      setExistingId(record.id)
+      setConfig({ ...config, isUnlocked: true })
+
+      toast({
+        title: 'WhatsApp Configurado',
+        description: 'A API do WhatsApp foi ativada com sucesso na nuvem.',
+      })
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Sincronização',
+        description: 'Falha ao salvar as configurações.',
+      })
+    }
     setIsSaving(false)
   }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,67 +21,51 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
-
 import CompanyModal from './CompanyModal'
 import CompanyProfileModal from './CompanyProfileModal'
-
-const MOCK_CLIENTS = [
-  {
-    id: 'CLI-001',
-    name: 'Construtora Horizonte',
-    location: 'São Paulo - SP',
-    progress: 100,
-    status: 'Ativo',
-    email: 'contato@horizonte.com',
-    avatar: 'https://img.usecurling.com/i?q=building&color=blue',
-  },
-  {
-    id: 'CLI-002',
-    name: 'SolarTech Energia',
-    location: 'Campinas - SP',
-    progress: 68,
-    status: 'Ativo',
-    email: 'vendas@solartech.com',
-    avatar: 'https://img.usecurling.com/i?q=sun&color=orange',
-  },
-  {
-    id: 'CLI-003',
-    name: 'teste',
-    location: 'Conceição do Canindé - PI',
-    progress: 68,
-    status: 'Ativo',
-    email: '',
-    avatar: '',
-  },
-  {
-    id: 'CLI-004',
-    name: 'Metalúrgica FerroForte',
-    location: 'Osasco - SP',
-    progress: 45,
-    status: 'Inativo',
-    email: 'comercial@ferroforte.com',
-    avatar: 'https://img.usecurling.com/i?q=metal&color=gray',
-  },
-]
+import { getEntities } from '@/services/entities'
+import { useRealtime } from '@/hooks/use-realtime'
+import pb from '@/lib/pocketbase/client'
 
 export default function ContactsClients() {
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
-  const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'new' | 'edit' }>({
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean
+    type: 'new' | 'edit'
+    id: string | null
+  }>({
     isOpen: false,
     type: 'new',
+    id: null,
   })
   const [profileOpen, setProfileOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const { toast } = useToast()
 
-  const filtered = MOCK_CLIENTS.filter((c) => {
+  const [entities, setEntities] = useState<any[]>([])
+
+  const loadData = async () => {
+    try {
+      const res = await getEntities('cliente')
+      setEntities(res)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+  useRealtime('relacionamentos', loadData)
+
+  const filtered = entities.filter((c) => {
     if (!showInactive && c.status === 'Inativo') return false
     if (search) {
       const s = search.toLowerCase()
       if (
         !c.name.toLowerCase().includes(s) &&
-        !c.location.toLowerCase().includes(s) &&
+        !c.data?.endereco?.cidade?.toLowerCase().includes(s) &&
         !c.email.toLowerCase().includes(s)
       )
         return false
@@ -132,7 +116,7 @@ export default function ContactsClients() {
             <span className="hidden sm:inline">Link Auto-Cadastro</span>
           </Button>
           <Button
-            onClick={() => setModalState({ isOpen: true, type: 'new' })}
+            onClick={() => setModalState({ isOpen: true, type: 'new', id: null })}
             className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex-1 sm:flex-none"
           >
             <Plus className="w-4 h-4 mr-2" /> Novo Cliente
@@ -164,9 +148,14 @@ export default function ContactsClients() {
 
       <div className="space-y-3">
         {filtered.map((c) => {
-          const isComplete = c.progress === 100
+          const isComplete = true
           const progressColor = isComplete ? 'bg-emerald-500' : 'bg-amber-500'
-          const borderColor = isComplete ? 'border-emerald-500' : 'border-amber-500'
+          const location = c.data?.endereco?.cidade
+            ? `${c.data.endereco.cidade} - ${c.data.endereco.estado}`
+            : 'Sem endereço'
+          const avatar = c.photo
+            ? pb.files.getURL(c, c.photo)
+            : c.data?.dados?.logo || `https://img.usecurling.com/i?q=company&seed=${c.id}`
 
           return (
             <div
@@ -175,22 +164,17 @@ export default function ContactsClients() {
             >
               <div
                 className={`absolute top-0 left-0 h-1 ${progressColor} transition-all duration-1000 ease-out`}
-                style={{ width: `${c.progress}%` }}
+                style={{ width: `100%` }}
               />
 
               <div className="flex items-center gap-4 sm:gap-5">
                 <div className="relative shrink-0">
                   <Avatar className="w-14 h-14 border border-slate-100 shadow-sm bg-slate-50">
-                    <AvatarImage src={c.avatar} className="object-contain p-2" />
+                    <AvatarImage src={avatar} className="object-contain p-2" />
                     <AvatarFallback className="text-lg font-medium text-blue-600 bg-blue-50">
                       {c.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div
-                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 ${progressColor} text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white shadow-sm z-10 whitespace-nowrap`}
-                  >
-                    {c.progress}%
-                  </div>
                 </div>
 
                 <div className="space-y-1 min-w-0 flex-1">
@@ -199,7 +183,7 @@ export default function ContactsClients() {
                   </h3>
                   <div className="flex items-center gap-1.5 text-sm text-slate-500 truncate">
                     <MapPin className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{c.location}</span>
+                    <span className="truncate">{location}</span>
                   </div>
                 </div>
               </div>
@@ -227,7 +211,7 @@ export default function ContactsClients() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setModalState({ isOpen: true, type: 'edit' })}
+                  onClick={() => setModalState({ isOpen: true, type: 'edit', id: c.id })}
                   className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 h-9"
                 >
                   <Edit2 className="w-4 h-4 mr-2" /> Editar
@@ -265,12 +249,13 @@ export default function ContactsClients() {
         open={modalState.isOpen}
         onOpenChange={(o) => setModalState((p) => ({ ...p, isOpen: o }))}
         type="client"
+        entityId={modalState.id}
       />
 
       <CompanyProfileModal
         open={profileOpen}
         onOpenChange={setProfileOpen}
-        onEdit={() => setModalState({ isOpen: true, type: 'edit' })}
+        onEdit={() => setModalState({ isOpen: true, type: 'edit', id: selectedClient?.id })}
         type="client"
         companyData={selectedClient}
       />

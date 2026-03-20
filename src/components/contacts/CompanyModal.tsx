@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,8 @@ import {
   Wallet,
   FileSignature,
   AlertTriangle,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,15 +33,32 @@ export default function CompanyModal({
   open,
   onOpenChange,
   type = 'client',
+  entityId = null,
 }: {
   open: boolean
   onOpenChange: (o: boolean) => void
   type?: 'client' | 'supplier'
+  entityId?: string | null
 }) {
   const [activeTab, setActiveTab] = useState('dados')
-  const { data, updateData, progress, globalProgress, errors, validate, autofillCNPJ } =
-    useCompanyForm(type)
+  const {
+    data,
+    updateData,
+    progress,
+    globalProgress,
+    errors,
+    validate,
+    saveEntity,
+    saveStatus,
+    autofillCNPJ,
+  } = useCompanyForm(type, entityId)
   const { toast } = useToast()
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab('dados')
+    }
+  }, [open, entityId])
 
   const TABS = [
     { id: 'dados', label: 'Dados Corporativos', prog: progress.dados, icon: Building2 },
@@ -55,7 +74,7 @@ export default function CompanyModal({
     { id: 'acordos', label: 'Acordos (SLA)', prog: progress.acordos, icon: FileSignature },
   ]
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) {
       toast({
         variant: 'destructive',
@@ -64,8 +83,17 @@ export default function CompanyModal({
       })
       return
     }
-    toast({ title: 'Dados Salvos', description: 'O registro foi salvo com sucesso.' })
-    onOpenChange(false)
+    const success = await saveEntity()
+    if (success) {
+      toast({ title: 'Dados Salvos', description: 'O registro foi salvo com sucesso na nuvem.' })
+      onOpenChange(false)
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Sincronização',
+        description: 'Ocorreu um erro ao salvar os dados no PocketBase.',
+      })
+    }
   }
 
   const getProgressColor = (prog: number | null) => {
@@ -92,19 +120,42 @@ export default function CompanyModal({
             <div>
               <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-slate-500" />
-                {type === 'supplier' ? 'Editar Fornecedor' : 'Editar Cliente'}
+                {entityId
+                  ? type === 'supplier'
+                    ? 'Editar Fornecedor'
+                    : 'Editar Cliente'
+                  : type === 'supplier'
+                    ? 'Novo Fornecedor'
+                    : 'Novo Cliente'}
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500 mt-1">
                 Preencha os dados corporativos e regras financeiras da empresa.
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-full">
-              <span className="text-xs text-slate-500 font-medium">Completude do Perfil:</span>
-              <Progress
-                value={globalProgress}
-                className="w-24 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
-              />
-              <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 shadow-inner">
+                {saveStatus === 'saving' ? (
+                  <span className="text-xs text-blue-600 font-semibold flex items-center">
+                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Salvando...
+                  </span>
+                ) : saveStatus === 'saved' ? (
+                  <span className="text-xs text-emerald-600 font-semibold flex items-center">
+                    <CheckCircle2 className="w-3 h-3 mr-1.5" /> Salvo
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
+                )}
+                {saveStatus === 'idle' && (
+                  <>
+                    <Progress
+                      value={globalProgress}
+                      className="w-20 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
+                    />
+                    <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,9 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
+import { getEntities, deleteEntity } from '@/services/entities'
+import { useRealtime } from '@/hooks/use-realtime'
+import pb from '@/lib/pocketbase/client'
 import {
   MoreHorizontal,
   Eye,
@@ -29,57 +32,38 @@ import {
 } from 'lucide-react'
 
 type Props = {
-  onEdit: () => void
-  onProfile: () => void
+  onEdit: (id: string) => void
+  onProfile: (id: string) => void
   sectorFilter: string
   search: string
 }
 
-const MOCK_COLABS = [
-  {
-    id: '# COL0001',
-    name: 'Mateus amorim dias',
-    role: 'Engenheiro Civil',
-    sector: 'Civil',
-    contract: 'Mensalista',
-    status: 'Ativo',
-    completion: 85,
-    img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=1',
-  },
-  {
-    id: '# COL0002',
-    name: 'Ana Souza',
-    role: 'Técnica Solar',
-    sector: 'Solar',
-    contract: 'Mensalista',
-    status: 'Ativo',
-    completion: 100,
-    img: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=2',
-  },
-  {
-    id: '# COL0003',
-    name: 'Carlos Mendes',
-    role: 'Soldador',
-    sector: 'Metalúrgica',
-    contract: 'Horista',
-    status: 'Ativo',
-    completion: 60,
-    img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=3',
-  },
-]
-
 export default function CollaboratorList({ onEdit, onProfile, sectorFilter, search }: Props) {
+  const [entities, setEntities] = useState<any[]>([])
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteStep, setDeleteStep] = useState<1 | 2>(1)
   const [password, setPassword] = useState('')
   const [activeItem, setActiveItem] = useState<any>(null)
-  const [deletedIds, setDeletedIds] = useState<string[]>([])
-  const [statuses, setStatuses] = useState<Record<string, string>>({})
   const { toast } = useToast()
 
-  const filtered = MOCK_COLABS.filter((c) => {
-    if (deletedIds.includes(c.id)) return false
-    if (sectorFilter !== 'Todos' && c.sector !== sectorFilter) return false
+  const loadData = async () => {
+    try {
+      const res = await getEntities('colaborador')
+      setEntities(res)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  useRealtime('relacionamentos', loadData)
+
+  const filtered = entities.filter((c) => {
+    const sector = c.data?.trabalho?.setor || 'N/A'
+    if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -91,12 +75,20 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
     setDeleteOpen(true)
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (password === 'admin123') {
-      toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança do sistema.' })
-      setDeletedIds((p) => [...p, activeItem.id])
-      setDeleteOpen(false)
-      setPassword('')
+      try {
+        await deleteEntity(activeItem.id)
+        toast({ title: 'Sucesso', description: 'Colaborador excluído com segurança do sistema.' })
+        setDeleteOpen(false)
+        setPassword('')
+      } catch (err) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: 'Não foi possível excluir o colaborador.',
+        })
+      }
     } else {
       toast({
         variant: 'destructive',
@@ -104,21 +96,6 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
         description: 'Senha incorreta para esta operação.',
       })
     }
-  }
-
-  const handleToggleStatus = (item: any) => {
-    const currentStatus = statuses[item.id] || item.status
-    const isDismissing = currentStatus === 'Ativo'
-    const nextStatus = isDismissing ? 'Desligado' : 'Ativo'
-
-    setStatuses((p) => ({ ...p, [item.id]: nextStatus }))
-
-    toast({
-      title: isDismissing ? 'Processo de Demissão' : 'Readmissão Concluída',
-      description: isDismissing
-        ? 'O colaborador foi marcado como desligado no sistema.'
-        : 'Colaborador reintegrado ao quadro de ativos.',
-    })
   }
 
   if (filtered.length === 0) {
@@ -132,10 +109,15 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
   return (
     <div className="space-y-4 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
       {filtered.map((c) => {
-        const status = statuses[c.id] || c.status
+        const status = c.status || 'Ativo'
         const radius = 26
         const circumference = 2 * Math.PI * radius
-        const strokeDashoffset = circumference - (c.completion / 100) * circumference
+        const completion = 100 // placeholder logic for completeness
+        const strokeDashoffset = circumference - (completion / 100) * circumference
+        const imgUrl = c.photo
+          ? pb.files.getURL(c, c.photo)
+          : c.data?.pessoal?.foto ||
+            `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${c.id}`
 
         return (
           <div
@@ -147,7 +129,7 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div
                 className="relative w-[60px] h-[60px] flex items-center justify-center shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={onProfile}
+                onClick={() => onProfile(c.id)}
               >
                 <svg className="w-full h-full transform -rotate-90 absolute inset-0">
                   <circle
@@ -171,19 +153,19 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
                   />
                 </svg>
                 <Avatar className="w-[42px] h-[42px] border-2 border-white z-10 shadow-sm">
-                  <AvatarImage src={c.img} />
+                  <AvatarImage src={imgUrl} />
                   <AvatarFallback className="bg-blue-50 text-blue-600 text-xs font-medium">
                     {c.name[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white z-20 shadow-sm">
-                  {c.completion}%
+                  {completion}%
                 </div>
               </div>
               <div className="space-y-1.5 flex-1">
                 <div
                   className="flex items-center gap-2 flex-wrap cursor-pointer"
-                  onClick={onProfile}
+                  onClick={() => onProfile(c.id)}
                 >
                   <h3 className="font-semibold text-slate-800 text-base leading-none tracking-tight hover:text-blue-600 transition-colors">
                     {c.name}
@@ -192,23 +174,30 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
                     variant="outline"
                     className="text-[10px] h-5 font-mono text-slate-500 bg-slate-50"
                   >
-                    #{c.id.replace('# ', '')}
+                    #{c.id.substring(0, 6)}
                   </Badge>
                   {status === 'Desligado' && (
                     <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-none shadow-none text-[10px] h-5">
                       Desligado
                     </Badge>
                   )}
+                  {status === 'Pending Validation' && (
+                    <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[10px] h-5">
+                      Pendente Validação
+                    </Badge>
+                  )}
                   <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-none shadow-none text-[10px] h-5">
-                    {c.sector}
+                    {c.data?.trabalho?.setor || 'Sem setor'}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-[13px] text-slate-500">
                   <span className="flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" /> {c.role}
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />{' '}
+                    {c.data?.trabalho?.cargo || 'Sem cargo'}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" /> {c.contract}
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />{' '}
+                    {c.data?.trabalho?.contrato || 'Mensalista'}
                   </span>
                 </div>
               </div>
@@ -216,14 +205,14 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
 
             <div className="flex items-center gap-2 w-full md:w-auto justify-end mt-2 md:mt-0 pt-3 md:pt-0 border-t border-slate-100 md:border-none">
               <Badge
-                className={`${status === 'Ativo' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-rose-500 hover:bg-rose-600'} text-white shadow-sm px-3 mr-2`}
+                className={`${status === 'Ativo' ? 'bg-emerald-500 hover:bg-emerald-600' : status === 'Pending Validation' ? 'bg-amber-500' : 'bg-rose-500'} text-white shadow-sm px-3 mr-2`}
               >
                 {status}
               </Badge>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onProfile}
+                onClick={() => onProfile(c.id)}
                 className="h-8 text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100"
               >
                 <Eye className="w-3.5 h-3.5 mr-2" /> Ficha
@@ -231,7 +220,7 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onEdit}
+                onClick={() => onEdit(c.id)}
                 className="h-8 text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100"
               >
                 <Edit2 className="w-3.5 h-3.5 mr-2" /> Editar
@@ -256,18 +245,6 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
                       Ações do Colaborador
                     </h4>
                   </div>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleToggleStatus(c)}
-                    className={`w-full justify-start text-sm h-9 ${status === 'Ativo' ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
-                  >
-                    {status === 'Ativo' ? (
-                      <UserMinus className="w-4 h-4 mr-2" />
-                    ) : (
-                      <UserCheck className="w-4 h-4 mr-2" />
-                    )}
-                    {status === 'Ativo' ? 'Demitir (Desligar)' : 'Readmitir (Ativar)'}
-                  </Button>
                   <div className="h-px bg-slate-100 my-1"></div>
                   <div className="px-3 py-2 bg-rose-50/50 mt-1 rounded-md">
                     <p className="text-[10px] text-rose-600 flex items-start gap-1.5 mb-2 font-medium leading-tight">

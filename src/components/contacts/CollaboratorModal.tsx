@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -45,12 +45,15 @@ import {
 export default function CollaboratorModal({
   open,
   onOpenChange,
+  entityId,
 }: {
   open: boolean
   onOpenChange: (o: boolean) => void
+  entityId: string | null
 }) {
   const [activeTab, setActiveTab] = useState('pessoal')
-  const [isEditing, setIsEditing] = useState(true)
+  const [isEditing, setIsEditing] = useState(!entityId)
+
   const {
     data,
     updateData,
@@ -63,9 +66,18 @@ export default function CollaboratorModal({
     fetchESocial,
     isFetchingESocial,
     saveStatus,
-  } = useCollaboratorForm()
+    saveEntity,
+  } = useCollaboratorForm(entityId)
+
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab('pessoal')
+      setIsEditing(!entityId)
+    }
+  }, [open, entityId])
 
   const TABS = [
     { id: 'pessoal', label: 'Pessoal', prog: progress.pessoal, icon: User },
@@ -82,21 +94,31 @@ export default function CollaboratorModal({
     { id: 'anexos', label: 'Anexos', prog: null, icon: Paperclip },
   ]
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) {
       toast({
         variant: 'destructive',
         title: 'Erros de Validação',
-        description:
-          'Por favor, preencha corretamente os campos obrigatórios marcados em vermelho.',
+        description: 'Por favor, preencha corretamente os campos obrigatórios.',
       })
       return
     }
-    toast({
-      title: 'Dados Atualizados',
-      description: 'Sincronização persistente realizada com sucesso na nuvem.',
-    })
-    setIsEditing(false)
+
+    const success = await saveEntity()
+    if (success) {
+      toast({
+        title: 'Dados Atualizados',
+        description: 'Sincronização persistente realizada com sucesso na nuvem.',
+      })
+      setIsEditing(false)
+      onOpenChange(false)
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Sincronização',
+        description: 'Ocorreu um erro ao salvar na nuvem.',
+      })
+    }
   }
 
   const handleOCRUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,15 +173,21 @@ export default function CollaboratorModal({
               </DialogDescription>
             </div>
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-              <Button
-                variant={isEditing ? 'outline' : 'default'}
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-                className="h-9 transition-all font-semibold shadow-sm"
-              >
-                {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
-                {isEditing ? 'Modo Leitura' : 'Ativar Edição'}
-              </Button>
+              {entityId && (
+                <Button
+                  variant={isEditing ? 'outline' : 'default'}
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="h-9 transition-all font-semibold shadow-sm"
+                >
+                  {isEditing ? (
+                    <Eye className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Edit2 className="w-4 h-4 mr-2" />
+                  )}
+                  {isEditing ? 'Modo Leitura' : 'Ativar Edição'}
+                </Button>
+              )}
               <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 shadow-inner">
                 {saveStatus === 'saving' ? (
                   <span className="text-xs text-blue-600 font-semibold flex items-center">

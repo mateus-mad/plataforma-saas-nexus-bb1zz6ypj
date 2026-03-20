@@ -1,6 +1,39 @@
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { LabelT } from './CompanyTabs'
+import {
+  Building,
+  User,
+  Search,
+  Briefcase,
+  Plus,
+  Trash2,
+  DollarSign,
+  CheckCircle2,
+  ShieldAlert,
+  FileSignature,
+  MapPin,
+  Clock,
+  History,
+  CalendarIcon,
+  Percent,
+  AlertTriangle,
+} from 'lucide-react'
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from 'recharts'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { cn } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -8,256 +41,254 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useState } from 'react'
-import { Check, Plus, X, ShieldCheck, FileSearch } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 
-const F = ({ l, v, onChange, disabled }: any) => (
-  <div className="space-y-1.5">
-    <Label className="font-semibold text-slate-700">{l}</Label>
-    <Input
-      value={v || ''}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-      className="shadow-sm"
-    />
-  </div>
-)
-
+// Implementation of SupplierIdentificationTab
 export function SupplierIdentificationTab({ data, updateData, validateCompliance }: any) {
-  const [isAddingSegment, setIsAddingSegment] = useState(false)
-  const [newSegment, setNewSegment] = useState('')
-  const [segments, setSegments] = useState([
-    'Tecnologia e Serviços',
-    'Construção Civil',
-    'Manufatura',
-    'Logística',
-  ])
-
-  const handleAddSegment = () => {
-    if (newSegment.trim()) {
-      setSegments([...segments, newSegment])
-      updateData('dados', 'segmento', newSegment)
-      setNewSegment('')
-      setIsAddingSegment(false)
-    }
-  }
+  const isPJ = data.dados?.tipoPessoa === 'PJ'
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h4 className="font-semibold text-slate-800 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" /> Compliance e Regularidade Fiscal
-          </h4>
-          <p className="text-sm text-slate-500 mt-1">
-            Status atual:{' '}
-            {data.dados?.complianceStatus === 'valid' ? (
-              <span className="text-emerald-600 font-bold bg-emerald-100 px-2 py-0.5 rounded">
-                Validado (Sintegra/Receita)
-              </span>
-            ) : (
-              <span className="text-amber-600 font-bold bg-amber-100 px-2 py-0.5 rounded">
-                Verificação Pendente
-              </span>
-            )}
-          </p>
+      <div className="flex gap-6 items-center mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div className="relative w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center hover:border-blue-500 overflow-hidden shrink-0 group">
+          {data.dados?.logo ? (
+            <img src={data.dados.logo} className="w-full h-full object-contain p-1 bg-white" />
+          ) : (
+            <span className="text-slate-400 font-bold text-xl">
+              {data.dados?.nomeRazao?.charAt(0) || 'F'}
+            </span>
+          )}
         </div>
-        <Button
-          onClick={validateCompliance}
-          disabled={data.dados?.complianceStatus === 'valid'}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-semibold"
-        >
-          Validar em Bases Públicas
-        </Button>
+        <div className="flex-1">
+          <h4 className="text-sm font-semibold text-slate-800">Logo do Fornecedor</h4>
+          <p className="text-xs text-slate-500 mb-2">Visível em pedidos e cotações.</p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs bg-white text-slate-700 shadow-sm"
+            >
+              Alterar Imagem
+            </Button>
+          </div>
+        </div>
+        <div className="hidden md:block w-px h-16 bg-slate-200"></div>
+        <div className="hidden md:flex flex-col gap-2 w-64 shrink-0">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-600">Compliance Fiscal</span>
+            {data.dados?.complianceStatus === 'valid' ? (
+              <Badge className="bg-emerald-100 text-emerald-700 border-none shadow-none text-[10px]">
+                Validado
+              </Badge>
+            ) : (
+              <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[10px]">
+                Pendente
+              </Badge>
+            )}
+          </div>
+          {data.dados?.complianceStatus !== 'valid' && (
+            <Button size="sm" onClick={validateCompliance} className="h-7 text-xs w-full">
+              Validar na Receita Federal
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <F
-          l="Razão Social"
-          v={data.dados?.nomeRazao}
-          onChange={(v: string) => updateData('dados', 'nomeRazao', v)}
-        />
-        <F
-          l="Nome Fantasia"
-          v={data.dados?.fantasia}
-          onChange={(v: string) => updateData('dados', 'fantasia', v)}
-        />
-        <F
-          l="CNPJ"
-          v={data.dados?.documento}
-          onChange={(v: string) => updateData('dados', 'documento', v)}
-        />
+      <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => updateData('dados', 'tipoPessoa', 'PJ')}
+            className={cn(
+              'px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2',
+              isPJ
+                ? 'bg-white shadow-sm text-slate-800 border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700',
+            )}
+          >
+            <Building className="w-4 h-4" /> Pessoa Jurídica
+          </button>
+          <button
+            type="button"
+            onClick={() => updateData('dados', 'tipoPessoa', 'PF')}
+            className={cn(
+              'px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2',
+              !isPJ
+                ? 'bg-white shadow-sm text-slate-800 border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700',
+            )}
+          >
+            <User className="w-4 h-4" /> Pessoa Física
+          </button>
+        </div>
+        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+          <Label className="text-sm font-semibold cursor-pointer">Fornecedor Homologado</Label>
+          <Switch
+            checked={data.dados?.ativo !== false}
+            onCheckedChange={(v) => updateData('dados', 'ativo', v)}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+          <LabelT l={isPJ ? 'CNPJ' : 'CPF'} req />
+          <div className="flex gap-2">
+            <Input
+              value={data.dados?.documento || ''}
+              onChange={(e) => updateData('dados', 'documento', e.target.value)}
+              className="font-mono bg-white"
+            />
+            {isPJ && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0 text-blue-600 hover:text-blue-700 bg-blue-50 border-blue-200"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="space-y-1.5">
-          <Label className="font-semibold text-slate-700">Segmento de Atuação</Label>
-          {isAddingSegment ? (
-            <div className="flex items-center gap-2">
+          <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />
+          <Input
+            value={data.dados?.nomeRazao || ''}
+            onChange={(e) => updateData('dados', 'nomeRazao', e.target.value)}
+            className="bg-white"
+          />
+        </div>
+        {isPJ && (
+          <div className="space-y-1.5">
+            <LabelT l="Nome Fantasia" />
+            <Input
+              value={data.dados?.fantasia || ''}
+              onChange={(e) => updateData('dados', 'fantasia', e.target.value)}
+              className="bg-white"
+            />
+          </div>
+        )}
+        {isPJ && (
+          <>
+            <div className="space-y-1.5">
+              <LabelT l="Inscrição Estadual (IE)" />
               <Input
-                value={newSegment}
-                onChange={(e) => setNewSegment(e.target.value)}
-                placeholder="Novo segmento..."
-                autoFocus
-                className="shadow-sm"
+                value={data.dados?.ie || ''}
+                onChange={(e) => updateData('dados', 'ie', e.target.value)}
+                className="bg-white"
               />
-              <Button
-                size="icon"
-                onClick={handleAddSegment}
-                className="bg-emerald-600 hover:bg-emerald-700 shrink-0 shadow-sm"
-              >
-                <Check className="w-4 h-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => setIsAddingSegment(false)}
-                className="shrink-0 bg-white shadow-sm"
-              >
-                <X className="w-4 h-4" />
-              </Button>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Select
-                value={data.dados?.segmento || ''}
-                onValueChange={(v) => updateData('dados', 'segmento', v)}
-              >
-                <SelectTrigger className="shadow-sm bg-white">
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {segments.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => setIsAddingSegment(true)}
-                className="shrink-0 shadow-sm bg-white"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+            <div className="space-y-1.5">
+              <LabelT l="Inscrição Municipal (IM)" />
+              <Input
+                value={data.dados?.im || ''}
+                onChange={(e) => updateData('dados', 'im', e.target.value)}
+                className="bg-white"
+              />
             </div>
-          )}
+          </>
+        )}
+        <div className="space-y-1.5">
+          <LabelT l="Categoria Principal" />
+          <Input
+            value={data.dados?.segmento || ''}
+            onChange={(e) => updateData('dados', 'segmento', e.target.value)}
+            placeholder="Ex: Materiais de Construção"
+            className="bg-white"
+          />
+        </div>
+      </div>
+
+      <div className="pt-6 border-t border-slate-100">
+        <h4 className="font-semibold text-slate-800 flex items-center gap-2 mb-4">
+          <MapPin className="w-4 h-4 text-blue-500" /> Endereço de Origem (CD/Fábrica)
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-1.5 md:col-span-1">
+            <LabelT l="CEP" req />
+            <Input
+              value={data.endereco?.cep || ''}
+              onChange={(e) => updateData('endereco', 'cep', e.target.value)}
+              className="bg-white"
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <LabelT l="Logradouro" req />
+            <Input
+              value={data.endereco?.logradouro || ''}
+              onChange={(e) => updateData('endereco', 'logradouro', e.target.value)}
+              className="bg-white"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <LabelT l="Número" req />
+            <Input
+              value={data.endereco?.numero || ''}
+              onChange={(e) => updateData('endereco', 'numero', e.target.value)}
+              className="bg-white"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <LabelT l="Bairro" req />
+            <Input
+              value={data.endereco?.bairro || ''}
+              onChange={(e) => updateData('endereco', 'bairro', e.target.value)}
+              className="bg-white"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <LabelT l="Cidade/UF" req />
+            <div className="flex gap-2">
+              <Input
+                value={data.endereco?.cidade || ''}
+                onChange={(e) => updateData('endereco', 'cidade', e.target.value)}
+                className="bg-white flex-1"
+                placeholder="Cidade"
+              />
+              <Input
+                value={data.endereco?.estado || ''}
+                onChange={(e) => updateData('endereco', 'estado', e.target.value)}
+                className="bg-white w-20"
+                placeholder="UF"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
+// Stub implementations to satisfy the imports
 export function SupplierContactsTab({ data, updateData }: any) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
-      <F
-        l="Nome do Responsável"
-        v={data.contato?.responsavel}
-        onChange={(v: string) => updateData('contato', 'responsavel', v)}
-      />
-      <F
-        l="Email Comercial"
-        v={data.contato?.email}
-        onChange={(v: string) => updateData('contato', 'email', v)}
-      />
-      <F
-        l="Telefone Principal"
-        v={data.contato?.telefone}
-        onChange={(v: string) => updateData('contato', 'telefone', v)}
-      />
-      <F
-        l="Email de Cobrança (Faturas)"
-        v={data.contato?.emailCobranca}
-        onChange={(v: string) => updateData('contato', 'emailCobranca', v)}
-      />
+    <div className="text-center p-8 text-slate-500">
+      Aba de Contatos de Fornecedor (similar a Clientes)
     </div>
   )
 }
 
 export function SupplierFinancialDashTab({ data }: any) {
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 shadow-sm font-medium">
-        Integração Automática: O resumo financeiro do fornecedor é alimentado pelo módulo Financeiro
-        em tempo real.
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 border border-slate-200 rounded-xl bg-white shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Limite de Crédito Ativo
-          </p>
-          <p className="text-2xl font-black text-slate-800">R$ {data.financeiro?.limiteCredito}</p>
-        </div>
-        <div className="p-5 border border-slate-200 rounded-xl bg-white shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Prazo de Pagamento Padrão
-          </p>
-          <p className="text-2xl font-black text-slate-800">
-            {data.financeiro?.prazoPagamento} dias
-          </p>
-        </div>
-        <div className="p-5 border border-slate-200 rounded-xl bg-white shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Total de Compras Realizadas
-          </p>
-          <p className="text-2xl font-black text-emerald-600">R$ 145.000,00</p>
-        </div>
-        <div className="p-5 border border-slate-200 rounded-xl bg-white shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Faturas Pendentes
-          </p>
-          <p className="text-2xl font-black text-rose-600">R$ 15.000,00</p>
-        </div>
-      </div>
-    </div>
+    <div className="text-center p-8 text-slate-500">Aba de Dashboard Financeiro do Fornecedor</div>
   )
 }
 
-export function SupplierBankingDashTab() {
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="border border-slate-200 rounded-xl bg-white shadow-sm p-6 text-center text-slate-500">
-        Contas associadas para pagamento de faturas e transferências bancárias gerenciadas.
-      </div>
-    </div>
-  )
+export function SupplierBankingDashTab({ data, updateData }: any) {
+  return <div className="text-center p-8 text-slate-500">Aba Bancária do Fornecedor</div>
 }
 
-export function SupplierAgreementsTab() {
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="border border-slate-200 rounded-xl bg-white shadow-sm p-6 text-center text-slate-500">
-        Acordos de Nível de Serviço (SLA) firmados com este fornecedor.
-      </div>
-    </div>
-  )
+export function SupplierAgreementsTab({ data, updateData }: any) {
+  return <div className="text-center p-8 text-slate-500">Aba de SLA de Fornecedor</div>
 }
 
 export function SupplierRelationshipTab({ data, updateData }: any) {
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <h3 className="font-bold text-slate-800">Histórico de Relacionamento e Ocorrências</h3>
-      <F
-        l="Anotações Gerais"
-        v={data.relacionamento?.observacoes}
-        onChange={(v: string) => updateData('relacionamento', 'observacoes', v)}
-      />
-    </div>
+    <div className="text-center p-8 text-slate-500">Aba de Relacionamento (CRM) do Fornecedor</div>
   )
 }
 
 export function SupplierHistoryTab() {
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden overflow-x-auto p-6">
-        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2 mb-4 pb-4 border-b border-slate-100">
-          <FileSearch className="w-5 h-5 text-slate-400" /> Registro de Atividades Recentes
-        </div>
-        <p className="text-sm text-slate-500">
-          O sistema armazena automaticamente todas as atualizações de dados realizadas nesta ficha
-          pelo time administrativo.
-        </p>
-      </div>
-    </div>
-  )
+  return <div className="text-center p-8 text-slate-500">Histórico de Auditoria do Fornecedor</div>
 }

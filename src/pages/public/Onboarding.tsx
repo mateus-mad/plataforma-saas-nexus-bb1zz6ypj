@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { createEntity } from '@/services/entities'
+import { createAttachment } from '@/services/attachments'
 import {
   Building,
   UploadCloud,
@@ -20,7 +22,11 @@ export default function Onboarding() {
   const { toast } = useToast()
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isProcessingOCR, setIsProcessingOCR] = useState(false)
+
+  const [ocrFile, setOcrFile] = useState<File | null>(null)
   const [extractedPhoto, setExtractedPhoto] = useState<string | null>(null)
+  const [extractedPhotoBlob, setExtractedPhotoBlob] = useState<Blob | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -39,7 +45,6 @@ export default function Onboarding() {
     estado: '',
   })
 
-  // Simulates a checking process to see if the token has already been used
   const [tokenStatus, setTokenStatus] = useState<'valid' | 'expired'>('valid')
 
   if (tokenStatus === 'expired' || isSubmitted) {
@@ -53,8 +58,8 @@ export default function Onboarding() {
               </div>
               <h1 className="text-2xl font-bold text-slate-800">Tudo Certo!</h1>
               <p className="text-slate-500">
-                Seus dados foram enviados com sucesso para o departamento de Recursos Humanos. Este
-                link foi expirado por questões de segurança.
+                Seus dados foram enviados com sucesso para o departamento de Recursos Humanos. O
+                setor fará a validação em breve.
               </p>
             </>
           ) : (
@@ -74,32 +79,14 @@ export default function Onboarding() {
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.nome || !formData.cpf) {
-      toast({
-        variant: 'destructive',
-        title: 'Dados Incompletos',
-        description: 'Por favor, preencha todos os campos obrigatórios.',
-      })
-      return
-    }
-
-    toast({
-      title: 'Enviando dados...',
-      description: 'Processando as informações de forma segura.',
-    })
-
-    setTimeout(() => {
-      setIsSubmitted(true)
-    }, 1500)
-  }
-
   const handleOcrSimulate = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
+      const file = e.target.files[0]
+      setOcrFile(file)
       setIsProcessingOCR(true)
       toast({ title: 'Lendo Documento', description: 'Extraindo dados e foto via IA...' })
-      setTimeout(() => {
+
+      setTimeout(async () => {
         setFormData((prev) => ({
           ...prev,
           nome: 'João Silva Oliveira',
@@ -115,10 +102,94 @@ export default function Onboarding() {
           cidade: 'São Paulo',
           estado: 'SP',
         }))
-        setExtractedPhoto('https://img.usecurling.com/ppl/medium?gender=male&seed=15')
+
+        try {
+          const res = await fetch('https://img.usecurling.com/ppl/medium?gender=male&seed=15')
+          const blob = await res.blob()
+          setExtractedPhoto(URL.createObjectURL(blob))
+          setExtractedPhotoBlob(blob)
+        } catch (err) {}
+
         setIsProcessingOCR(false)
         toast({ title: 'Sucesso', description: 'Dados e foto extraídos com sucesso.' })
       }, 2500)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.nome || !formData.cpf) {
+      toast({
+        variant: 'destructive',
+        title: 'Dados Incompletos',
+        description: 'Por favor, preencha todos os campos obrigatórios.',
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    toast({
+      title: 'Enviando dados...',
+      description: 'Processando as informações de forma segura.',
+    })
+
+    const fd = new FormData()
+    fd.append('name', formData.nome)
+    fd.append('type', 'collaborator')
+    fd.append('document_number', formData.cpf)
+
+    if (formData.dataNascimento) {
+      fd.append('birth_date', formData.dataNascimento + ' 12:00:00.000Z')
+    }
+
+    fd.append(
+      'address',
+      `${formData.logradouro}, ${formData.numero} - ${formData.cidade}/${formData.estado}`,
+    )
+    fd.append('status', 'Pending Validation')
+
+    const fullData = {
+      pessoal: {
+        name: formData.nome,
+        mae: formData.nomeMae,
+        pai: formData.nomePai,
+        nascimento: formData.dataNascimento,
+      },
+      docs: { cpf: formData.cpf, rg: formData.rg },
+      endereco: {
+        cep: formData.cep,
+        logradouro: formData.logradouro,
+        numero: formData.numero,
+        bairro: formData.bairro,
+        cidade: formData.cidade,
+        estado: formData.estado,
+      },
+      contato: { email: formData.email, telPrinc: formData.telefone },
+    }
+    fd.append('data', JSON.stringify(fullData))
+
+    if (extractedPhotoBlob) {
+      fd.append('profile_image', extractedPhotoBlob, 'profile.jpg')
+    }
+
+    try {
+      const entity = await createEntity(fd)
+      if (ocrFile) {
+        const attFd = new FormData()
+        attFd.append('entity_id', entity.id)
+        attFd.append('file', ocrFile)
+        attFd.append('file_type', 'rg')
+        await createAttachment(attFd)
+      }
+      setIsSubmitted(true)
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Envio',
+        description: 'Ocorreu um erro ao salvar os dados. Tente novamente.',
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -143,7 +214,9 @@ export default function Onboarding() {
           <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
             <div className="bg-blue-50/50 border border-blue-200 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-50 transition-colors relative overflow-hidden group">
               <ScanLine className="w-8 h-8 text-blue-500 mb-3" />
-              <h4 className="font-semibold text-slate-800 mb-1">Preenchimento Automático (OCR)</h4>
+              <h4 className="font-semibold text-slate-800 mb-1">
+                Acelere com Envio Inteligente (OCR)
+              </h4>
               <p className="text-xs text-slate-500 mb-4 max-w-md">
                 Faça o upload de uma foto do seu RG ou CNH para extrairmos sua foto e dados
                 automaticamente, facilitando o preenchimento.
@@ -157,6 +230,7 @@ export default function Onboarding() {
                 disabled={isProcessingOCR}
               />
               <Button
+                type="button"
                 asChild
                 variant="outline"
                 className={cn(
@@ -332,9 +406,16 @@ export default function Onboarding() {
               <Button
                 type="submit"
                 size="lg"
+                disabled={isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto px-12"
               >
-                Enviar Informações
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
+                  </>
+                ) : (
+                  'Enviar Informações'
+                )}
               </Button>
             </div>
           </form>

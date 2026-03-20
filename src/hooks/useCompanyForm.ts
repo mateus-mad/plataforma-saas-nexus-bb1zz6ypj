@@ -1,53 +1,83 @@
-import { useState } from 'react'
-import { db } from '@/lib/database'
+import { useState, useEffect } from 'react'
+import { getEntity, createEntity, updateEntity } from '@/services/entities'
+import { extractFieldErrors } from '@/lib/pocketbase/errors'
+import pb from '@/lib/pocketbase/client'
 
-export function useCompanyForm(type: 'client' | 'supplier') {
+const DEFAULT_COMPANY_DATA = {
+  dados: {
+    tipoPessoa: 'PJ',
+    nomeRazao: '',
+    fantasia: '',
+    documento: '',
+    segmento: '',
+    logo: '',
+    complianceStatus: 'pending',
+  },
+  endereco: {
+    cep: '',
+    logradouro: '',
+    numero: '',
+    cidade: '',
+    estado: '',
+  },
+  contato: {
+    responsavel: '',
+    email: '',
+    telefone: '',
+    emailCobranca: '',
+  },
+  financeiro: {
+    limiteCredito: '',
+    prazoPagamento: '',
+  },
+  bancario: {
+    contas: [],
+  },
+  acordos: {
+    lista: [],
+  },
+  contratos: {
+    lista: [],
+  },
+  relacionamento: {
+    observacoes: '',
+  },
+}
+
+export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | null) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
-
   const [data, setData] = useState<any>({
-    dados: {
-      tipoPessoa: 'PJ',
-      nomeRazao: 'DIRECAO GERAL SA',
-      fantasia: 'Direção Geral',
-      documento: '12.345.678/0001-90',
-      segmento: 'Tecnologia e Serviços',
-      logo: 'https://img.usecurling.com/i?q=company&color=blue',
-      complianceStatus: 'pending',
-    },
-    endereco: {
-      cep: '01001-000',
-      logradouro: 'Praça da Sé',
-      numero: '123',
-      cidade: 'São Paulo',
-      estado: 'SP',
-    },
-    contato: {
-      responsavel: 'João Silva',
-      email: 'contato@direcaogeral.com',
-      telefone: '(11) 3333-3333',
-      emailCobranca: 'financeiro@direcaogeral.com',
-    },
-    financeiro: {
-      limiteCredito: '50.000,00',
-      prazoPagamento: '30',
-    },
-    bancario: {
-      contas: [{ id: 1, banco: 'Itaú (341)', tipo: 'Corrente', agencia: '0001', conta: '12345-6' }],
-    },
-    acordos: {
-      lista: [{ id: 1, descricao: 'Acordo SLA Padrão 2026', desconto: '5%', prazo: '45 dias' }],
-    },
-    contratos: {
-      lista: [],
-    },
-    relacionamento: {
-      observacoes: '',
-    },
+    ...DEFAULT_COMPANY_DATA,
+    dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
   })
 
+  useEffect(() => {
+    if (entityId) {
+      loadEntity(entityId)
+    } else {
+      setData({
+        ...DEFAULT_COMPANY_DATA,
+        dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
+      })
+    }
+  }, [entityId, type])
+
+  const loadEntity = async (id: string) => {
+    try {
+      const record = await getEntity(id)
+      const parsedData = record.data || { ...DEFAULT_COMPANY_DATA }
+      if (record.photo) {
+        parsedData.dados.logo = pb.files.getURL(record, record.photo)
+      }
+      setData(parsedData)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   const updateData = async (section: string, field: string | null, value: any) => {
-    let newData
+    let newData: any
     setData((prev: any) => {
       if (field === null) {
         newData = { ...prev, [section]: value }
@@ -66,10 +96,47 @@ export function useCompanyForm(type: 'client' | 'supplier') {
       setErrors(newE)
     }
 
+    if (entityId) {
+      setSaveStatus('saving')
+      const fd = new FormData()
+      fd.append('data', JSON.stringify(newData))
+      fd.append('name', newData.dados?.nomeRazao || 'Sem Nome')
+      try {
+        await updateEntity(entityId, fd)
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+      } catch (err) {
+        setSaveStatus('idle')
+      }
+    }
+  }
+
+  const saveEntity = async () => {
     setSaveStatus('saving')
-    if (newData) await db.set('companies_data', newData)
-    setSaveStatus('saved')
-    setTimeout(() => setSaveStatus('idle'), 2000)
+    try {
+      const fd = new FormData()
+      fd.append('name', data.dados?.nomeRazao || 'Sem Nome')
+      fd.append('type', type === 'client' ? 'cliente' : 'fornecedor')
+      fd.append('document_number', data.dados?.documento || '')
+      fd.append('email', data.contato?.email || '')
+      fd.append('phone', data.contato?.telefone || '')
+      fd.append('status', data.dados?.ativo !== false ? 'Ativo' : 'Inativo')
+      fd.append('data', JSON.stringify(data))
+
+      if (entityId) {
+        await updateEntity(entityId, fd)
+      } else {
+        await createEntity(fd)
+      }
+
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+      return true
+    } catch (err) {
+      setErrors(extractFieldErrors(err))
+      setSaveStatus('idle')
+      return false
+    }
   }
 
   const validateCompliance = async () => {
@@ -78,6 +145,14 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     await updateData('dados', 'complianceStatus', 'valid')
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
+  }
+
+  const autofillCNPJ = async () => {
+    setSaveStatus('saving')
+    await new Promise((r) => setTimeout(r, 1500))
+    const newData = { ...data, dados: { ...data.dados, nomeRazao: 'Empresa Auto Preenchida S/A' } }
+    setData(newData)
+    setSaveStatus('idle')
   }
 
   const getProgress = (sec: string) => {
@@ -115,5 +190,7 @@ export function useCompanyForm(type: 'client' | 'supplier') {
     validate: () => true,
     saveStatus,
     validateCompliance,
+    saveEntity,
+    autofillCNPJ,
   }
 }
