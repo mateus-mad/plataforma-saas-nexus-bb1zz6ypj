@@ -137,8 +137,9 @@ export default function CollaboratorModal({
       } else {
         toast({
           variant: 'destructive',
-          title: 'Erro de Leitura',
-          description: 'Não foi possível extrair os dados do documento.',
+          title: 'Erro de Extração (OCR)',
+          description:
+            'Documento ilegível. Por favor, preencha manualmente ou envie uma foto com melhor qualidade.',
         })
       }
     }
@@ -157,8 +158,9 @@ export default function CollaboratorModal({
       } else {
         toast({
           variant: 'destructive',
-          title: 'Erro de Leitura',
-          description: 'Não foi possível extrair os dados do documento.',
+          title: 'Erro de Extração (OCR)',
+          description:
+            'Documento ilegível. Por favor, preencha manualmente ou envie uma foto com melhor qualidade.',
         })
       }
       if (fileInputRef.current) fileInputRef.current.value = ''

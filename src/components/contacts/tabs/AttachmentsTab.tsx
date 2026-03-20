@@ -29,7 +29,7 @@ export default function AttachmentsTab({ data = [], onChange, readOnly }: Props)
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0]
       const ext = file.name.split('.').pop()?.toLowerCase() || ''
-      let type = 'archive'
+      let type = 'Documento'
       if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) type = 'image'
       if (ext === 'pdf') type = 'pdf'
 
@@ -51,14 +51,11 @@ export default function AttachmentsTab({ data = [], onChange, readOnly }: Props)
   }
 
   const getIcon = (type: string) => {
-    switch (type) {
-      case 'pdf':
-        return <FileText className="w-8 h-8 text-rose-500" />
-      case 'image':
-        return <ImageIcon className="w-8 h-8 text-blue-500" />
-      default:
-        return <FileArchive className="w-8 h-8 text-slate-500" />
-    }
+    if (type === 'pdf') return <FileText className="w-8 h-8 text-rose-500" />
+    if (type === 'image') return <ImageIcon className="w-8 h-8 text-blue-500" />
+    if (type === 'Documento de Identificação')
+      return <FileText className="w-8 h-8 text-emerald-500" />
+    return <FileArchive className="w-8 h-8 text-slate-500" />
   }
 
   return (
@@ -131,7 +128,9 @@ export default function AttachmentsTab({ data = [], onChange, readOnly }: Props)
                     {file.name}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {file.size} • Anexado em {file.date}
+                    {file.size} •{' '}
+                    {file.type === 'Documento de Identificação' ? 'Identificação / OCR' : 'Anexo'} •{' '}
+                    {file.date}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -170,9 +169,13 @@ export default function AttachmentsTab({ data = [], onChange, readOnly }: Props)
       <Dialog open={!!previewFile} onOpenChange={(o) => !o && setPreviewFile(null)}>
         <DialogContent className="max-w-4xl p-1 bg-transparent border-none shadow-none">
           <div className="bg-white rounded-xl overflow-hidden p-6 text-center border border-slate-200 shadow-2xl relative">
-            {previewFile?.type === 'image' ? (
+            {previewFile?.type === 'image' || previewFile?.type === 'Documento de Identificação' ? (
               <img
-                src="https://img.usecurling.com/p/800/600?q=document"
+                src={
+                  previewFile?.file
+                    ? URL.createObjectURL(previewFile.file)
+                    : 'https://img.usecurling.com/p/800/600?q=document'
+                }
                 alt="Preview do Documento"
                 className="max-w-full h-auto rounded-lg mx-auto"
               />

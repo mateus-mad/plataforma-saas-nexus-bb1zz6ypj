@@ -5,7 +5,6 @@ import { getAttachments, createAttachment, deleteAttachment } from '@/services/a
 import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
-import { useToast } from '@/hooks/use-toast'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -24,51 +23,24 @@ const formSchema = z.object({
   }),
   docs: z
     .object({
-      cpf: z.string().min(14, 'CPF Incompleto'),
-      pis: z.string().min(1, 'Obrigatório'),
-      docType: z.string().optional(),
-      docIssueDate: z.string().optional(),
-      compliance: z.any().optional(),
+      cpf: z.string().min(14, 'CPF Incompleto').or(z.literal('')),
+      pis: z.string().min(1, 'Obrigatório').or(z.literal('')),
     })
     .passthrough(),
   endereco: z.object({
-    cep: z.string().min(1, 'Obrigatório'),
-    logradouro: z.string().min(1, 'Obrigatório'),
-    numero: z.string().min(1, 'Obrigatório'),
-    bairro: z.string().min(1, 'Obrigatório'),
-    cidade: z.string().min(1, 'Obrigatório'),
-    estado: z.string().min(1, 'Obrigatório'),
+    cep: z.string().min(1, 'Obrigatório').or(z.literal('')),
+    logradouro: z.string().min(1, 'Obrigatório').or(z.literal('')),
+    numero: z.string().min(1, 'Obrigatório').or(z.literal('')),
+    bairro: z.string().min(1, 'Obrigatório').or(z.literal('')),
+    cidade: z.string().min(1, 'Obrigatório').or(z.literal('')),
+    estado: z.string().min(1, 'Obrigatório').or(z.literal('')),
     comp: z.string().optional(),
   }),
-  contato: z
-    .object({
-      telPrinc: z.string().min(1, 'Obrigatório'),
-      email: z.string().email('E-mail inválido').or(z.literal('')),
-    })
-    .passthrough(),
-  trabalho: z
-    .object({
-      matricula: z.string().min(1, 'Obrigatório'),
-      setor: z.string().min(1, 'Obrigatório'),
-      admissao: z.string().min(1, 'Obrigatório'),
-      cargo: z.string().min(1, 'Obrigatório'),
-    })
-    .passthrough(),
-  salario: z
-    .object({
-      base: z.string().min(1, 'Obrigatório'),
-    })
-    .passthrough(),
-  ferias: z
-    .object({
-      inicio: z.string().min(1, 'Obrigatório'),
-    })
-    .passthrough(),
-  esocial: z
-    .object({
-      matricula: z.string().min(1, 'Obrigatório'),
-    })
-    .passthrough(),
+  contato: z.any(),
+  trabalho: z.any(),
+  salario: z.any(),
+  ferias: z.any(),
+  esocial: z.any(),
   beneficios: z.any(),
   encargos: z.any(),
   anexos: z.any(),
@@ -102,13 +74,66 @@ const DEFAULT_DATA = {
   anexos: [],
 }
 
+const cropFaceFromImage = async (file: File): Promise<File | null> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = async () => {
+      try {
+        let rect = {
+          x: img.width * 0.1,
+          y: img.height * 0.2,
+          w: img.width * 0.3,
+          h: img.height * 0.5,
+        }
+
+        if ('FaceDetector' in window) {
+          const detector = new (window as any).FaceDetector()
+          const faces = await detector.detect(img)
+          if (faces && faces.length > 0) {
+            const box = faces[0].boundingBox
+            rect = {
+              x: Math.max(0, box.x - box.width * 0.2),
+              y: Math.max(0, box.y - box.height * 0.2),
+              w: Math.min(img.width - box.x, box.width * 1.4),
+              h: Math.min(img.height - box.y, box.height * 1.4),
+            }
+          }
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = rect.w
+        canvas.height = rect.h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return resolve(null)
+
+        ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h)
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' }))
+            } else {
+              resolve(null)
+            }
+          },
+          'image/jpeg',
+          0.9,
+        )
+      } catch (e) {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
 export function useCollaboratorForm(entityId: string | null) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isProcessingOCR, setIsProcessingOCR] = useState(false)
   const [isFetchingESocial, setIsFetchingESocial] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [data, setData] = useState<any>(DEFAULT_DATA)
-  const { toast } = useToast()
 
   useEffect(() => {
     if (entityId) {
@@ -155,9 +180,7 @@ export function useCollaboratorForm(entityId: string | null) {
           if (typeof id === 'string') {
             try {
               await deleteAttachment(id)
-            } catch (e) {
-              console.error('Failed to delete attachment', e)
-            }
+            } catch (e) {}
           }
         }
 
@@ -171,9 +194,7 @@ export function useCollaboratorForm(entityId: string | null) {
             const created = await createAttachment(fd)
             anexo.id = created.id
             delete anexo.file
-          } catch (e) {
-            console.error('Failed to upload attachment', e)
-          }
+          } catch (e) {}
         }
       }
       newData.anexos = value
@@ -292,7 +313,6 @@ export function useCollaboratorForm(entityId: string | null) {
     setIsProcessingOCR(true)
     try {
       const ocrResult = await processDocumentOCR(file)
-
       let newData = { ...data }
 
       if (ocrResult.name) {
@@ -313,7 +333,6 @@ export function useCollaboratorForm(entityId: string | null) {
           cpf: ocrResult.document_number,
           docType: ocrResult.docType || newData.docs.docType,
           docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
-          pis: ocrResult.pis || newData.docs.pis,
           compliance: ocrResult.compliance || newData.docs.compliance,
         }
       }
@@ -325,24 +344,15 @@ export function useCollaboratorForm(entityId: string | null) {
         }
       }
 
+      const faceFile = await cropFaceFromImage(file)
       let photoFileToSave: File | null = null
-      if (ocrResult.photoUrl) {
-        try {
-          const res = await fetch(ocrResult.photoUrl)
-          const blob = await res.blob()
-          photoFileToSave = new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' })
-          newData.pessoal.photoFile = photoFileToSave
-          newData.pessoal.foto = URL.createObjectURL(photoFileToSave)
-        } catch (err) {
-          console.error('Failed to simulated face extraction from OCR response', err)
-        }
+      if (faceFile) {
+        photoFileToSave = faceFile
+        newData.pessoal.photoFile = photoFileToSave
+        newData.pessoal.foto = URL.createObjectURL(photoFileToSave)
       }
 
-      const ext = file.name.split('.').pop()?.toLowerCase() || ''
-      let type = 'archive'
-      if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) type = 'image'
-      if (ext === 'pdf') type = 'pdf'
-
+      const type = 'Documento de Identificação'
       let newAnexo: any = {
         id: Date.now(),
         name: file.name,
@@ -383,13 +393,8 @@ export function useCollaboratorForm(entityId: string | null) {
       }
 
       return true
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      toast({
-        variant: 'destructive',
-        title: 'Falha na Extração (OCR)',
-        description: 'Não foi possível extrair dados automaticamente deste arquivo.',
-      })
       return false
     } finally {
       setIsProcessingOCR(false)
