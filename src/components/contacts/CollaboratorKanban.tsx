@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { getEntities, deleteEntity } from '@/services/entities'
 import { useRealtime } from '@/hooks/use-realtime'
+import { getExpiryStatus } from '@/components/contacts/NotificationCenter'
 import pb from '@/lib/pocketbase/client'
 import { Building2, MoreVertical, Eye, Edit2, Lock, Trash2, AlertTriangle } from 'lucide-react'
 
@@ -24,6 +25,7 @@ type Props = {
   onEdit: (id: string) => void
   onProfile: (id: string) => void
   sectorFilter: string
+  statusFilter: string
   search: string
   complianceMode?: boolean
 }
@@ -32,6 +34,7 @@ export default function CollaboratorKanban({
   onEdit,
   onProfile,
   sectorFilter,
+  statusFilter,
   search,
   complianceMode,
 }: Props) {
@@ -63,6 +66,7 @@ export default function CollaboratorKanban({
     if (complianceMode && !isMissingData(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
+    if (statusFilter !== 'Todos' && (c.status || 'Ativo') !== statusFilter) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -95,10 +99,16 @@ export default function CollaboratorKanban({
 
   const columns = [
     {
+      title: 'Rascunhos',
+      color: 'border-slate-400',
+      bg: 'bg-slate-400',
+      items: filtered.filter((c) => c.status === 'Rascunho'),
+    },
+    {
       title: 'Ativos',
       color: 'border-emerald-500',
       bg: 'bg-emerald-500',
-      items: filtered.filter((c) => c.status === 'Ativo'),
+      items: filtered.filter((c) => c.status === 'Ativo' || !c.status),
     },
     {
       title: 'Pendentes / Férias',
@@ -115,7 +125,7 @@ export default function CollaboratorKanban({
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-500 items-start">
       {columns.map((col) => (
         <div
           key={col.title}
@@ -140,6 +150,8 @@ export default function CollaboratorKanban({
                 ? pb.files.getURL(it, it.photo)
                 : it.data?.pessoal?.foto ||
                   `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${it.id}`
+
+              const expiry = getExpiryStatus(it.data?.docs?.expiryDate)
 
               return (
                 <div
@@ -203,14 +215,26 @@ export default function CollaboratorKanban({
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 truncate">
                         <Building2 className="w-3 h-3" /> {it.data?.trabalho?.cargo || 'Sem Cargo'}
                       </p>
-                      <Badge variant="outline" className="mt-1 bg-slate-50 text-[9px]">
-                        {it.data?.trabalho?.setor || 'Sem Setor'}
-                      </Badge>
-                      {isMissingData(it) && (
-                        <Badge className="mt-1 bg-amber-100 text-amber-700 border-none shadow-none text-[9px] ml-1">
-                          Dados Incompletos
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        <Badge variant="outline" className="bg-slate-50 text-[9px]">
+                          {it.data?.trabalho?.setor || 'Sem Setor'}
                         </Badge>
-                      )}
+                        {isMissingData(it) && it.status !== 'Rascunho' && (
+                          <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[9px]">
+                            Incompleto
+                          </Badge>
+                        )}
+                        {expiry === 'expired' && (
+                          <Badge className="bg-rose-500 text-white border-none shadow-none text-[9px]">
+                            Doc Expirado
+                          </Badge>
+                        )}
+                        {expiry === 'expiring' && (
+                          <Badge className="bg-amber-500 text-white border-none shadow-none text-[9px]">
+                            Vence em Breve
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">

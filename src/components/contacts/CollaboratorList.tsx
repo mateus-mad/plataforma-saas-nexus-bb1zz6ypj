@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   AlertDialog,
@@ -17,6 +18,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { getEntities, deleteEntity } from '@/services/entities'
 import { useRealtime } from '@/hooks/use-realtime'
+import { getExpiryStatus } from '@/components/contacts/NotificationCenter'
 import pb from '@/lib/pocketbase/client'
 import {
   MoreHorizontal,
@@ -27,12 +29,15 @@ import {
   Lock,
   Trash2,
   AlertTriangle,
+  Download,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 type Props = {
   onEdit: (id: string) => void
   onProfile: (id: string) => void
   sectorFilter: string
+  statusFilter: string
   search: string
   complianceMode?: boolean
 }
@@ -41,6 +46,7 @@ export default function CollaboratorList({
   onEdit,
   onProfile,
   sectorFilter,
+  statusFilter,
   search,
   complianceMode,
 }: Props) {
@@ -49,6 +55,7 @@ export default function CollaboratorList({
   const [deleteStep, setDeleteStep] = useState<1 | 2>(1)
   const [password, setPassword] = useState('')
   const [activeItem, setActiveItem] = useState<any>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -73,9 +80,46 @@ export default function CollaboratorList({
     if (complianceMode && !isMissingData(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
+    if (statusFilter !== 'Todos' && (c.status || 'Ativo') !== statusFilter) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  const selectAll = (checked: boolean) => setSelectedIds(checked ? filtered.map((x) => x.id) : [])
+
+  const handleExportCSV = () => {
+    const selectedData = filtered
+      .filter((c) => selectedIds.includes(c.id))
+      .map((c) => ({
+        Nome: c.name,
+        Documento: c.document_number || 'N/A',
+        Tipo: c.type,
+        Status: c.status || 'Ativo',
+        Setor: c.data?.trabalho?.setor || 'N/A',
+        Validade_Doc: c.data?.docs?.expiryDate || 'N/A',
+      }))
+
+    if (selectedData.length === 0) return
+
+    const headers = Object.keys(selectedData[0]).join(',')
+    const rows = selectedData.map((obj) =>
+      Object.values(obj)
+        .map((v) => `"${v}"`)
+        .join(','),
+    )
+    const csv = [headers, ...rows].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'exportacao_colaboradores.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   const openDeleteModal = (item: any) => {
     setActiveItem(item)
@@ -119,6 +163,28 @@ export default function CollaboratorList({
 
   return (
     <div className="space-y-4 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex justify-between items-center mb-2 px-1">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={selectedIds.length === filtered.length && filtered.length > 0}
+            onCheckedChange={selectAll}
+            className="w-5 h-5 rounded"
+          />
+          <span className="text-sm font-medium text-slate-600">
+            Selecionar Todos ({selectedIds.length} de {filtered.length})
+          </span>
+        </div>
+        {selectedIds.length > 0 && (
+          <Button
+            size="sm"
+            onClick={handleExportCSV}
+            className="bg-slate-800 hover:bg-slate-700 h-8"
+          >
+            <Download className="w-3.5 h-3.5 mr-2" /> Exportar CSV
+          </Button>
+        )}
+      </div>
+
       {filtered.map((c) => {
         const status = c.status || 'Ativo'
         const radius = 26
@@ -130,11 +196,21 @@ export default function CollaboratorList({
           : c.data?.pessoal?.foto ||
             `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${c.id}`
 
+        const expiry = getExpiryStatus(c.data?.docs?.expiryDate)
+
         return (
           <div
             key={c.id}
-            className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-blue-200 rounded-xl bg-white hover:border-blue-400 transition-all shadow-sm relative group gap-4"
+            className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-blue-200 rounded-xl bg-white hover:border-blue-400 transition-all shadow-sm relative group gap-4 pl-12"
           >
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+              <Checkbox
+                checked={selectedIds.includes(c.id)}
+                onCheckedChange={() => toggleSelect(c.id)}
+                className="w-5 h-5 rounded"
+              />
+            </div>
+
             <div className="absolute top-0 left-0 w-[85%] h-1 bg-blue-500 rounded-tl-xl transition-all duration-500 opacity-20"></div>
 
             <div className="flex items-center gap-4 w-full md:w-auto">
@@ -201,16 +277,33 @@ export default function CollaboratorList({
                       Desligado
                     </Badge>
                   )}
+                  {status === 'Rascunho' && (
+                    <Badge className="bg-slate-200 text-slate-700 border-none shadow-none text-[10px] h-5 font-bold">
+                      Rascunho
+                    </Badge>
+                  )}
                   {status === 'Pending Validation' && (
                     <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[10px] h-5">
                       Pendente Validação
                     </Badge>
                   )}
-                  {isMissingData(c) && (
+                  {isMissingData(c) && status !== 'Rascunho' && (
                     <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none shadow-none text-[10px] h-5">
                       Dados Incompletos
                     </Badge>
                   )}
+
+                  {expiry === 'expired' && (
+                    <Badge className="bg-rose-500 text-white border-none shadow-none text-[10px] h-5">
+                      Doc Expirado
+                    </Badge>
+                  )}
+                  {expiry === 'expiring' && (
+                    <Badge className="bg-amber-500 text-white border-none shadow-none text-[10px] h-5">
+                      Vence em Breve
+                    </Badge>
+                  )}
+
                   <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-none shadow-none text-[10px] h-5">
                     {c.data?.trabalho?.setor || 'Sem setor'}
                   </Badge>
@@ -230,7 +323,7 @@ export default function CollaboratorList({
 
             <div className="flex items-center gap-2 w-full md:w-auto justify-end mt-2 md:mt-0 pt-3 md:pt-0 border-t border-slate-100 md:border-none">
               <Badge
-                className={`${status === 'Ativo' ? 'bg-emerald-500 hover:bg-emerald-600' : status === 'Pending Validation' ? 'bg-amber-500' : 'bg-rose-500'} text-white shadow-sm px-3 mr-2`}
+                className={`${status === 'Ativo' ? 'bg-emerald-500 hover:bg-emerald-600' : status === 'Rascunho' ? 'bg-slate-400' : status === 'Pending Validation' ? 'bg-amber-500' : 'bg-rose-500'} text-white shadow-sm px-3 mr-2`}
               >
                 {status}
               </Badge>

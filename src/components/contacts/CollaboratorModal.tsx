@@ -147,15 +147,14 @@ export default function CollaboratorModal({
     if (result.success) {
       toast({
         title: 'Inteligência Artificial (OCR)',
-        description:
-          'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
+        description: 'Dados extraídos e mapeados com sucesso.',
       })
     } else if (result.reason === 'unreadable') {
       toast({
         variant: 'destructive',
         title: 'Erro de Extração (OCR)',
         description:
-          'Unable to read document. Please check the image quality or fill fields manually.',
+          'Documento não pôde ser lido automaticamente. Por favor, preencha os campos manualmente.',
       })
     } else {
       toast({

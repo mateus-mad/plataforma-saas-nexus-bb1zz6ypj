@@ -63,7 +63,14 @@ const DEFAULT_DATA = {
     foto: '',
     photoFile: null as File | null,
   },
-  docs: { docType: 'RG', docIssueDate: '', cpf: '', pis: '', compliance: { status: 'pending' } },
+  docs: {
+    docType: 'RG',
+    docIssueDate: '',
+    expiryDate: '',
+    cpf: '',
+    pis: '',
+    compliance: { status: 'pending' },
+  },
   endereco: { cep: '', logradouro: '', numero: '', comp: '', bairro: '', cidade: '', estado: '' },
   contato: { telPrinc: '', whatsapp: '', email: '' },
   trabalho: { matricula: '', setor: '', admissao: '', cargo: '' },
@@ -149,6 +156,7 @@ export function useCollaboratorForm(entityId: string | null) {
       const record = await getEntity(id)
       const parsedData = record.data || { ...DEFAULT_DATA }
       parsedData.pessoal = { ...DEFAULT_DATA.pessoal, ...parsedData.pessoal }
+      parsedData.docs = { ...DEFAULT_DATA.docs, ...parsedData.docs }
 
       if (record.photo) {
         parsedData.pessoal.foto = pb.files.getURL(record, record.photo)
@@ -232,6 +240,12 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('name', newData.pessoal.name || '')
       fd.append('document_number', newData.docs.cpf || '')
 
+      // Keep track of Drafts
+      const record = await getEntity(entityId)
+      if (record.status === 'Rascunho') {
+        fd.append('status', 'Ativo')
+      }
+
       if (section === 'pessoal' && field === 'foto' && file) {
         fd.append('photo', file)
       }
@@ -272,7 +286,18 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('document_number', data.docs.cpf || '')
       fd.append('email', data.contato.email || '')
       fd.append('phone', data.contato.telPrinc || '')
-      fd.append('status', 'Ativo')
+
+      let recordId = entityId
+      if (entityId) {
+        const record = await getEntity(entityId)
+        if (record.status === 'Rascunho') {
+          fd.append('status', 'Ativo')
+        } else {
+          fd.append('status', record.status || 'Ativo')
+        }
+      } else {
+        fd.append('status', 'Ativo')
+      }
 
       const payloadData = { ...data }
       delete payloadData.anexos
@@ -284,7 +309,6 @@ export function useCollaboratorForm(entityId: string | null) {
         fd.append('photo', data.pessoal.photoFile)
       }
 
-      let recordId = entityId
       if (entityId) {
         await updateEntity(entityId, fd)
       } else {
@@ -316,7 +340,6 @@ export function useCollaboratorForm(entityId: string | null) {
 
   const processOCR = async (file: File, docType: string = 'RG') => {
     setIsProcessingOCR(true)
-    let ocrSuccess = true
     try {
       const type = 'Documento de Identificação'
       let newAnexo: any = {
@@ -338,7 +361,7 @@ export function useCollaboratorForm(entityId: string | null) {
           newAnexo.id = created.id
           delete newAnexo.file
         } catch (attErr) {
-          console.error('Failed to create attachment during OCR process', attErr)
+          console.error('Failed to create attachment during OCR', attErr)
         }
       }
 
@@ -349,16 +372,11 @@ export function useCollaboratorForm(entityId: string | null) {
       try {
         ocrResult = await processDocumentOCR(file, docType)
       } catch (err: any) {
-        if (err instanceof ClientResponseError && err.status === 400) {
-          console.warn('OCR API returned 400 Bad Request: Unable to read document.', err)
-          return { success: false, reason: 'unreadable' }
-        } else {
-          console.error('OCR Error:', err)
-          return { success: false, reason: 'error' }
-        }
+        console.warn('OCR API returned error or was unreachable:', err)
+        return { success: false, reason: 'unreadable' }
       }
 
-      if (ocrSuccess && ocrResult) {
+      if (ocrResult) {
         if (ocrResult.name) {
           newData.pessoal = {
             ...newData.pessoal,
@@ -377,6 +395,7 @@ export function useCollaboratorForm(entityId: string | null) {
             cpf: ocrResult.document_number || newData.docs.cpf,
             docType: ocrResult.docType || docType || newData.docs.docType,
             docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
+            expiryDate: ocrResult.expiryDate || newData.docs.expiryDate,
             compliance: ocrResult.compliance || newData.docs.compliance,
           }
         }
@@ -401,7 +420,7 @@ export function useCollaboratorForm(entityId: string | null) {
             newData.pessoal.foto = URL.createObjectURL(faceFile)
           }
         } catch (cropErr) {
-          console.error('Error cropping face image', cropErr)
+          console.error('Error cropping face', cropErr)
         }
       }
 
@@ -415,7 +434,7 @@ export function useCollaboratorForm(entityId: string | null) {
           if (pd.pessoal) delete pd.pessoal.photoFile
 
           fd.append('data', JSON.stringify(pd))
-          if (ocrSuccess && ocrResult) {
+          if (ocrResult) {
             if (ocrResult.name) fd.append('name', ocrResult.name)
             if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
           }
@@ -426,7 +445,7 @@ export function useCollaboratorForm(entityId: string | null) {
 
           await updateEntity(entityId, fd)
         } catch (updateErr) {
-          console.error('Failed to update entity with OCR/Attachment data', updateErr)
+          console.error('Failed to update entity with OCR data', updateErr)
         }
       }
 

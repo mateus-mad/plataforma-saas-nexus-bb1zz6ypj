@@ -9,6 +9,7 @@ import {
   List as ListIcon,
   MessageCircle,
   AlertTriangle,
+  ScanLine,
 } from 'lucide-react'
 import {
   Select,
@@ -29,6 +30,8 @@ import ContactsDashboard from '@/components/contacts/ContactsDashboard'
 import ContactsClients from '@/components/contacts/ContactsClients'
 import ContactsSuppliers from '@/components/contacts/ContactsSuppliers'
 import ContactsAudit from '@/components/contacts/ContactsAudit'
+import BatchOCRModal from '@/components/contacts/BatchOCRModal'
+import NotificationCenter from '@/components/contacts/NotificationCenter'
 
 import { useToast } from '@/hooks/use-toast'
 
@@ -47,6 +50,7 @@ export default function Relacionamento() {
 
   const [colabView, setColabView] = useState<'lista' | 'kanban'>('lista')
   const [sectorFilter, setSectorFilter] = useState('Todos')
+  const [statusFilter, setStatusFilter] = useState('Todos')
   const [search, setSearch] = useState('')
   const [complianceMode, setComplianceMode] = useState(false)
 
@@ -57,6 +61,7 @@ export default function Relacionamento() {
   }>({ isOpen: false, type: 'new', id: null })
 
   const [aiOpen, setAiOpen] = useState(false)
+  const [batchOcrOpen, setBatchOcrOpen] = useState(false)
   const { toast } = useToast()
 
   const handleOpenModal = (type: 'edit' | 'new' | 'profile', id: string | null = null) =>
@@ -92,12 +97,20 @@ export default function Relacionamento() {
               <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
                 <h2 className="text-2xl font-bold tracking-tight text-slate-800">Colaboradores</h2>
                 <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                  <NotificationCenter />
                   <Button
                     variant="outline"
                     onClick={sendWhatsApp}
                     className="border-green-200 text-green-700 hover:bg-green-50 shadow-sm"
                   >
-                    <MessageCircle className="w-4 h-4 mr-2" /> Enviar Link de Cadastro
+                    <MessageCircle className="w-4 h-4 mr-2" /> Enviar Link
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setBatchOcrOpen(true)}
+                    className="border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 shadow-sm font-semibold"
+                  >
+                    <ScanLine className="w-4 h-4 mr-2" /> OCR em Lote
                   </Button>
                   <Button
                     variant="outline"
@@ -117,7 +130,7 @@ export default function Relacionamento() {
 
               <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                  <div className="relative w-full sm:w-64">
+                  <div className="relative w-full sm:w-56">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
                       placeholder="Buscar colaborador..."
@@ -126,12 +139,25 @@ export default function Relacionamento() {
                       className="pl-9 bg-white h-9"
                     />
                   </div>
+
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-36 bg-white h-9">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Todos">Todos (Status)</SelectItem>
+                      <SelectItem value="Ativo">Ativos</SelectItem>
+                      <SelectItem value="Rascunho">Rascunhos</SelectItem>
+                      <SelectItem value="Desligado">Desligados</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   <Select value={sectorFilter} onValueChange={setSectorFilter}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white h-9">
+                    <SelectTrigger className="w-full sm:w-40 bg-white h-9">
                       <SelectValue placeholder="Setor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Todos">Todos os Setores</SelectItem>
+                      <SelectItem value="Todos">Todos (Setores)</SelectItem>
                       <SelectItem value="Civil">Civil</SelectItem>
                       <SelectItem value="Solar">Solar</SelectItem>
                       <SelectItem value="Metalúrgica">Metalúrgica</SelectItem>
@@ -177,6 +203,7 @@ export default function Relacionamento() {
                 {colabView === 'lista' ? (
                   <CollaboratorList
                     sectorFilter={sectorFilter}
+                    statusFilter={statusFilter}
                     search={search}
                     complianceMode={complianceMode}
                     onEdit={(id) => handleOpenModal('edit', id)}
@@ -185,6 +212,7 @@ export default function Relacionamento() {
                 ) : (
                   <CollaboratorKanban
                     sectorFilter={sectorFilter}
+                    statusFilter={statusFilter}
                     search={search}
                     complianceMode={complianceMode}
                     onEdit={(id) => handleOpenModal('edit', id)}
@@ -213,6 +241,7 @@ export default function Relacionamento() {
         entityId={modalState.id}
       />
       <AIEngineModal open={aiOpen} onOpenChange={setAiOpen} />
+      <BatchOCRModal open={batchOcrOpen} onOpenChange={setBatchOcrOpen} />
     </div>
   )
 }

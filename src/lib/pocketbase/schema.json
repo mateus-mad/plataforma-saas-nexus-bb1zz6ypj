@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-20T23:42:59.104Z",
+  "generatedAt": "2026-03-20T23:55:49.169Z",
   "collections": [
     {
       "name": "users",
@@ -126,7 +126,7 @@
           "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": []
+      "indexes": ["CREATE INDEX `idx_status_rel` ON `relacionamentos` (status)"]
     },
     {
       "name": "whatsapp_configs",
