@@ -27,8 +27,6 @@ import {
   Lock,
   Trash2,
   AlertTriangle,
-  UserMinus,
-  UserCheck,
 } from 'lucide-react'
 
 type Props = {
@@ -36,9 +34,16 @@ type Props = {
   onProfile: (id: string) => void
   sectorFilter: string
   search: string
+  complianceMode?: boolean
 }
 
-export default function CollaboratorList({ onEdit, onProfile, sectorFilter, search }: Props) {
+export default function CollaboratorList({
+  onEdit,
+  onProfile,
+  sectorFilter,
+  search,
+  complianceMode,
+}: Props) {
   const [entities, setEntities] = useState<any[]>([])
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteStep, setDeleteStep] = useState<1 | 2>(1)
@@ -61,7 +66,11 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
 
   useRealtime('relacionamentos', loadData)
 
+  const isMissingData = (c: any) =>
+    !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
+
   const filtered = entities.filter((c) => {
+    if (complianceMode && !isMissingData(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -101,7 +110,9 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
   if (filtered.length === 0) {
     return (
       <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
-        Nenhum colaborador encontrado para os filtros selecionados.
+        {complianceMode
+          ? 'Todos os colaboradores selecionados estão em compliance com os dados exigidos.'
+          : 'Nenhum colaborador encontrado para os filtros selecionados.'}
       </div>
     )
   }
@@ -112,7 +123,7 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
         const status = c.status || 'Ativo'
         const radius = 26
         const circumference = 2 * Math.PI * radius
-        const completion = 100 // placeholder logic for completeness
+        const completion = isMissingData(c) ? 40 : 100
         const strokeDashoffset = circumference - (completion / 100) * circumference
         const imgUrl = c.photo
           ? pb.files.getURL(c, c.photo)
@@ -144,7 +155,11 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
                     cx="30"
                     cy="30"
                     r={radius}
-                    className="stroke-blue-500 transition-all duration-1000 ease-out"
+                    className={
+                      isMissingData(c)
+                        ? 'stroke-amber-500 transition-all duration-1000 ease-out'
+                        : 'stroke-blue-500 transition-all duration-1000 ease-out'
+                    }
                     strokeWidth="4"
                     fill="none"
                     strokeDasharray={circumference}
@@ -155,10 +170,15 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
                 <Avatar className="w-[42px] h-[42px] border-2 border-white z-10 shadow-sm">
                   <AvatarImage src={imgUrl} />
                   <AvatarFallback className="bg-blue-50 text-blue-600 text-xs font-medium">
-                    {c.name[0]}
+                    {c.name !== 'Sem Nome' ? c.name[0] : '?'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white z-20 shadow-sm">
+                <div
+                  className={cn(
+                    'absolute -bottom-1 left-1/2 -translate-x-1/2 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white z-20 shadow-sm',
+                    isMissingData(c) ? 'bg-amber-500' : 'bg-blue-600',
+                  )}
+                >
                   {completion}%
                 </div>
               </div>
@@ -184,6 +204,11 @@ export default function CollaboratorList({ onEdit, onProfile, sectorFilter, sear
                   {status === 'Pending Validation' && (
                     <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[10px] h-5">
                       Pendente Validação
+                    </Badge>
+                  )}
+                  {isMissingData(c) && (
+                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none shadow-none text-[10px] h-5">
+                      Dados Incompletos
                     </Badge>
                   )}
                   <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-none shadow-none text-[10px] h-5">

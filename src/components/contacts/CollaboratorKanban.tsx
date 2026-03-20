@@ -25,9 +25,16 @@ type Props = {
   onProfile: (id: string) => void
   sectorFilter: string
   search: string
+  complianceMode?: boolean
 }
 
-export default function CollaboratorKanban({ onEdit, onProfile, sectorFilter, search }: Props) {
+export default function CollaboratorKanban({
+  onEdit,
+  onProfile,
+  sectorFilter,
+  search,
+  complianceMode,
+}: Props) {
   const [entities, setEntities] = useState<any[]>([])
   const { toast } = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -49,7 +56,11 @@ export default function CollaboratorKanban({ onEdit, onProfile, sectorFilter, se
   }, [])
   useRealtime('relacionamentos', loadData)
 
+  const isMissingData = (c: any) =>
+    !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
+
   const filtered = entities.filter((c) => {
+    if (complianceMode && !isMissingData(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -182,7 +193,7 @@ export default function CollaboratorKanban({ onEdit, onProfile, sectorFilter, se
                     <Avatar className="w-10 h-10 border border-slate-100 shadow-sm">
                       <AvatarImage src={imgUrl} />
                       <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
-                        {it.name[0]}
+                        {it.name !== 'Sem Nome' ? it.name[0] : '?'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 pr-6">
@@ -195,6 +206,11 @@ export default function CollaboratorKanban({ onEdit, onProfile, sectorFilter, se
                       <Badge variant="outline" className="mt-1 bg-slate-50 text-[9px]">
                         {it.data?.trabalho?.setor || 'Sem Setor'}
                       </Badge>
+                      {isMissingData(it) && (
+                        <Badge className="mt-1 bg-amber-100 text-amber-700 border-none shadow-none text-[9px] ml-1">
+                          Dados Incompletos
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">

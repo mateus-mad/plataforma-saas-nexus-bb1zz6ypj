@@ -314,7 +314,7 @@ export function useCollaboratorForm(entityId: string | null) {
     }
   }
 
-  const processOCR = async (file: File) => {
+  const processOCR = async (file: File, docType: string = 'RG') => {
     setIsProcessingOCR(true)
     let ocrSuccess = true
     try {
@@ -347,14 +347,15 @@ export function useCollaboratorForm(entityId: string | null) {
 
       let ocrResult = null
       try {
-        ocrResult = await processDocumentOCR(file)
+        ocrResult = await processDocumentOCR(file, docType)
       } catch (err: any) {
         if (err instanceof ClientResponseError && err.status === 400) {
           console.warn('OCR API returned 400 Bad Request: Unable to read document.', err)
+          return { success: false, reason: 'unreadable' }
         } else {
           console.error('OCR Error:', err)
+          return { success: false, reason: 'error' }
         }
-        ocrSuccess = false
       }
 
       if (ocrSuccess && ocrResult) {
@@ -374,7 +375,7 @@ export function useCollaboratorForm(entityId: string | null) {
           newData.docs = {
             ...newData.docs,
             cpf: ocrResult.document_number || newData.docs.cpf,
-            docType: ocrResult.docType || newData.docs.docType,
+            docType: ocrResult.docType || docType || newData.docs.docType,
             docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
             compliance: ocrResult.compliance || newData.docs.compliance,
           }
@@ -429,10 +430,10 @@ export function useCollaboratorForm(entityId: string | null) {
         }
       }
 
-      return ocrSuccess
+      return { success: true }
     } catch (e: any) {
       console.error('Unhandled error in processOCR', e)
-      return false
+      return { success: false, reason: 'error' }
     } finally {
       setIsProcessingOCR(false)
     }

@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, LayoutGrid, List as ListIcon, MessageCircle } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+  MessageCircle,
+  AlertTriangle,
+} from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -11,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useSidebar } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 
 import CollaboratorList from '@/components/contacts/CollaboratorList'
 import CollaboratorKanban from '@/components/contacts/CollaboratorKanban'
@@ -40,6 +48,7 @@ export default function Relacionamento() {
   const [colabView, setColabView] = useState<'lista' | 'kanban'>('lista')
   const [sectorFilter, setSectorFilter] = useState('Todos')
   const [search, setSearch] = useState('')
+  const [complianceMode, setComplianceMode] = useState(false)
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean
@@ -114,11 +123,11 @@ export default function Relacionamento() {
                       placeholder="Buscar colaborador..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="pl-9 bg-white"
+                      className="pl-9 bg-white h-9"
                     />
                   </div>
                   <Select value={sectorFilter} onValueChange={setSectorFilter}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white">
+                    <SelectTrigger className="w-full sm:w-48 bg-white h-9">
                       <SelectValue placeholder="Setor" />
                     </SelectTrigger>
                     <SelectContent>
@@ -129,6 +138,19 @@ export default function Relacionamento() {
                       <SelectItem value="Administrativo">Administrativo</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  <Button
+                    variant={complianceMode ? 'default' : 'outline'}
+                    onClick={() => setComplianceMode(!complianceMode)}
+                    className={cn(
+                      'h-9 w-full sm:w-auto',
+                      complianceMode
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
+                        : 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100',
+                    )}
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" /> Compliance
+                  </Button>
                 </div>
 
                 <div className="flex bg-white p-1 rounded-lg border border-slate-200 w-full sm:w-auto justify-center">
@@ -156,6 +178,7 @@ export default function Relacionamento() {
                   <CollaboratorList
                     sectorFilter={sectorFilter}
                     search={search}
+                    complianceMode={complianceMode}
                     onEdit={(id) => handleOpenModal('edit', id)}
                     onProfile={(id) => handleOpenModal('profile', id)}
                   />
@@ -163,6 +186,7 @@ export default function Relacionamento() {
                   <CollaboratorKanban
                     sectorFilter={sectorFilter}
                     search={search}
+                    complianceMode={complianceMode}
                     onEdit={(id) => handleOpenModal('edit', id)}
                     onProfile={(id) => handleOpenModal('profile', id)}
                   />
