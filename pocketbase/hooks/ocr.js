@@ -24,7 +24,9 @@ routerAdd(
       })
 
       if (res.statusCode !== 200) {
-        throw new Error('Falha na requisição ao serviço de OCR')
+        throw new BadRequestError(
+          'Unable to read document. Please check the image quality or fill fields manually.',
+        )
       }
 
       const data = res.json
@@ -34,13 +36,17 @@ routerAdd(
         !data.ParsedResults ||
         data.ParsedResults.length === 0
       ) {
-        throw new Error('Documento ilegível')
+        throw new BadRequestError(
+          'Unable to read document. Please check the image quality or fill fields manually.',
+        )
       }
 
       const text = data.ParsedResults[0].ParsedText || ''
 
       if (!text || text.length < 10) {
-        throw new Error('Documento ilegível')
+        throw new BadRequestError(
+          'Unable to read document. Please check the image quality or fill fields manually.',
+        )
       }
 
       const cpfMatch = text.match(/\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}/)
@@ -89,7 +95,7 @@ routerAdd(
 
       for (let i = 0; i < lines.length; i++) {
         const l = lines[i]
-        if (/(RUA|AVENIDA|AV\.|PRAÇA|ALAMEDA|RODOVIA)/i.test(l)) {
+        if (/(RUA|AVENIDA|AV\.|PRAÇA|ALAMEDA|RODOVIA|TRAVESSA)/i.test(l)) {
           logradouro = l
           const numMatch = l.match(/\d+/)
           if (numMatch) numero = numMatch[0]
@@ -99,6 +105,9 @@ routerAdd(
         )
         if (ufMatch && !estado) {
           estado = ufMatch[0]
+        }
+        if (/BAIRRO|VILA|JARDIM/i.test(l)) {
+          bairro = l
         }
       }
 
@@ -122,8 +131,11 @@ routerAdd(
         },
       })
     } catch (err) {
+      if (err instanceof BadRequestError) {
+        throw err
+      }
       throw new BadRequestError(
-        'Documento ilegível. Por favor, preencha manualmente ou envie uma foto com melhor qualidade.',
+        'Unable to read document. Please check the image quality or fill fields manually.',
       )
     }
   },

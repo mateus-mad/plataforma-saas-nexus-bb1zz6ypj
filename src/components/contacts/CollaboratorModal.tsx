@@ -132,14 +132,14 @@ export default function CollaboratorModal({
         toast({
           title: 'Inteligência Artificial (OCR)',
           description:
-            'Dados pessoais extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
+            'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
         })
       } else {
         toast({
           variant: 'destructive',
           title: 'Erro de Extração (OCR)',
           description:
-            'Documento ilegível. Por favor, preencha manualmente ou envie uma foto com melhor qualidade.',
+            'Unable to read document. Please check the image quality or fill fields manually.',
         })
       }
     }
@@ -153,14 +153,14 @@ export default function CollaboratorModal({
         toast({
           title: 'Inteligência Artificial (OCR)',
           description:
-            'Dados pessoais extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
+            'Dados extraídos e mapeados. Verificamos a validade dos documentos publicamente.',
         })
       } else {
         toast({
           variant: 'destructive',
           title: 'Erro de Extração (OCR)',
           description:
-            'Documento ilegível. Por favor, preencha manualmente ou envie uma foto com melhor qualidade.',
+            'Unable to read document. Please check the image quality or fill fields manually.',
         })
       }
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -322,7 +322,7 @@ export default function CollaboratorModal({
                   >
                     {isProcessingOCR ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing Document...
                       </>
                     ) : (
                       <>

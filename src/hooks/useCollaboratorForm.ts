@@ -322,7 +322,7 @@ export function useCollaboratorForm(entityId: string | null) {
       if (ocrResult.name) {
         newData.pessoal = {
           ...newData.pessoal,
-          name: ocrResult.name,
+          name: ocrResult.name || newData.pessoal.name,
           nascimento: ocrResult.nascimento || newData.pessoal.nascimento,
           mae: ocrResult.mae || newData.pessoal.mae,
           nacionalidade: ocrResult.nacionalidade || newData.pessoal.nacionalidade,
@@ -334,7 +334,7 @@ export function useCollaboratorForm(entityId: string | null) {
       if (ocrResult.document_number) {
         newData.docs = {
           ...newData.docs,
-          cpf: ocrResult.document_number,
+          cpf: ocrResult.document_number || newData.docs.cpf,
           docType: ocrResult.docType || newData.docs.docType,
           docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
           compliance: ocrResult.compliance || newData.docs.compliance,
@@ -342,9 +342,15 @@ export function useCollaboratorForm(entityId: string | null) {
       }
 
       if (ocrResult.address) {
+        const addr = ocrResult.address
         newData.endereco = {
           ...newData.endereco,
-          ...ocrResult.address,
+          cep: addr.cep || newData.endereco.cep,
+          logradouro: addr.logradouro || newData.endereco.logradouro,
+          numero: addr.numero || newData.endereco.numero,
+          bairro: addr.bairro || newData.endereco.bairro,
+          cidade: addr.cidade || newData.endereco.cidade,
+          estado: addr.estado || newData.endereco.estado,
         }
       }
 
