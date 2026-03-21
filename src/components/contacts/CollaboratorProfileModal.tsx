@@ -331,8 +331,23 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
               <Field l="WhatsApp" v={cData.whatsapp} />
               <Field l="E-mail" v={cData.email || data.email} />
             </div>
-            <div className="pt-4 border-t border-slate-100">
+            <div className="pt-4 border-t border-slate-100 space-y-4">
               <Field l="Endereço Residencial" v={addressString} />
+              {addressString !== 'Endereço não cadastrado' && (
+                <div className="w-full h-[150px] rounded-lg border border-slate-200 overflow-hidden bg-slate-50 relative flex items-center justify-center">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    scrolling="no"
+                    marginHeight={0}
+                    marginWidth={0}
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(addressString)}&t=m&z=15&output=embed&iwloc=near`}
+                    title="Mapa do Endereço"
+                    className="absolute inset-0"
+                  />
+                </div>
+              )}
             </div>
           </Section>
 

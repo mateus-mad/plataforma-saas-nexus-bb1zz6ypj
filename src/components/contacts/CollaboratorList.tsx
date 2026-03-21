@@ -160,7 +160,7 @@ export default function CollaboratorList({
 
   if (filtered.length === 0) {
     return (
-      <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
+      <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl bg-white shadow-sm">
         {complianceMode
           ? 'Todos os colaboradores selecionados estão em compliance com os dados exigidos.'
           : 'Nenhum colaborador encontrado para os filtros selecionados.'}
@@ -171,17 +171,21 @@ export default function CollaboratorList({
   return (
     <div className="space-y-4 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex justify-between items-center mb-2 px-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
           <Checkbox
             checked={selectedIds.length === filtered.length && filtered.length > 0}
             onCheckedChange={selectAll}
-            className="w-5 h-5 rounded"
+            className="w-4 h-4 rounded"
           />
-          <span className="text-sm font-medium text-slate-600">
+          <span className="text-xs font-medium text-slate-600">
             Selecionar Todos ({selectedIds.length} de {filtered.length})
           </span>
         </div>
-        <Button size="sm" onClick={handleExportCSV} className="bg-slate-800 hover:bg-slate-700 h-8">
+        <Button
+          size="sm"
+          onClick={handleExportCSV}
+          className="bg-slate-800 hover:bg-slate-700 h-8 shadow-sm"
+        >
           <Download className="w-3.5 h-3.5 mr-2" /> Exportar{' '}
           {selectedIds.length > 0 ? 'Selecionados' : 'Filtrados'} (CSV)
         </Button>
@@ -328,7 +332,7 @@ export default function CollaboratorList({
                 variant="outline"
                 size="sm"
                 onClick={() => onProfile(c.id)}
-                className="h-8 text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100"
+                className="h-8 text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100 shadow-sm"
               >
                 <Eye className="w-3.5 h-3.5 mr-2" /> Ficha
               </Button>
@@ -336,7 +340,7 @@ export default function CollaboratorList({
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(c.id)}
-                className="h-8 text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100"
+                className="h-8 text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100 shadow-sm"
               >
                 <Edit2 className="w-3.5 h-3.5 mr-2" /> Editar
               </Button>

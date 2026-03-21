@@ -25,30 +25,10 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react'
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from 'recharts'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { consultarCNPJ } from '@/services/cnpj'
 
-// Implementation of SupplierIdentificationTab
 export function SupplierIdentificationTab({ data, updateData, validateCompliance }: any) {
   const { toast } = useToast()
   const isPJ = data.dados?.tipoPessoa === 'PJ'
@@ -70,19 +50,37 @@ export function SupplierIdentificationTab({ data, updateData, validateCompliance
     try {
       const res = await consultarCNPJ(data.dados.documento)
 
-      updateData('dados', 'nomeRazao', res.razao_social || '')
-      updateData('dados', 'fantasia', res.nome_fantasia || '')
-
-      if (res.data_inicio_atividade) {
-        updateData('dados', 'dataAbertura', res.data_inicio_atividade)
+      if (res.error) {
+        toast({ variant: 'destructive', title: 'Erro', description: res.message })
+        return
       }
 
-      if (res.cep) updateData('endereco', 'cep', res.cep)
-      if (res.logradouro) updateData('endereco', 'logradouro', res.logradouro)
-      if (res.numero) updateData('endereco', 'numero', res.numero)
-      if (res.bairro) updateData('endereco', 'bairro', res.bairro)
-      if (res.municipio) updateData('endereco', 'cidade', res.municipio)
-      if (res.uf) updateData('endereco', 'estado', res.uf)
+      const info = res.data
+
+      updateData('dados', 'nomeRazao', info.razao_social || '')
+      updateData('dados', 'fantasia', info.nome_fantasia || '')
+
+      if (info.data_inicio_atividade) {
+        updateData('dados', 'dataAbertura', info.data_inicio_atividade)
+      }
+
+      if (info.cep) updateData('endereco', 'cep', info.cep)
+
+      const logradouro = info.descricao_tipo_de_logradouro
+        ? `${info.descricao_tipo_de_logradouro} ${info.logradouro}`
+        : info.logradouro
+
+      if (logradouro) updateData('endereco', 'logradouro', logradouro)
+      if (info.numero) updateData('endereco', 'numero', info.numero)
+      if (info.bairro) updateData('endereco', 'bairro', info.bairro)
+      if (info.municipio) updateData('endereco', 'cidade', info.municipio)
+      if (info.uf) updateData('endereco', 'estado', info.uf)
+
+      if (info.nome_fantasia || info.razao_social) {
+        const query = info.nome_fantasia || info.razao_social
+        const logoUrl = `https://img.usecurling.com/i?q=${encodeURIComponent(query)}&color=multicolor&shape=fill`
+        updateData('dados', 'logo', logoUrl)
+      }
 
       toast({
         title: 'Sucesso',
@@ -92,7 +90,7 @@ export function SupplierIdentificationTab({ data, updateData, validateCompliance
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: e.message || 'Não foi possível encontrar o CNPJ.',
+        description: 'Não foi possível encontrar o CNPJ.',
       })
     } finally {
       setLoadingCnpj(false)
@@ -113,7 +111,9 @@ export function SupplierIdentificationTab({ data, updateData, validateCompliance
         </div>
         <div className="flex-1">
           <h4 className="text-sm font-semibold text-slate-800">Logo do Fornecedor</h4>
-          <p className="text-xs text-slate-500 mb-2">Visível em pedidos e cotações.</p>
+          <p className="text-xs text-slate-500 mb-2">
+            Visível em pedidos e cotações. A logo será buscada automaticamente via CNPJ.
+          </p>
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -173,7 +173,7 @@ export function SupplierIdentificationTab({ data, updateData, validateCompliance
             <User className="w-4 h-4" /> Pessoa Física
           </button>
         </div>
-        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
           <Label className="text-sm font-semibold cursor-pointer">Fornecedor Homologado</Label>
           <Switch
             checked={data.dados?.ativo !== false}
@@ -265,11 +265,13 @@ export function SupplierIdentificationTab({ data, updateData, validateCompliance
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5 md:col-span-1">
             <LabelT l="CEP" req />
-            <Input
-              value={data.endereco?.cep || ''}
-              onChange={(e) => updateData('endereco', 'cep', e.target.value)}
-              className="bg-white"
-            />
+            <div className="flex gap-2">
+              <Input
+                value={data.endereco?.cep || ''}
+                onChange={(e) => updateData('endereco', 'cep', e.target.value)}
+                className="bg-white"
+              />
+            </div>
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <LabelT l="Logradouro" req />

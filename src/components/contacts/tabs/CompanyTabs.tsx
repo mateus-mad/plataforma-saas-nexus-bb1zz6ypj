@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { consultarCNPJ } from '@/services/cnpj'
+import { consultarCEP } from '@/services/cep'
 
 export const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -81,6 +82,12 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
       onChange('nomeRazao', info.razao_social || '')
       onChange('fantasia', info.nome_fantasia || '')
 
+      if (info.nome_fantasia || info.razao_social) {
+        const query = info.nome_fantasia || info.razao_social
+        const logoUrl = `https://img.usecurling.com/i?q=${encodeURIComponent(query)}&color=multicolor&shape=fill`
+        onChange('logo', logoUrl)
+      }
+
       const cleanCnpj = info.cnpj || data.documento.replace(/\D/g, '')
       onChange(
         'documento',
@@ -108,7 +115,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
 
       toast({
         title: 'Sucesso',
-        description: 'Dados e endereço preenchidos com sucesso.',
+        description: 'Dados, logo e endereço preenchidos com sucesso via CNPJ.',
       })
     } catch (e: any) {
       console.error('CNPJ Lookup Error:', e)
@@ -152,7 +159,9 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         </div>
         <div>
           <h4 className="text-sm font-semibold text-slate-800">Logo ou Marca da Empresa</h4>
-          <p className="text-xs text-slate-500 mb-2">Formatos suportados: JPG ou PNG (Max 2MB)</p>
+          <p className="text-xs text-slate-500 mb-2">
+            Formatos suportados: JPG ou PNG (Max 2MB). A logo será buscada automaticamente via CNPJ.
+          </p>
           {!readOnly && (
             <Button
               size="sm"
@@ -503,16 +512,64 @@ export function CompanyContatoTab({ data, onChange, readOnly }: any) {
 }
 
 export function CompanyAddressTab({ data, onChange, readOnly }: any) {
+  const [loadingCep, setLoadingCep] = useState(false)
+  const { toast } = useToast()
+
+  const handleCepSearch = async () => {
+    if (!data.cep || data.cep.replace(/\D/g, '').length !== 8) {
+      toast({
+        variant: 'destructive',
+        title: 'CEP inválido',
+        description: 'Digite um CEP válido com 8 dígitos.',
+      })
+      return
+    }
+    setLoadingCep(true)
+    const res = await consultarCEP(data.cep)
+    setLoadingCep(false)
+
+    if (res.error) {
+      toast({ variant: 'destructive', title: 'Erro', description: res.message })
+    } else {
+      onChange('logradouro', res.data.logradouro)
+      onChange('bairro', res.data.bairro)
+      onChange('cidade', res.data.localidade)
+      onChange('estado', res.data.uf)
+      toast({ title: 'Sucesso', description: 'Endereço preenchido automaticamente.' })
+    }
+  }
+
+  const fullAddress = data.logradouro
+    ? `${data.logradouro}, ${data.numero || 'S/N'} - ${data.bairro || ''} - ${data.cidade || ''}/${data.estado || ''}`
+    : ''
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-1.5 md:col-span-1">
           <LabelT l="CEP" req />
-          <Input
-            value={data.cep || ''}
-            onChange={(e) => onChange('cep', e.target.value)}
-            disabled={readOnly}
-          />
+          <div className="flex gap-2">
+            <Input
+              value={data.cep || ''}
+              onChange={(e) => onChange('cep', e.target.value)}
+              disabled={readOnly}
+            />
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCepSearch}
+                disabled={loadingCep}
+                className="shrink-0"
+              >
+                {loadingCep ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-1.5 md:col-span-2">
           <LabelT l="Logradouro" req />
@@ -562,6 +619,33 @@ export function CompanyAddressTab({ data, onChange, readOnly }: any) {
             disabled={readOnly}
           />
         </div>
+      </div>
+
+      <div className="pt-6 border-t border-slate-100">
+        <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-blue-500" />
+          Visualização Geográfica
+        </h4>
+        {fullAddress ? (
+          <div className="w-full h-[300px] rounded-xl border border-slate-200 overflow-hidden bg-slate-50 relative flex items-center justify-center">
+            <iframe
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              scrolling="no"
+              marginHeight={0}
+              marginWidth={0}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(fullAddress)}&t=m&z=15&output=embed&iwloc=near`}
+              title="Mapa do Endereço"
+              className="absolute inset-0"
+            />
+          </div>
+        ) : (
+          <div className="w-full h-[300px] rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+            <Search className="w-8 h-8 mb-2 opacity-50" />
+            <p>Preencha o endereço completo para visualizar no mapa.</p>
+          </div>
+        )}
       </div>
     </div>
   )

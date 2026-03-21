@@ -135,123 +135,126 @@ export default function CollaboratorKanban({
       {columns.map((col) => (
         <div
           key={col.title}
-          className={`bg-slate-50/70 rounded-xl border-t-4 ${col.color} p-4 space-y-4 shadow-sm h-full min-h-[500px]`}
+          className={`bg-slate-50/70 rounded-xl border-t-4 ${col.color} p-4 space-y-4 shadow-sm h-full min-h-[500px] flex flex-col`}
         >
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">
               {col.title}
             </h3>
-            <span className="bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
+            <span className="bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
               {col.items.length}
             </span>
           </div>
 
           {col.items.length === 0 ? (
-            <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
-              Nenhum colaborador
+            <div className="text-center p-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl flex-1 flex items-center justify-center">
+              Vazio
             </div>
           ) : (
-            col.items.map((it, idx) => {
-              const imgUrl = it.photo
-                ? pb.files.getURL(it, it.photo)
-                : it.data?.pessoal?.foto ||
-                  `https://img.usecurling.com/ppl/thumbnail?gender=${it.data?.pessoal?.genero === 'Feminino' ? 'female' : 'male'}&seed=${it.id}`
+            <div className="space-y-3 flex-1">
+              {col.items.map((it, idx) => {
+                const imgUrl = it.photo
+                  ? pb.files.getURL(it, it.photo)
+                  : it.data?.pessoal?.foto ||
+                    `https://img.usecurling.com/ppl/thumbnail?gender=${it.data?.pessoal?.genero === 'Feminino' ? 'female' : 'male'}&seed=${it.id}`
 
-              const complianceStatus = it.compliance_status || 'pendente'
+                const complianceStatus = it.compliance_status || 'pendente'
 
-              return (
-                <div
-                  key={it.id}
-                  className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all group relative"
-                >
-                  <div className="absolute top-3 right-3 z-10">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-slate-400 hover:text-slate-800 bg-slate-50/50 hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="end"
-                        className="w-56 p-1 rounded-xl border-slate-200 shadow-lg overflow-hidden bg-white"
-                      >
-                        <Button
-                          variant="ghost"
-                          onClick={() => onProfile(it.id)}
-                          className="w-full justify-start text-sm h-9 text-slate-600"
-                        >
-                          <Eye className="w-4 h-4 mr-2" /> Ficha Completa
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => onEdit(it.id)}
-                          className="w-full justify-start text-sm h-9 text-slate-600"
-                        >
-                          <Edit2 className="w-4 h-4 mr-2" /> Editar Dados
-                        </Button>
-                        <div className="h-px bg-slate-100 my-1"></div>
-                        <div className="px-2 py-1 mt-1 bg-rose-50/50 rounded-md">
+                return (
+                  <div
+                    key={it.id}
+                    className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all group relative cursor-grab active:cursor-grabbing"
+                  >
+                    <div className="absolute top-3 right-3 z-10">
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
                             variant="ghost"
-                            onClick={() => openDeleteModal(it)}
-                            className="w-full justify-start text-xs h-8 text-rose-700 hover:text-white hover:bg-rose-600"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:text-slate-800 bg-slate-50/50 hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir Registro
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="end"
+                          className="w-56 p-1 rounded-xl border-slate-200 shadow-lg overflow-hidden bg-white"
+                        >
+                          <Button
+                            variant="ghost"
+                            onClick={() => onProfile(it.id)}
+                            className="w-full justify-start text-sm h-9 text-slate-600"
+                          >
+                            <Eye className="w-4 h-4 mr-2" /> Ficha Completa
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => onEdit(it.id)}
+                            className="w-full justify-start text-sm h-9 text-slate-600"
+                          >
+                            <Edit2 className="w-4 h-4 mr-2" /> Editar Dados
+                          </Button>
+                          <div className="h-px bg-slate-100 my-1"></div>
+                          <div className="px-2 py-1 mt-1 bg-rose-50/50 rounded-md">
+                            <Button
+                              variant="ghost"
+                              onClick={() => openDeleteModal(it)}
+                              className="w-full justify-start text-xs h-8 text-rose-700 hover:text-white hover:bg-rose-600"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir Registro
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
 
-                  <div className="flex gap-3 cursor-pointer" onClick={() => onProfile(it.id)}>
-                    <Avatar className="w-10 h-10 border border-slate-100 shadow-sm">
-                      <AvatarImage src={imgUrl} />
-                      <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
-                        {it.name !== 'Sem Nome' ? it.name[0] : '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 pr-6">
-                      <p className="font-semibold text-sm text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                        {it.name}
-                      </p>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 truncate">
-                        <Building2 className="w-3 h-3" /> {it.data?.trabalho?.cargo || 'Sem Cargo'}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        <Badge variant="outline" className="bg-slate-50 text-[9px]">
-                          {it.data?.trabalho?.setor || 'Sem Setor'}
-                        </Badge>
-                        {complianceStatus === 'vencido' && (
-                          <Badge className="bg-rose-500 text-white border-none shadow-none text-[9px]">
-                            Vencido
+                    <div className="flex gap-3 cursor-pointer" onClick={() => onProfile(it.id)}>
+                      <Avatar className="w-10 h-10 border border-slate-100 shadow-sm">
+                        <AvatarImage src={imgUrl} />
+                        <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
+                          {it.name !== 'Sem Nome' ? it.name[0] : '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 pr-6">
+                        <p className="font-semibold text-sm text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                          {it.name}
+                        </p>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 truncate">
+                          <Building2 className="w-3 h-3" />{' '}
+                          {it.data?.trabalho?.cargo || 'Sem Cargo'}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          <Badge variant="outline" className="bg-slate-50 text-[9px]">
+                            {it.data?.trabalho?.setor || 'Sem Setor'}
                           </Badge>
-                        )}
-                        {complianceStatus === 'pendente' && (
-                          <Badge className="bg-amber-500 text-white border-none shadow-none text-[9px]">
-                            Pendente
-                          </Badge>
-                        )}
-                        {complianceStatus === 'em_dia' && (
-                          <Badge className="bg-emerald-500 text-white border-none shadow-none text-[9px]">
-                            Em dia
-                          </Badge>
-                        )}
+                          {complianceStatus === 'vencido' && (
+                            <Badge className="bg-rose-500 text-white border-none shadow-none text-[9px]">
+                              Vencido
+                            </Badge>
+                          )}
+                          {complianceStatus === 'pendente' && (
+                            <Badge className="bg-amber-500 text-white border-none shadow-none text-[9px]">
+                              Pendente
+                            </Badge>
+                          )}
+                          {complianceStatus === 'em_dia' && (
+                            <Badge className="bg-emerald-500 text-white border-none shadow-none text-[9px]">
+                              Em dia
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                      <Badge variant="outline" className="text-[10px] font-medium bg-slate-50">
+                        {it.data?.trabalho?.contrato || 'Mensalista'}
+                      </Badge>
+                      <div className={`w-2 h-2 rounded-full ${col.bg}`} title={it.status} />
+                    </div>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-                    <Badge variant="outline" className="text-[10px] font-medium bg-slate-50">
-                      {it.data?.trabalho?.contrato || 'Mensalista'}
-                    </Badge>
-                    <div className={`w-2 h-2 rounded-full ${col.bg}`} title={it.status} />
-                  </div>
-                </div>
-              )
-            })
+                )
+              })}
+            </div>
           )}
         </div>
       ))}

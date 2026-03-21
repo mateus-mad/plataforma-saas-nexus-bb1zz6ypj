@@ -2,19 +2,20 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
 import {
   Building2,
   Phone,
-  FileText,
   MapPin,
   DollarSign,
   Printer,
   Edit,
   Mail,
-  User,
-  ExternalLink,
-  Map as MapIcon,
+  CheckCircle2,
+  TrendingUp,
+  AlertCircle,
+  Activity,
 } from 'lucide-react'
 
 type Props = {
@@ -83,6 +84,15 @@ export default function CompanyProfileModal({
     ? `${e.logradouro}, ${e.numero || 'S/N'} - ${e.bairro || ''} - ${e.cidade || ''}/${e.estado || ''} ${e.cep || ''}`
     : ''
 
+  // Fake analytics based on ID
+  const seed = companyData.id
+    ? parseInt(companyData.id.replace(/\D/g, '').substring(0, 3) || '85')
+    : 85
+  const finScore = Math.min(1000, Math.max(300, seed * 10))
+  const punctuality = Math.min(100, Math.max(50, seed + 10))
+  const totalBilled = (seed * 1250).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const accountsRec = (seed * 150).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1000px] w-[95vw] h-[90vh] p-0 overflow-hidden bg-slate-50 border-none rounded-xl shadow-2xl flex flex-col">
@@ -148,6 +158,51 @@ export default function CompanyProfileModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <Section t="Histórico e Performance" icon={TrendingUp}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-slate-500 mb-1">Score Financeiro</p>
+                <div className="flex flex-col items-center gap-1">
+                  <span
+                    className={cn(
+                      'text-lg font-bold',
+                      finScore > 700
+                        ? 'text-emerald-600'
+                        : finScore > 500
+                          ? 'text-amber-500'
+                          : 'text-rose-500',
+                    )}
+                  >
+                    {finScore}/1000
+                  </span>
+                  <Progress
+                    value={(finScore / 1000) * 100}
+                    className={cn(
+                      'h-1.5 w-16',
+                      finScore > 700 ? '[&>div]:bg-emerald-500' : '[&>div]:bg-amber-500',
+                    )}
+                  />
+                </div>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-slate-500 mb-1">Pontualidade</p>
+                <p className="text-lg font-bold text-slate-800 flex justify-center items-center gap-1">
+                  {punctuality}% <Activity className="w-4 h-4 text-emerald-500" />
+                </p>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-slate-500 mb-1">Total Faturado</p>
+                <p className="text-lg font-bold text-slate-800">{totalBilled}</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-slate-500 mb-1">Contas a Receber</p>
+                <p className="text-lg font-bold text-slate-800 flex justify-center items-center gap-1">
+                  {accountsRec} {seed < 30 && <AlertCircle className="w-4 h-4 text-rose-500" />}
+                </p>
+              </div>
+            </div>
+          </Section>
+
           <Section t="Dados Corporativos" icon={Building2}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <Field

@@ -8,6 +8,7 @@ import {
   Send,
   CalendarClock,
   MessageCircle,
+  TrendingUp,
 } from 'lucide-react'
 import {
   BarChart,
@@ -18,10 +19,19 @@ import {
   AreaChart,
   Area,
   ResponsiveContainer,
+  ComposedChart,
+  Line,
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { getEntities } from '@/services/entities'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -36,11 +46,12 @@ const VOLUME_DATA = [
 ]
 
 const ADMISSION_DATA = [
-  { month: 'Jan', engenheiro: 4, administrativo: 2, operario: 5 },
-  { month: 'Fev', engenheiro: 3, administrativo: 1, operario: 8 },
-  { month: 'Mar', engenheiro: 6, administrativo: 3, operario: 12 },
-  { month: 'Abr', engenheiro: 2, administrativo: 4, operario: 6 },
-  { month: 'Mai', engenheiro: 7, administrativo: 2, operario: 15 },
+  { month: 'Jan', admissao: 15, demissao: 2 },
+  { month: 'Fev', admissao: 12, demissao: 5 },
+  { month: 'Mar', admissao: 22, demissao: 3 },
+  { month: 'Abr', admissao: 18, demissao: 8 },
+  { month: 'Mai', admissao: 25, demissao: 4 },
+  { month: 'Jun', admissao: 10, demissao: 2 },
 ]
 
 const chartConfig = {
@@ -50,9 +61,8 @@ const chartConfig = {
 }
 
 const admissionConfig = {
-  engenheiro: { label: 'Engenheiros', color: 'hsl(var(--chart-1))' },
-  administrativo: { label: 'Administrativo', color: 'hsl(var(--chart-2))' },
-  operario: { label: 'Operacional', color: 'hsl(var(--chart-3))' },
+  admissao: { label: 'Admissões', color: 'hsl(var(--chart-2))' },
+  demissao: { label: 'Demissões', color: 'hsl(var(--destructive))' },
 }
 
 export default function ContactsDashboard() {
@@ -63,22 +73,30 @@ export default function ContactsDashboard() {
     collaborators: 0,
     incomplete: 0,
   })
+  const [segmentFilter, setSegmentFilter] = useState('Todos')
 
   const loadData = async () => {
     try {
       const rels = await getEntities()
 
       let incompleteCount = 0
+      let cClient = 0
+      let cSupplier = 0
+      let cColab = 0
+
       rels.forEach((r) => {
         if (!r.document_number || !r.name || r.name === 'Sem Nome') {
           incompleteCount++
         }
+        if (r.type === 'cliente') cClient++
+        if (r.type === 'fornecedor') cSupplier++
+        if (r.type === 'colaborador') cColab++
       })
 
       setCounts({
-        clients: rels.filter((r) => r.type === 'cliente').length,
-        suppliers: rels.filter((r) => r.type === 'fornecedor').length,
-        collaborators: rels.filter((r) => r.type === 'colaborador').length,
+        clients: cClient,
+        suppliers: cSupplier,
+        collaborators: cColab,
         incomplete: incompleteCount,
       })
     } catch (e) {
@@ -111,11 +129,10 @@ export default function ContactsDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">
-            Performance & Automação (HR/Comercial)
+            Inteligência e Performance
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Métricas de crescimento de relacionamentos e controle unificado de compliance e
-            admissões.
+            Métricas centralizadas de RH, clientes e fornecedores.
           </p>
         </div>
       </div>
@@ -128,7 +145,9 @@ export default function ContactsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-800">{counts.clients}</div>
-            <p className="text-xs text-emerald-600 mt-1 font-medium">Cadastrados na base</p>
+            <p className="text-xs text-emerald-600 mt-1 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> +12% este mês
+            </p>
           </CardContent>
         </Card>
         <Card className="border-amber-100 shadow-sm">
@@ -138,7 +157,9 @@ export default function ContactsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-800">{counts.suppliers}</div>
-            <p className="text-xs text-amber-600 mt-1 font-medium">Cadastrados na base</p>
+            <p className="text-xs text-amber-600 mt-1 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> +5% este mês
+            </p>
           </CardContent>
         </Card>
         <Card className="border-blue-100 shadow-sm">
@@ -150,31 +171,42 @@ export default function ContactsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-800">{counts.collaborators}</div>
-            <p className="text-xs text-blue-600 mt-1 font-medium">Cadastrados na base</p>
+            <p className="text-xs text-blue-600 mt-1 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> +8% este mês
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-rose-50 border-rose-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-rose-800">
-              Perfis Incompletos / Risco
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-rose-800">Perfis Incompletos</CardTitle>
             <AlertTriangle className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-rose-700">{counts.incomplete}</div>
-            <p className="text-xs text-rose-600 mt-1 font-medium">Faltam dados essenciais</p>
+            <p className="text-xs text-rose-600 mt-1 font-medium">Requerem atenção (Risco)</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader>
+        <Card className="shadow-sm border-slate-200 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold text-slate-800">
-              Volume de Aquisição (Novos Relacionamentos)
+              Volume de Aquisição (Novos Registros)
             </CardTitle>
+            <Select value={segmentFilter} onValueChange={setSegmentFilter}>
+              <SelectTrigger className="w-[140px] h-8 text-xs bg-white">
+                <SelectValue placeholder="Segmento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos os Seg.</SelectItem>
+                <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+                <SelectItem value="Varejo">Varejo</SelectItem>
+                <SelectItem value="Indústria">Indústria</SelectItem>
+              </SelectContent>
+            </Select>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <ChartContainer config={chartConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={VOLUME_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -212,27 +244,33 @@ export default function ContactsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader>
+        <Card className="shadow-sm border-slate-200 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold text-slate-800">
-              Admissões por Profissão / Setor
+              Análise RH: Admissões vs Demissões
             </CardTitle>
+            <Select defaultValue="Engenharia">
+              <SelectTrigger className="w-[140px] h-8 text-xs bg-white">
+                <SelectValue placeholder="Profissão" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Engenharia">Engenharia</SelectItem>
+                <SelectItem value="Administrativo">Administrativo</SelectItem>
+                <SelectItem value="Operacional">Operacional</SelectItem>
+              </SelectContent>
+            </Select>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <ChartContainer config={admissionConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
+                <ComposedChart
                   data={ADMISSION_DATA}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="colorEng" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-engenheiro)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--color-engenheiro)" stopOpacity={0} />
-                    </linearGradient>
                     <linearGradient id="colorAdm" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-administrativo)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--color-administrativo)" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--color-admissao)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-admissao)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -246,27 +284,19 @@ export default function ContactsDashboard() {
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Area
                     type="monotone"
-                    dataKey="engenheiro"
-                    stackId="1"
-                    stroke="var(--color-engenheiro)"
-                    fill="url(#colorEng)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="administrativo"
-                    stackId="1"
-                    stroke="var(--color-administrativo)"
+                    dataKey="admissao"
                     fill="url(#colorAdm)"
+                    stroke="var(--color-admissao)"
+                    strokeWidth={2}
                   />
-                  <Area
+                  <Line
                     type="monotone"
-                    dataKey="operario"
-                    stackId="1"
-                    stroke="var(--color-operario)"
-                    fill="var(--color-operario)"
-                    fillOpacity={0.1}
+                    dataKey="demissao"
+                    stroke="var(--color-demissao)"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: 'var(--color-demissao)' }}
                   />
-                </AreaChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>

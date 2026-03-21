@@ -74,11 +74,44 @@ const DEFAULT_DATA = {
   },
   endereco: { cep: '', logradouro: '', numero: '', comp: '', bairro: '', cidade: '', estado: '' },
   contato: { telPrinc: '', whatsapp: '', email: '' },
-  trabalho: { matricula: '', setor: '', admissao: '', cargo: '' },
-  salario: { base: '', banco: '', agConta: '', conta: '' },
-  beneficios: { saude: '', vt: '', vr: '' },
+  trabalho: {
+    matricula: '',
+    setor: '',
+    cargo: '',
+    admissao: '',
+    contrato: 'CLT',
+    jornada: '',
+    turno: 'Manhã',
+    horas: '44',
+    experienciaDias: '90',
+    experienciaFim: '',
+    exameAdmissional: '',
+    sindicato: '',
+  },
+  salario: {
+    base: '',
+    tipoSalario: 'Mensalista',
+    formaPagamento: 'PIX',
+    banco: '',
+    agConta: '',
+    conta: '',
+    temComissao: false,
+    comissaoPercent: '',
+    comissaoBase: '',
+    comissaoMeta: '',
+  },
+  beneficios: {
+    vt: false,
+    va: false,
+    vr: false,
+    saude: false,
+    odonto: false,
+    combustivel: false,
+    vida: false,
+    creche: false,
+  },
   encargos: { inss: '', irrf: '', fgts: '' },
-  ferias: { inicio: '', fim: '', direito: '' },
+  ferias: { inicio: '', fim: '', direito: '30 dias', proximoVencimento: '' },
   esocial: { matricula: '', categoria: '', cbo: '', natureza: '', admissao: '' },
   anexos: [],
 }
@@ -181,6 +214,9 @@ export function useCollaboratorForm(entityId: string | null) {
       const parsedData = record.data || { ...DEFAULT_DATA }
       parsedData.pessoal = { ...DEFAULT_DATA.pessoal, ...parsedData.pessoal }
       parsedData.docs = { ...DEFAULT_DATA.docs, ...parsedData.docs }
+      parsedData.beneficios = { ...DEFAULT_DATA.beneficios, ...parsedData.beneficios }
+      parsedData.salario = { ...DEFAULT_DATA.salario, ...parsedData.salario }
+      parsedData.trabalho = { ...DEFAULT_DATA.trabalho, ...parsedData.trabalho }
 
       if (record.photo) {
         parsedData.pessoal.foto = pb.files.getURL(record, record.photo)
@@ -265,6 +301,38 @@ export function useCollaboratorForm(entityId: string | null) {
             irrf: encargos.irrf,
             fgts: encargos.fgts,
           }
+        }
+      }
+
+      if (section === 'trabalho' && field === 'admissao' && value) {
+        const adDate = new Date(value)
+        if (!isNaN(adDate.getTime())) {
+          newData.ferias.inicio = value
+          const fimDate = new Date(adDate)
+          fimDate.setFullYear(fimDate.getFullYear() + 1)
+          fimDate.setDate(fimDate.getDate() - 1)
+          newData.ferias.fim = fimDate.toISOString().split('T')[0]
+
+          const prevDate = new Date(fimDate)
+          prevDate.setDate(prevDate.getDate() + 1)
+          const projDate = new Date(prevDate)
+          projDate.setFullYear(projDate.getFullYear() + 1)
+          newData.ferias.proximoVencimento = projDate.toISOString().split('T')[0]
+        }
+      }
+
+      if (
+        section === 'trabalho' &&
+        (field === 'experienciaDias' || field === 'admissao') &&
+        newData.trabalho.admissao &&
+        newData.trabalho.experienciaDias
+      ) {
+        const adDate = new Date(newData.trabalho.admissao)
+        const days = parseInt(newData.trabalho.experienciaDias, 10)
+        if (!isNaN(adDate.getTime()) && !isNaN(days)) {
+          const fim = new Date(adDate)
+          fim.setDate(fim.getDate() + days)
+          newData.trabalho.experienciaFim = fim.toISOString().split('T')[0]
         }
       }
     }

@@ -17,6 +17,7 @@ import {
   Star,
   Clock,
   ShieldCheck,
+  FileSignature,
 } from 'lucide-react'
 
 type Props = {
@@ -72,6 +73,7 @@ export default function SupplierProfileView({ open, onOpenChange, onEdit, compan
   const f = companyData.data?.financeiro || {}
   const b = companyData.data?.bancario || {}
   const p = c.pessoas || []
+  const a = companyData.data?.acordos?.lista || []
 
   // Fake analytics based on ID
   const seed = companyData.id
@@ -80,6 +82,7 @@ export default function SupplierProfileView({ open, onOpenChange, onEdit, compan
   const premiumScore = Math.min(100, Math.max(0, seed))
   const ticketMedio = (seed * 150).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   const atrasoMedio = Math.floor(seed / 10)
+  const agreementsCount = a.filter((ac: any) => ac.ativo).length
 
   const isPJ = d.tipoPessoa === 'PJ'
   const fullAddress = e.logradouro
@@ -152,18 +155,16 @@ export default function SupplierProfileView({ open, onOpenChange, onEdit, compan
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
                 <Star className="w-6 h-6 text-amber-500" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-0.5">
-                  Premium Score (Confiabilidade)
-                </p>
+                <p className="text-xs font-semibold text-slate-500 mb-0.5">Premium Score</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-slate-800">{premiumScore}/100</span>
-                  <Progress value={premiumScore} className="w-20 h-1.5 [&>div]:bg-amber-500" />
+                  <span className="text-lg font-bold text-slate-800">{premiumScore}/100</span>
+                  <Progress value={premiumScore} className="w-12 h-1.5 [&>div]:bg-amber-500" />
                 </div>
               </div>
             </div>
@@ -172,10 +173,8 @@ export default function SupplierProfileView({ open, onOpenChange, onEdit, compan
                 <TrendingUp className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-0.5">
-                  Ticket Médio de Compras
-                </p>
-                <p className="text-xl font-bold text-slate-800">{ticketMedio}</p>
+                <p className="text-xs font-semibold text-slate-500 mb-0.5">Ticket Médio</p>
+                <p className="text-lg font-bold text-slate-800">{ticketMedio}</p>
               </div>
             </div>
             <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-4">
@@ -183,13 +182,20 @@ export default function SupplierProfileView({ open, onOpenChange, onEdit, compan
                 <Clock className="w-6 h-6 text-rose-500" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-0.5">
-                  Média de Pagamentos Atrasados
-                </p>
-                <p className="text-xl font-bold text-slate-800 flex items-center gap-1">
+                <p className="text-xs font-semibold text-slate-500 mb-0.5">Atraso Médio</p>
+                <p className="text-lg font-bold text-slate-800 flex items-center gap-1">
                   {atrasoMedio} dias{' '}
                   {atrasoMedio > 5 && <AlertTriangle className="w-4 h-4 text-rose-500 ml-1" />}
                 </p>
+              </div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                <FileSignature className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-0.5">Acordos Ativos</p>
+                <p className="text-lg font-bold text-slate-800">{agreementsCount} Contratos</p>
               </div>
             </div>
           </div>
