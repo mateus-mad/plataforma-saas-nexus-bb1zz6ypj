@@ -6,6 +6,7 @@ import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
 import { ClientResponseError } from 'pocketbase'
+import { toast } from '@/hooks/use-toast'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -69,7 +70,7 @@ const DEFAULT_DATA = {
     expiryDate: '',
     cpf: '',
     pis: '',
-    compliance: { status: 'pending' },
+    compliance: { status: 'pendente' },
   },
   endereco: { cep: '', logradouro: '', numero: '', comp: '', bairro: '', cidade: '', estado: '' },
   contato: { telPrinc: '', whatsapp: '', email: '' },
@@ -240,7 +241,11 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('name', newData.pessoal.name || '')
       fd.append('document_number', newData.docs.cpf || '')
 
-      // Keep track of Drafts
+      if (newData.docs?.expiryDate) {
+        fd.append('expiry_date', newData.docs.expiryDate)
+      }
+      fd.append('compliance_status', newData.docs?.compliance?.status || 'pendente')
+
       const record = await getEntity(entityId)
       if (record.status === 'Rascunho') {
         fd.append('status', 'Ativo')
@@ -286,6 +291,11 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('document_number', data.docs.cpf || '')
       fd.append('email', data.contato.email || '')
       fd.append('phone', data.contato.telPrinc || '')
+
+      if (data.docs?.expiryDate) {
+        fd.append('expiry_date', data.docs.expiryDate)
+      }
+      fd.append('compliance_status', data.docs?.compliance?.status || 'pendente')
 
       let recordId = entityId
       if (entityId) {
@@ -373,7 +383,12 @@ export function useCollaboratorForm(entityId: string | null) {
         ocrResult = await processDocumentOCR(file, docType)
       } catch (err: any) {
         console.warn('OCR API returned error or was unreachable:', err)
-        return { success: false, reason: 'unreadable' }
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Extração (OCR)',
+          description: 'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+        })
+        return { success: false, reason: 'error' }
       }
 
       if (ocrResult) {
@@ -437,6 +452,8 @@ export function useCollaboratorForm(entityId: string | null) {
           if (ocrResult) {
             if (ocrResult.name) fd.append('name', ocrResult.name)
             if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
+            if (ocrResult.expiryDate) fd.append('expiry_date', ocrResult.expiryDate)
+            fd.append('compliance_status', ocrResult.compliance?.status || 'pendente')
           }
 
           if (newData.pessoal.photoFile) {

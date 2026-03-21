@@ -40,7 +40,7 @@ export default function NotificationCenter() {
 
   const notifications = entities
     .map((c) => {
-      const status = getExpiryStatus(c.data?.docs?.expiryDate)
+      const status = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
       return { ...c, expiryStatus: status }
     })
     .filter((c) => c.expiryStatus === 'expired' || c.expiryStatus === 'expiring')
@@ -92,7 +92,10 @@ export default function NotificationCenter() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-slate-800 leading-tight">{n.name}</p>
                     <p className="text-xs text-slate-500">
-                      Vencimento: {new Date(n.data?.docs?.expiryDate).toLocaleDateString('pt-BR')}
+                      Vencimento:{' '}
+                      {new Date(n.expiry_date || n.data?.docs?.expiryDate).toLocaleDateString(
+                        'pt-BR',
+                      )}
                     </p>
                     <Badge
                       className={

@@ -75,7 +75,7 @@ export default function CollaboratorList({
 
   const isMissingDataOrExpired = (c: any) => {
     const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
-    const expiry = getExpiryStatus(c.data?.docs?.expiryDate)
+    const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
     const isExpired = expiry === 'expired' || expiry === 'expiring'
     return isMissing || isExpired
   }
@@ -102,8 +102,9 @@ export default function CollaboratorList({
         'Document Number': c.document_number || 'N/A',
         Email: c.email || 'N/A',
         Phone: c.phone || 'N/A',
-        Status: c.status || 'Ativo',
-        'Expiration Date': c.data?.docs?.expiryDate || 'N/A',
+        'Status do Cadastro': c.status || 'Ativo',
+        'Expiration Date': c.expiry_date || c.data?.docs?.expiryDate || 'N/A',
+        'Compliance Status': c.compliance_status || 'pendente',
       }))
 
     if (selectedData.length === 0) return
@@ -124,6 +125,11 @@ export default function CollaboratorList({
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
+    toast({
+      title: 'Exportação Concluída',
+      description: `${selectedData.length} registros exportados para CSV com sucesso.`,
+    })
   }
 
   const openDeleteModal = (item: any) => {
@@ -204,7 +210,7 @@ export default function CollaboratorList({
           : c.data?.pessoal?.foto ||
             `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${c.id}`
 
-        const expiry = getExpiryStatus(c.data?.docs?.expiryDate)
+        const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
 
         return (
           <div
@@ -303,17 +309,17 @@ export default function CollaboratorList({
 
                   {expiry === 'expired' && (
                     <Badge className="bg-rose-500 text-white border-none shadow-none text-[10px] h-5">
-                      Doc Expirado
+                      Vencido
                     </Badge>
                   )}
                   {expiry === 'expiring' && (
                     <Badge className="bg-amber-500 text-white border-none shadow-none text-[10px] h-5">
-                      Vence em Breve
+                      Vence em breve
                     </Badge>
                   )}
                   {expiry === 'valid' && status !== 'Rascunho' && !isMissingData(c) && (
-                    <Badge className="bg-emerald-100 text-emerald-700 border-none shadow-none text-[10px] h-5">
-                      Docs OK
+                    <Badge className="bg-emerald-500 text-white border-none shadow-none text-[10px] h-5">
+                      Em dia
                     </Badge>
                   )}
 

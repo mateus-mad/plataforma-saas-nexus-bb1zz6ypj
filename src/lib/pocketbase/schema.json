@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T00:02:26.159Z",
+  "generatedAt": "2026-03-21T00:14:32.070Z",
   "collections": [
     {
       "name": "users",
@@ -124,6 +124,19 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "expiry_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "compliance_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente", "em_dia", "vencido"]
         }
       ],
       "indexes": ["CREATE INDEX `idx_status_rel` ON `relacionamentos` (status)"]

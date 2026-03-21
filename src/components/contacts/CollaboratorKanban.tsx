@@ -61,7 +61,7 @@ export default function CollaboratorKanban({
 
   const isMissingDataOrExpired = (c: any) => {
     const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
-    const expiry = getExpiryStatus(c.data?.docs?.expiryDate)
+    const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
     const isExpired = expiry === 'expired' || expiry === 'expiring'
     return isMissing || isExpired
   }
@@ -158,7 +158,7 @@ export default function CollaboratorKanban({
                 : it.data?.pessoal?.foto ||
                   `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${it.id}`
 
-              const expiry = getExpiryStatus(it.data?.docs?.expiryDate)
+              const expiry = getExpiryStatus(it.expiry_date || it.data?.docs?.expiryDate)
 
               return (
                 <div
@@ -233,17 +233,17 @@ export default function CollaboratorKanban({
                         )}
                         {expiry === 'expired' && (
                           <Badge className="bg-rose-500 text-white border-none shadow-none text-[9px]">
-                            Doc Expirado
+                            Vencido
                           </Badge>
                         )}
                         {expiry === 'expiring' && (
                           <Badge className="bg-amber-500 text-white border-none shadow-none text-[9px]">
-                            Vence em Breve
+                            Vence em breve
                           </Badge>
                         )}
                         {expiry === 'valid' && it.status !== 'Rascunho' && !isMissingData(it) && (
-                          <Badge className="bg-emerald-100 text-emerald-700 border-none shadow-none text-[9px]">
-                            Docs OK
+                          <Badge className="bg-emerald-500 text-white border-none shadow-none text-[9px]">
+                            Em dia
                           </Badge>
                         )}
                       </div>

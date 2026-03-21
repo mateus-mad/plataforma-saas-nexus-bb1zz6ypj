@@ -46,11 +46,31 @@ export default function BatchOCRModal({
   }
 
   const addFiles = (newFiles: File[]) => {
-    const valid = newFiles.filter((f) => f.type.includes('image') || f.type.includes('pdf'))
-    setFiles((prev) => [
-      ...prev,
-      ...valid.map((f) => ({ id: Math.random().toString(), file: f, status: 'pending' as const })),
-    ])
+    const valid: { id: string; file: File; status: 'pending' }[] = []
+
+    for (const f of newFiles) {
+      if (!['application/pdf', 'image/jpeg', 'image/png'].includes(f.type)) {
+        toast({
+          variant: 'destructive',
+          title: 'Formato não suportado',
+          description: 'Formato de arquivo não suportado. Use PDF, JPG ou PNG.',
+        })
+        continue
+      }
+      if (f.size > 5 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'Arquivo muito grande',
+          description: `O arquivo ${f.name} excede o limite de 5MB.`,
+        })
+        continue
+      }
+      valid.push({ id: Math.random().toString(), file: f, status: 'pending' as const })
+    }
+
+    if (valid.length > 0) {
+      setFiles((prev) => [...prev, ...valid])
+    }
   }
 
   const updateFileStatus = (id: string, status: 'processing' | 'done' | 'error') => {
@@ -86,8 +106,7 @@ export default function BatchOCRModal({
           toast({
             variant: 'destructive',
             title: 'Erro de Extração (OCR)',
-            description:
-              'Unable to read document. Please check the image quality or fill fields manually.',
+            description: 'Erro ao processar documento. Por favor, preencha os dados manualmente.',
           })
         }
 
@@ -96,10 +115,21 @@ export default function BatchOCRModal({
         fd.append('status', 'Rascunho')
         fd.append('name', ocrResult?.name || fileObj.file.name.replace(/\.[^/.]+$/, ''))
 
-        if (ocrResult?.document_number) fd.append('document_number', ocrResult.document_number)
+        if (ocrResult?.document_number) {
+          fd.append('document_number', ocrResult.document_number)
+        }
+        if (ocrResult?.expiryDate) {
+          fd.append('expiry_date', ocrResult.expiryDate)
+        }
+
+        fd.append('compliance_status', ocrResult?.compliance?.status || 'pendente')
 
         const data = {
-          docs: { docType: 'RG', cpf: ocrResult?.document_number || '' },
+          docs: {
+            docType: 'RG',
+            cpf: ocrResult?.document_number || '',
+            expiryDate: ocrResult?.expiryDate ? ocrResult.expiryDate.split(' ')[0] : '',
+          },
           pessoal: { name: ocrResult?.name || '' },
         }
         fd.append('data', JSON.stringify(data))

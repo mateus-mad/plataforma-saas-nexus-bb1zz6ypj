@@ -8,8 +8,12 @@ routerAdd(
       throw new BadRequestError('Nenhum arquivo enviado para processamento.')
     }
 
-    const formData =
+    const isPdf = base64.includes('application/pdf')
+    let formData =
       'base64Image=' + encodeURIComponent(base64) + '&language=por&isOverlayRequired=false'
+    if (isPdf) {
+      formData += '&filetype=PDF'
+    }
 
     try {
       const res = $http.send({
@@ -20,12 +24,12 @@ routerAdd(
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: formData,
-        timeout: 30,
+        timeout: 60,
       })
 
       if (res.statusCode !== 200) {
         throw new BadRequestError(
-          'Unable to read document. Please check the image quality or fill fields manually.',
+          'Erro ao processar documento. Por favor, preencha os dados manualmente.',
         )
       }
 
@@ -37,15 +41,15 @@ routerAdd(
         data.ParsedResults.length === 0
       ) {
         throw new BadRequestError(
-          'Unable to read document. Please check the image quality or fill fields manually.',
+          'Erro ao processar documento. Por favor, preencha os dados manualmente.',
         )
       }
 
-      const text = data.ParsedResults[0].ParsedText || ''
+      const text = data.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
 
       if (!text || text.length < 10) {
         throw new BadRequestError(
-          'Unable to read document. Please check the image quality or fill fields manually.',
+          'Erro ao processar documento. Por favor, preencha os dados manualmente.',
         )
       }
 
@@ -62,6 +66,22 @@ routerAdd(
       const dates = text.match(/\d{2}\/\d{2}\/\d{4}/g) || []
       const nascimento = dates.length > 0 ? dates[0] : ''
       const docIssueDate = dates.length > 1 ? dates[1] : ''
+      let expiryDate = ''
+
+      const validadeMatch = text.match(
+        /(?:VALIDADE|VENCIMENTO|VÁLIDO ATÉ)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
+      )
+      if (validadeMatch) {
+        const parts = validadeMatch[1].split('/')
+        if (parts.length === 3) expiryDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
+      } else if (dates.length > 2) {
+        const parts = dates[2].split('/')
+        expiryDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
+      } else {
+        const d = new Date()
+        d.setFullYear(d.getFullYear() + 1)
+        expiryDate = d.toISOString()
+      }
 
       let name = ''
       const lines = text
@@ -112,11 +132,12 @@ routerAdd(
       }
 
       return e.json(200, {
-        name: name,
+        name: name || 'Desconhecido',
         document_number: cpf || rg,
         docType: cpf ? 'CPF' : rg ? 'RG' : 'Outro',
         nascimento: nascimento,
         docIssueDate: docIssueDate,
+        expiryDate: expiryDate,
         address: {
           cep: cep,
           logradouro: logradouro,
@@ -126,7 +147,7 @@ routerAdd(
           estado: estado,
         },
         compliance: {
-          status: cpf || name ? 'valid' : 'pending',
+          status: cpf || name ? 'em_dia' : 'pendente',
           message: 'Processado e validado via OCR com sucesso.',
         },
       })
@@ -135,7 +156,7 @@ routerAdd(
         throw err
       }
       throw new BadRequestError(
-        'Unable to read document. Please check the image quality or fill fields manually.',
+        'Erro ao processar documento. Por favor, preencha os dados manualmente.',
       )
     }
   },
