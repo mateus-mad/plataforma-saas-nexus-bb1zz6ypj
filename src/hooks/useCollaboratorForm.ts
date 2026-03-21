@@ -6,6 +6,7 @@ import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
 import { useToast } from '@/hooks/use-toast'
+import { calculateComplianceStatus } from '@/lib/utils'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -220,6 +221,14 @@ export function useCollaboratorForm(entityId: string | null) {
       if (section === 'pessoal' && field === 'foto' && file) {
         newData.pessoal.photoFile = file
       }
+
+      if (section === 'docs' && field === 'expiryDate') {
+        const compStatus = calculateComplianceStatus(value)
+        newData.docs.compliance = {
+          ...newData.docs.compliance,
+          status: compStatus,
+        }
+      }
     }
 
     setData(newData)
@@ -244,7 +253,8 @@ export function useCollaboratorForm(entityId: string | null) {
       if (newData.docs?.expiryDate) {
         fd.append('expiry_date', newData.docs.expiryDate)
       }
-      fd.append('compliance_status', newData.docs?.compliance?.status || 'pendente')
+      const compStatus = calculateComplianceStatus(newData.docs?.expiryDate)
+      fd.append('compliance_status', compStatus)
 
       const record = await getEntity(entityId)
       if (record.status === 'rascunho') {
@@ -295,7 +305,8 @@ export function useCollaboratorForm(entityId: string | null) {
       if (data.docs?.expiryDate) {
         fd.append('expiry_date', data.docs.expiryDate)
       }
-      fd.append('compliance_status', data.docs?.compliance?.status || 'pendente')
+      const compStatus = calculateComplianceStatus(data.docs?.expiryDate)
+      fd.append('compliance_status', compStatus)
 
       let recordId = entityId
       if (entityId) {
@@ -384,8 +395,9 @@ export function useCollaboratorForm(entityId: string | null) {
       } catch (err: any) {
         toast({
           variant: 'destructive',
-          title: 'Erro de Extração (OCR)',
-          description: 'Erro na extração: Formato não suportado ou arquivo corrompido.',
+          title: 'Erro na extração OCR',
+          description:
+            'Não foi possível extrair dados. Você pode continuar com preenchimento manual.',
         })
         setIsProcessingOCR(false)
         return { success: false, reason: 'error' }
@@ -405,13 +417,19 @@ export function useCollaboratorForm(entityId: string | null) {
         }
 
         if (ocrResult.document_number) {
+          const newExpiry = ocrResult.expiryDate || newData.docs.expiryDate
+          const complianceStatus = calculateComplianceStatus(newExpiry)
+
           newData.docs = {
             ...newData.docs,
             cpf: ocrResult.document_number || newData.docs.cpf,
             docType: ocrResult.docType || docType || newData.docs.docType,
             docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
-            expiryDate: ocrResult.expiryDate || newData.docs.expiryDate,
-            compliance: ocrResult.compliance || newData.docs.compliance,
+            expiryDate: newExpiry,
+            compliance: {
+              ...newData.docs.compliance,
+              status: complianceStatus,
+            },
           }
         }
 
@@ -453,7 +471,8 @@ export function useCollaboratorForm(entityId: string | null) {
             if (ocrResult.name) fd.append('name', ocrResult.name)
             if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
             if (ocrResult.expiryDate) fd.append('expiry_date', ocrResult.expiryDate)
-            fd.append('compliance_status', ocrResult.compliance?.status || 'pendente')
+            const compStatus = calculateComplianceStatus(ocrResult.expiryDate)
+            fd.append('compliance_status', compStatus)
           }
 
           if (newData.pessoal.photoFile) {
@@ -470,8 +489,9 @@ export function useCollaboratorForm(entityId: string | null) {
     } catch (e: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro de Extração (OCR)',
-        description: 'Erro na extração: Formato não suportado ou arquivo corrompido.',
+        title: 'Erro na extração OCR',
+        description:
+          'Não foi possível extrair dados. Você pode continuar com preenchimento manual.',
       })
       return { success: false, reason: 'error' }
     } finally {

@@ -18,6 +18,7 @@ import {
   Truck,
   Plus,
   Link as LinkIcon,
+  Download,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -91,6 +92,35 @@ export default function ContactsSuppliers() {
     setProfileOpen(true)
   }
 
+  const handleExportCSV = () => {
+    if (filtered.length === 0) {
+      toast({ title: 'Aviso', description: 'Não há fornecedores para exportar.' })
+      return
+    }
+
+    const headers = 'ID,Nome,Status,Email,Telefone,Cidade,Estado'
+    const rows = filtered.map((c) => {
+      const cidade = c.data?.endereco?.cidade || ''
+      const estado = c.data?.endereco?.estado || ''
+      return `"${c.id}","${c.name}","${c.status || 'ativo'}","${c.email || ''}","${c.phone || ''}","${cidade}","${estado}"`
+    })
+    const csv = [headers, ...rows].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'fornecedores_exportacao.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: 'Exportação Concluída',
+      description: `${filtered.length} fornecedores exportados para CSV com sucesso.`,
+    })
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-100">
@@ -105,7 +135,16 @@ export default function ContactsSuppliers() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          <Button
+            variant="outline"
+            onClick={handleExportCSV}
+            className="text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-sm"
+            title="Exportar para CSV"
+          >
+            <Download className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </Button>
           <Button
             variant="outline"
             onClick={sendWhatsApp}
@@ -192,12 +231,12 @@ export default function ContactsSuppliers() {
                 <Badge
                   className={cn(
                     'shadow-none font-semibold px-3 mr-1 sm:mr-3 capitalize',
-                    c.status === 'ativo'
+                    c.status === 'ativo' || !c.status
                       ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-slate-100 text-slate-500 hover:bg-slate-200',
                   )}
                 >
-                  {c.status}
+                  {c.status || 'ativo'}
                 </Badge>
 
                 <Button

@@ -13,6 +13,7 @@ import { processDocumentOCR } from '@/services/ocr'
 import { createEntity } from '@/services/entities'
 import { createAttachment } from '@/services/attachments'
 import { useToast } from '@/hooks/use-toast'
+import { calculateComplianceStatus } from '@/lib/utils'
 
 export default function BatchOCRModal({
   open,
@@ -65,11 +66,11 @@ export default function BatchOCRModal({
         })
         continue
       }
-      if (f.size > 5 * 1024 * 1024) {
+      if (f.size > 10 * 1024 * 1024) {
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
-          description: `O arquivo ${f.name} excede o limite de 5MB.`,
+          description: `O arquivo ${f.name} excede o limite de 10MB para lote.`,
         })
         continue
       }
@@ -113,8 +114,8 @@ export default function BatchOCRModal({
           ocrFailed = true
           toast({
             variant: 'destructive',
-            title: 'Erro na extração',
-            description: 'Formato não suportado ou arquivo corrompido.',
+            title: 'Erro na extração OCR',
+            description: `Não foi possível extrair dados de ${fileObj.file.name}. Preencha manualmente o rascunho depois.`,
           })
         }
 
@@ -126,17 +127,21 @@ export default function BatchOCRModal({
         if (ocrResult?.document_number) {
           fd.append('document_number', ocrResult.document_number)
         }
-        if (ocrResult?.expiryDate) {
-          fd.append('expiry_date', ocrResult.expiryDate)
+
+        const expiryDate = ocrResult?.expiryDate ? ocrResult.expiryDate.split(' ')[0] : ''
+        if (expiryDate) {
+          fd.append('expiry_date', expiryDate)
         }
 
-        fd.append('compliance_status', 'pendente')
+        const compStatus = calculateComplianceStatus(expiryDate)
+        fd.append('compliance_status', compStatus)
 
         const data = {
           docs: {
             docType: 'RG',
             cpf: ocrResult?.document_number || '',
-            expiryDate: ocrResult?.expiryDate ? ocrResult.expiryDate.split(' ')[0] : '',
+            expiryDate: expiryDate,
+            compliance: { status: compStatus },
           },
           pessoal: { name: ocrResult?.name || '' },
         }
@@ -204,7 +209,7 @@ export default function BatchOCRModal({
             <p className="text-sm text-slate-600 font-medium mb-1">
               Arraste e solte seus arquivos aqui
             </p>
-            <p className="text-xs text-slate-400 mb-4">PNG, JPG ou PDF (Máx 5MB por arquivo)</p>
+            <p className="text-xs text-slate-400 mb-4">PNG, JPG ou PDF (Máx 10MB por arquivo)</p>
             <Button
               variant="outline"
               onClick={() => fileRef.current?.click()}

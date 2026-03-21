@@ -228,11 +228,6 @@ export default function CollaboratorKanban({
                         <Badge variant="outline" className="bg-slate-50 text-[9px]">
                           {it.data?.trabalho?.setor || 'Sem Setor'}
                         </Badge>
-                        {isMissingData(it) && it.status !== 'rascunho' && (
-                          <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[9px]">
-                            Incompleto
-                          </Badge>
-                        )}
                         {complianceStatus === 'vencido' && (
                           <Badge className="bg-rose-500 text-white border-none shadow-none text-[9px]">
                             Vencido
@@ -243,13 +238,11 @@ export default function CollaboratorKanban({
                             Pendente
                           </Badge>
                         )}
-                        {complianceStatus === 'em_dia' &&
-                          it.status !== 'rascunho' &&
-                          !isMissingData(it) && (
-                            <Badge className="bg-emerald-500 text-white border-none shadow-none text-[9px]">
-                              Em dia
-                            </Badge>
-                          )}
+                        {complianceStatus === 'em_dia' && (
+                          <Badge className="bg-emerald-500 text-white border-none shadow-none text-[9px]">
+                            Em dia
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

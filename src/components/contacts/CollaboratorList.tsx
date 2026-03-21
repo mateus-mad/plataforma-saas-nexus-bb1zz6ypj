@@ -96,40 +96,32 @@ export default function CollaboratorList({
   const selectAll = (checked: boolean) => setSelectedIds(checked ? filtered.map((x) => x.id) : [])
 
   const handleExportCSV = () => {
-    const selectedData = filtered
-      .filter((c) => selectedIds.includes(c.id))
-      .map((c) => ({
-        name: c.name || '',
-        type: c.type || 'colaborador',
-        document_number: c.document_number || '',
-        email: c.email || '',
-        phone: c.phone || '',
-        expiry_date: c.expiry_date || c.data?.docs?.expiryDate || '',
-        compliance_status: c.compliance_status || 'pendente',
-      }))
+    const dataToExport =
+      selectedIds.length > 0 ? filtered.filter((c) => selectedIds.includes(c.id)) : filtered
 
-    if (selectedData.length === 0) return
+    if (dataToExport.length === 0) {
+      toast({ title: 'Aviso', description: 'Não há dados para exportar.' })
+      return
+    }
 
-    const headers = Object.keys(selectedData[0]).join(',')
-    const rows = selectedData.map((obj) =>
-      Object.values(obj)
-        .map((v) => `"${v}"`)
-        .join(','),
-    )
+    const headers = 'ID,Nome,Tipo,Documento,Status,Compliance,Vencimento'
+    const rows = dataToExport.map((c) => {
+      return `"${c.id}","${c.name}","${c.type || 'colaborador'}","${c.document_number || ''}","${c.status || 'ativo'}","${c.compliance_status || 'pendente'}","${c.expiry_date || c.data?.docs?.expiryDate || ''}"`
+    })
     const csv = [headers, ...rows].join('\n')
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', 'exportacao_selecionados.csv')
+    link.setAttribute('download', 'colaboradores_exportacao.csv')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
 
     toast({
       title: 'Exportação Concluída',
-      description: `${selectedData.length} registros exportados para CSV com sucesso.`,
+      description: `${dataToExport.length} registros exportados para CSV com sucesso.`,
     })
   }
 
@@ -189,15 +181,10 @@ export default function CollaboratorList({
             Selecionar Todos ({selectedIds.length} de {filtered.length})
           </span>
         </div>
-        {selectedIds.length > 0 && (
-          <Button
-            size="sm"
-            onClick={handleExportCSV}
-            className="bg-slate-800 hover:bg-slate-700 h-8"
-          >
-            <Download className="w-3.5 h-3.5 mr-2" /> Exportar Selecionados (CSV)
-          </Button>
-        )}
+        <Button size="sm" onClick={handleExportCSV} className="bg-slate-800 hover:bg-slate-700 h-8">
+          <Download className="w-3.5 h-3.5 mr-2" /> Exportar{' '}
+          {selectedIds.length > 0 ? 'Selecionados' : 'Filtrados'} (CSV)
+        </Button>
       </div>
 
       {filtered.map((c) => {
@@ -297,16 +284,6 @@ export default function CollaboratorList({
                       Rascunho
                     </Badge>
                   )}
-                  {status === 'pendente' && (
-                    <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[10px] h-5">
-                      Pendente
-                    </Badge>
-                  )}
-                  {isMissingData(c) && status !== 'rascunho' && (
-                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none shadow-none text-[10px] h-5">
-                      Dados Incompletos
-                    </Badge>
-                  )}
 
                   {complianceStatus === 'vencido' && (
                     <Badge className="bg-rose-500 text-white border-none shadow-none text-[10px] h-5">
@@ -318,7 +295,7 @@ export default function CollaboratorList({
                       Pendente
                     </Badge>
                   )}
-                  {complianceStatus === 'em_dia' && status !== 'rascunho' && !isMissingData(c) && (
+                  {complianceStatus === 'em_dia' && (
                     <Badge className="bg-emerald-500 text-white border-none shadow-none text-[10px] h-5">
                       Em dia
                     </Badge>
