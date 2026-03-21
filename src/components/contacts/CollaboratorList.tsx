@@ -73,11 +73,15 @@ export default function CollaboratorList({
 
   useRealtime('relacionamentos', loadData)
 
-  const isMissingData = (c: any) =>
-    !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
+  const isMissingDataOrExpired = (c: any) => {
+    const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
+    const expiry = getExpiryStatus(c.data?.docs?.expiryDate)
+    const isExpired = expiry === 'expired' || expiry === 'expiring'
+    return isMissing || isExpired
+  }
 
   const filtered = entities.filter((c) => {
-    if (complianceMode && !isMissingData(c)) return false
+    if (complianceMode && !isMissingDataOrExpired(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
     if (statusFilter !== 'Todos' && (c.status || 'Ativo') !== statusFilter) return false
@@ -93,12 +97,13 @@ export default function CollaboratorList({
     const selectedData = filtered
       .filter((c) => selectedIds.includes(c.id))
       .map((c) => ({
-        Nome: c.name,
-        Documento: c.document_number || 'N/A',
-        Tipo: c.type,
+        Name: c.name || '',
+        Type: c.type || 'colaborador',
+        'Document Number': c.document_number || 'N/A',
+        Email: c.email || 'N/A',
+        Phone: c.phone || 'N/A',
         Status: c.status || 'Ativo',
-        Setor: c.data?.trabalho?.setor || 'N/A',
-        Validade_Doc: c.data?.docs?.expiryDate || 'N/A',
+        'Expiration Date': c.data?.docs?.expiryDate || 'N/A',
       }))
 
     if (selectedData.length === 0) return
@@ -150,6 +155,9 @@ export default function CollaboratorList({
       })
     }
   }
+
+  const isMissingData = (c: any) =>
+    !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
 
   if (filtered.length === 0) {
     return (
@@ -301,6 +309,11 @@ export default function CollaboratorList({
                   {expiry === 'expiring' && (
                     <Badge className="bg-amber-500 text-white border-none shadow-none text-[10px] h-5">
                       Vence em Breve
+                    </Badge>
+                  )}
+                  {expiry === 'valid' && status !== 'Rascunho' && !isMissingData(c) && (
+                    <Badge className="bg-emerald-100 text-emerald-700 border-none shadow-none text-[10px] h-5">
+                      Docs OK
                     </Badge>
                   )}
 

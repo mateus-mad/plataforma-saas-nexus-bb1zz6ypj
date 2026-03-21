@@ -59,11 +59,18 @@ export default function CollaboratorKanban({
   }, [])
   useRealtime('relacionamentos', loadData)
 
+  const isMissingDataOrExpired = (c: any) => {
+    const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
+    const expiry = getExpiryStatus(c.data?.docs?.expiryDate)
+    const isExpired = expiry === 'expired' || expiry === 'expiring'
+    return isMissing || isExpired
+  }
+
   const isMissingData = (c: any) =>
     !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
 
   const filtered = entities.filter((c) => {
-    if (complianceMode && !isMissingData(c)) return false
+    if (complianceMode && !isMissingDataOrExpired(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
     if (statusFilter !== 'Todos' && (c.status || 'Ativo') !== statusFilter) return false
@@ -232,6 +239,11 @@ export default function CollaboratorKanban({
                         {expiry === 'expiring' && (
                           <Badge className="bg-amber-500 text-white border-none shadow-none text-[9px]">
                             Vence em Breve
+                          </Badge>
+                        )}
+                        {expiry === 'valid' && it.status !== 'Rascunho' && !isMissingData(it) && (
+                          <Badge className="bg-emerald-100 text-emerald-700 border-none shadow-none text-[9px]">
+                            Docs OK
                           </Badge>
                         )}
                       </div>

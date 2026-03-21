@@ -10,7 +10,7 @@ import { UploadCloud, FileText, CheckCircle2, Loader2, X, AlertTriangle } from '
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { processDocumentOCR } from '@/services/ocr'
-import { createEntity, updateEntity } from '@/services/entities'
+import { createEntity } from '@/services/entities'
 import { createAttachment } from '@/services/attachments'
 import { useToast } from '@/hooks/use-toast'
 
@@ -65,23 +65,30 @@ export default function BatchOCRModal({
   const processBatch = async () => {
     setIsProcessing(true)
     let count = 0
-    const totalPending = files.filter((f) => f.status === 'pending' || f.status === 'error').length
+    const pendingFiles = files.filter((f) => f.status === 'pending' || f.status === 'error')
+    const totalPending = pendingFiles.length
 
     if (totalPending === 0) {
       setIsProcessing(false)
       return
     }
 
-    for (const fileObj of files) {
-      if (fileObj.status === 'done') continue
-
+    for (const fileObj of pendingFiles) {
       updateFileStatus(fileObj.id, 'processing')
       try {
         let ocrResult: any = null
+        let ocrFailed = false
         try {
           ocrResult = await processDocumentOCR(fileObj.file, 'RG')
         } catch (e) {
           console.warn('OCR Failure on batch', e)
+          ocrFailed = true
+          toast({
+            variant: 'destructive',
+            title: 'Erro de Extração (OCR)',
+            description:
+              'Unable to read document. Please check the image quality or fill fields manually.',
+          })
         }
 
         const fd = new FormData()
@@ -105,7 +112,7 @@ export default function BatchOCRModal({
         attFd.append('category', 'Documento de Identificação')
         await createAttachment(attFd)
 
-        updateFileStatus(fileObj.id, 'done')
+        updateFileStatus(fileObj.id, ocrFailed ? 'error' : 'done')
       } catch (e) {
         updateFileStatus(fileObj.id, 'error')
       }
@@ -120,7 +127,7 @@ export default function BatchOCRModal({
     })
   }
 
-  const pendingCount = files.filter((f) => f.status === 'pending').length
+  const pendingCount = files.filter((f) => f.status === 'pending' || f.status === 'error').length
 
   return (
     <Dialog
@@ -211,11 +218,16 @@ export default function BatchOCRModal({
                       {f.status === 'processing' && (
                         <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
                       )}
-                      {f.status === 'done' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                      {f.status === 'done' && (
+                        <CheckCircle2
+                          className="w-4 h-4 text-emerald-500"
+                          title="Extraído com sucesso"
+                        />
+                      )}
                       {f.status === 'error' && (
                         <AlertTriangle
-                          className="w-4 h-4 text-rose-500"
-                          title="Falha ao extrair dados"
+                          className="w-4 h-4 text-amber-500"
+                          title="Rascunho criado, mas OCR falhou"
                         />
                       )}
 

@@ -143,24 +143,27 @@ export default function CollaboratorModal({
   }
 
   const processFile = async (file: File) => {
-    const result = await processOCR(file, docType)
-    if (result.success) {
-      toast({
-        title: 'Inteligência Artificial (OCR)',
-        description: 'Dados extraídos e mapeados com sucesso.',
-      })
-    } else if (result.reason === 'unreadable') {
+    try {
+      const result = await processOCR(file, docType)
+      if (result && result.success) {
+        toast({
+          title: 'Inteligência Artificial (OCR)',
+          description: 'Dados extraídos e mapeados com sucesso.',
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Extração (OCR)',
+          description:
+            'Unable to read document. Please check the image quality or fill fields manually.',
+        })
+      }
+    } catch (e) {
       toast({
         variant: 'destructive',
         title: 'Erro de Extração (OCR)',
         description:
-          'Documento não pôde ser lido automaticamente. Por favor, preencha os campos manualmente.',
-      })
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Servidor',
-        description: 'Não foi possível processar o documento no momento.',
+          'Unable to read document. Please check the image quality or fill fields manually.',
       })
     }
     setLowQualityFile(null)
