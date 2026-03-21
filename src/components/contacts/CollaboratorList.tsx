@@ -18,7 +18,6 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { getEntities, deleteEntity } from '@/services/entities'
 import { useRealtime } from '@/hooks/use-realtime'
-import { getExpiryStatus } from '@/components/contacts/NotificationCenter'
 import pb from '@/lib/pocketbase/client'
 import {
   MoreHorizontal,
@@ -75,8 +74,7 @@ export default function CollaboratorList({
 
   const isMissingDataOrExpired = (c: any) => {
     const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
-    const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
-    const isExpired = expiry === 'vencido' || expiry === 'pendente'
+    const isExpired = c.compliance_status === 'vencido' || c.compliance_status === 'pendente'
     return isMissing || isExpired
   }
 
@@ -213,7 +211,7 @@ export default function CollaboratorList({
           : c.data?.pessoal?.foto ||
             `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${c.id}`
 
-        const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
+        const complianceStatus = c.compliance_status || 'pendente'
 
         return (
           <div
@@ -310,17 +308,17 @@ export default function CollaboratorList({
                     </Badge>
                   )}
 
-                  {expiry === 'vencido' && (
+                  {complianceStatus === 'vencido' && (
                     <Badge className="bg-rose-500 text-white border-none shadow-none text-[10px] h-5">
                       Vencido
                     </Badge>
                   )}
-                  {expiry === 'pendente' && (
+                  {complianceStatus === 'pendente' && (
                     <Badge className="bg-amber-500 text-white border-none shadow-none text-[10px] h-5">
-                      Vence em breve
+                      Pendente
                     </Badge>
                   )}
-                  {expiry === 'em_dia' && status !== 'rascunho' && !isMissingData(c) && (
+                  {complianceStatus === 'em_dia' && status !== 'rascunho' && !isMissingData(c) && (
                     <Badge className="bg-emerald-500 text-white border-none shadow-none text-[10px] h-5">
                       Em dia
                     </Badge>

@@ -385,7 +385,7 @@ export function useCollaboratorForm(entityId: string | null) {
         toast({
           variant: 'destructive',
           title: 'Erro de Extração (OCR)',
-          description: 'Erro no processamento do arquivo. Por favor, preencha manualmente.',
+          description: 'Erro na extração: Formato não suportado ou arquivo corrompido.',
         })
         setIsProcessingOCR(false)
         return { success: false, reason: 'error' }
@@ -471,7 +471,7 @@ export function useCollaboratorForm(entityId: string | null) {
       toast({
         variant: 'destructive',
         title: 'Erro de Extração (OCR)',
-        description: 'Erro no processamento do arquivo. Por favor, preencha manualmente.',
+        description: 'Erro na extração: Formato não suportado ou arquivo corrompido.',
       })
       return { success: false, reason: 'error' }
     } finally {

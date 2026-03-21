@@ -5,7 +5,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { UploadCloud, FileText, CheckCircle2, Loader2, X, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -29,6 +29,14 @@ export default function BatchOCRModal({
   const [progress, setProgress] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (open) {
+      setFiles([])
+      setProgress(0)
+      setIsProcessing(false)
+    }
+  }, [open])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -105,8 +113,8 @@ export default function BatchOCRModal({
           ocrFailed = true
           toast({
             variant: 'destructive',
-            title: 'Erro de Extração (OCR)',
-            description: 'Erro no processamento do arquivo. Por favor, preencha manualmente.',
+            title: 'Erro na extração',
+            description: 'Formato não suportado ou arquivo corrompido.',
           })
         }
 
@@ -122,7 +130,7 @@ export default function BatchOCRModal({
           fd.append('expiry_date', ocrResult.expiryDate)
         }
 
-        fd.append('compliance_status', ocrResult?.compliance?.status || 'pendente')
+        fd.append('compliance_status', 'pendente')
 
         const data = {
           docs: {

@@ -8,7 +8,10 @@ routerAdd(
       throw new BadRequestError('Nenhum arquivo enviado para processamento.')
     }
 
-    const isPdf = base64.includes('application/pdf') || base64.includes('data:application/pdf')
+    const isPdf =
+      base64.includes('application/pdf') ||
+      base64.includes('data:application/pdf') ||
+      body.docType === 'PDF'
 
     if (!base64.startsWith('data:')) {
       if (isPdf) {
@@ -33,13 +36,11 @@ routerAdd(
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: formData,
-        timeout: 60,
+        timeout: 120,
       })
 
       if (res.statusCode !== 200) {
-        throw new BadRequestError(
-          'Erro no processamento do arquivo. Por favor, preencha manualmente.',
-        )
+        throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
       }
 
       const data = res.json
@@ -49,17 +50,13 @@ routerAdd(
         !data.ParsedResults ||
         data.ParsedResults.length === 0
       ) {
-        throw new BadRequestError(
-          'Erro no processamento do arquivo. Por favor, preencha manualmente.',
-        )
+        throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
       }
 
       const text = data.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
 
-      if (!text || text.length < 10) {
-        throw new BadRequestError(
-          'Erro no processamento do arquivo. Por favor, preencha manualmente.',
-        )
+      if (!text || text.length < 5) {
+        throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
       }
 
       const cpfMatch = text.match(/\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}/)
@@ -156,17 +153,12 @@ routerAdd(
           estado: estado,
         },
         compliance: {
-          status: 'em_dia',
-          message: 'Processado e validado via OCR com sucesso.',
+          status: 'pendente',
+          message: 'Processado via OCR. Necessita verificação.',
         },
       })
     } catch (err) {
-      if (err instanceof BadRequestError) {
-        throw err
-      }
-      throw new BadRequestError(
-        'Erro no processamento do arquivo. Por favor, preencha manualmente.',
-      )
+      throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
     }
   },
   $apis.requireAuth(),
