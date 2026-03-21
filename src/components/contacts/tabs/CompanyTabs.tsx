@@ -103,6 +103,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         variant: 'destructive',
         title: 'Aviso',
         description:
+          e.message ||
           'Não foi possível recuperar os dados automaticamente. Por favor, preencha manualmente.',
       })
     } finally {
