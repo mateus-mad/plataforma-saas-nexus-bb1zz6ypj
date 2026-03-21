@@ -3,29 +3,25 @@ import { ClientResponseError } from 'pocketbase'
 
 export const consultarCNPJ = async (cnpj: string) => {
   const cleanCnpj = cnpj.replace(/\D/g, '')
-  if (cleanCnpj.length !== 14) throw new Error('CNPJ inválido')
+  if (cleanCnpj.length !== 14) {
+    return { error: true, message: 'CNPJ inválido' }
+  }
 
   try {
-    return await pb.send(`/backend/v1/cnpj/${cleanCnpj}`, { method: 'GET' })
-  } catch (error) {
-    if (error instanceof ClientResponseError) {
-      // Status 0 indicates a network-level error (CORS, connection refused, offline)
-      // Status >= 500 indicates an upstream service issue
-      if (error.status === 0 || error.status >= 500) {
-        throw new Error(
-          'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, preencha os dados manualmente.',
-        )
-      }
+    const data = await pb.send(`/backend/v1/cnpj/${cleanCnpj}`, { method: 'GET' })
+    return { error: false, data }
+  } catch (error: any) {
+    let message =
+      'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.'
 
-      // Use the structured error message from the backend if available
-      if (error.response?.message) {
-        throw new Error(error.response.message)
+    if (error instanceof ClientResponseError) {
+      // If it's a known error from the API (like 404 Not Found), use its message.
+      // For network errors (0) or backend 503s, keep our robust fallback message.
+      if (error.response?.message && error.status !== 0 && error.status !== 503) {
+        message = error.response.message
       }
     }
 
-    // Fallback for any other unexpected JS errors
-    throw new Error(
-      'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, preencha os dados manualmente.',
-    )
+    return { error: true, message }
   }
 }

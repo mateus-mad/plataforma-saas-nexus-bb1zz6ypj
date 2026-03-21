@@ -17,7 +17,7 @@ routerAdd(
       })
 
       if (res.statusCode === 200) {
-        return e.json(200, res.json)
+        return e.json(200, res.json || {})
       }
 
       if (res.statusCode === 404) {
@@ -27,7 +27,8 @@ routerAdd(
       if (res.statusCode >= 500) {
         return e.json(503, {
           error: 'servico_indisponivel',
-          message: 'Não foi possível conectar ao serviço de consulta de CNPJ.',
+          message:
+            'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.',
         })
       }
 
@@ -41,7 +42,8 @@ routerAdd(
       // and return a clear JSON error instead of a generic 500 stack trace.
       return e.json(503, {
         error: 'servico_indisponivel',
-        message: 'Não foi possível conectar ao serviço de consulta de CNPJ.',
+        message:
+          'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.',
       })
     }
   },

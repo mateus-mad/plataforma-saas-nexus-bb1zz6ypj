@@ -65,32 +65,45 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
     try {
       const res = await consultarCNPJ(data.documento)
 
-      onChange('nomeRazao', res.razao_social || '')
-      onChange('fantasia', res.nome_fantasia || '')
+      if (res.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro na Consulta',
+          description:
+            res.message ||
+            'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.',
+        })
+        return
+      }
 
-      const cleanCnpj = res.cnpj || data.documento.replace(/\D/g, '')
+      const info = res.data
+
+      onChange('nomeRazao', info.razao_social || '')
+      onChange('fantasia', info.nome_fantasia || '')
+
+      const cleanCnpj = info.cnpj || data.documento.replace(/\D/g, '')
       onChange(
         'documento',
         cleanCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'),
       )
 
-      if (res.data_inicio_atividade) {
-        onChange('dataAbertura', res.data_inicio_atividade)
+      if (info.data_inicio_atividade) {
+        onChange('dataAbertura', info.data_inicio_atividade)
       }
 
       if (onUpdateSection) {
-        if (res.cep) onUpdateSection('endereco', 'cep', res.cep)
+        if (info.cep) onUpdateSection('endereco', 'cep', info.cep)
 
-        const logradouro = res.descricao_tipo_de_logradouro
-          ? `${res.descricao_tipo_de_logradouro} ${res.logradouro}`
-          : res.logradouro
+        const logradouro = info.descricao_tipo_de_logradouro
+          ? `${info.descricao_tipo_de_logradouro} ${info.logradouro}`
+          : info.logradouro
 
         if (logradouro) onUpdateSection('endereco', 'logradouro', logradouro)
-        if (res.numero) onUpdateSection('endereco', 'numero', res.numero)
-        if (res.bairro) onUpdateSection('endereco', 'bairro', res.bairro)
-        if (res.municipio) onUpdateSection('endereco', 'cidade', res.municipio)
-        if (res.uf) onUpdateSection('endereco', 'estado', res.uf)
-        if (res.complemento) onUpdateSection('endereco', 'comp', res.complemento)
+        if (info.numero) onUpdateSection('endereco', 'numero', info.numero)
+        if (info.bairro) onUpdateSection('endereco', 'bairro', info.bairro)
+        if (info.municipio) onUpdateSection('endereco', 'cidade', info.municipio)
+        if (info.uf) onUpdateSection('endereco', 'estado', info.uf)
+        if (info.complemento) onUpdateSection('endereco', 'comp', info.complemento)
       }
 
       toast({
@@ -103,8 +116,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         variant: 'destructive',
         title: 'Erro na Consulta',
         description:
-          e.message ||
-          'Não foi possível recuperar os dados automaticamente. Por favor, preencha manualmente.',
+          'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.',
       })
     } finally {
       setLoadingCnpj(false)
