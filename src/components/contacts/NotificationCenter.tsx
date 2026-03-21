@@ -16,9 +16,9 @@ export const getExpiryStatus = (dateStr?: string) => {
   now.setHours(0, 0, 0, 0)
 
   const diffDays = (expiry.getTime() - now.getTime()) / (1000 * 3600 * 24)
-  if (diffDays < 0) return 'expired'
-  if (diffDays <= 30) return 'expiring'
-  return 'valid'
+  if (diffDays < 0) return 'vencido'
+  if (diffDays <= 30) return 'pendente'
+  return 'em_dia'
 }
 
 export default function NotificationCenter() {
@@ -43,10 +43,8 @@ export default function NotificationCenter() {
       const status = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
       return { ...c, expiryStatus: status }
     })
-    .filter((c) => c.expiryStatus === 'expired' || c.expiryStatus === 'expiring')
+    .filter((c) => c.expiryStatus === 'vencido' || c.expiryStatus === 'pendente')
 
-  const expiredCount = notifications.filter((n) => n.expiryStatus === 'expired').length
-  const expiringCount = notifications.filter((n) => n.expiryStatus === 'expiring').length
   const totalCount = notifications.length
 
   return (
@@ -83,7 +81,7 @@ export default function NotificationCenter() {
                   className="p-3 border-b border-slate-100 hover:bg-slate-50 transition-colors flex items-start gap-3"
                 >
                   <div className="mt-0.5">
-                    {n.expiryStatus === 'expired' ? (
+                    {n.expiryStatus === 'vencido' ? (
                       <AlertCircle className="w-4 h-4 text-rose-500" />
                     ) : (
                       <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -99,12 +97,12 @@ export default function NotificationCenter() {
                     </p>
                     <Badge
                       className={
-                        n.expiryStatus === 'expired'
+                        n.expiryStatus === 'vencido'
                           ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border-none shadow-none text-[10px] px-1.5 py-0'
                           : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-none shadow-none text-[10px] px-1.5 py-0'
                       }
                     >
-                      {n.expiryStatus === 'expired' ? 'Expirado' : 'Vence em < 30 dias'}
+                      {n.expiryStatus === 'vencido' ? 'Expirado' : 'Vence em < 30 dias'}
                     </Badge>
                   </div>
                 </div>

@@ -5,8 +5,7 @@ import { getAttachments, createAttachment, deleteAttachment } from '@/services/a
 import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
-import { ClientResponseError } from 'pocketbase'
-import { toast } from '@/hooks/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 const formSchema = z.object({
   pessoal: z.object({
@@ -143,6 +142,7 @@ export function useCollaboratorForm(entityId: string | null) {
   const [isFetchingESocial, setIsFetchingESocial] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [data, setData] = useState<any>(DEFAULT_DATA)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (entityId) {
@@ -247,8 +247,8 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('compliance_status', newData.docs?.compliance?.status || 'pendente')
 
       const record = await getEntity(entityId)
-      if (record.status === 'Rascunho') {
-        fd.append('status', 'Ativo')
+      if (record.status === 'rascunho') {
+        fd.append('status', 'ativo')
       }
 
       if (section === 'pessoal' && field === 'foto' && file) {
@@ -300,13 +300,13 @@ export function useCollaboratorForm(entityId: string | null) {
       let recordId = entityId
       if (entityId) {
         const record = await getEntity(entityId)
-        if (record.status === 'Rascunho') {
-          fd.append('status', 'Ativo')
+        if (record.status === 'rascunho') {
+          fd.append('status', 'ativo')
         } else {
-          fd.append('status', record.status || 'Ativo')
+          fd.append('status', record.status || 'ativo')
         }
       } else {
-        fd.append('status', 'Ativo')
+        fd.append('status', 'ativo')
       }
 
       const payloadData = { ...data }
@@ -382,12 +382,12 @@ export function useCollaboratorForm(entityId: string | null) {
       try {
         ocrResult = await processDocumentOCR(file, docType)
       } catch (err: any) {
-        console.warn('OCR API returned error or was unreachable:', err)
         toast({
           variant: 'destructive',
           title: 'Erro de Extração (OCR)',
-          description: 'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+          description: 'Erro no processamento do arquivo. Por favor, preencha manualmente.',
         })
+        setIsProcessingOCR(false)
         return { success: false, reason: 'error' }
       }
 
@@ -468,7 +468,11 @@ export function useCollaboratorForm(entityId: string | null) {
 
       return { success: true }
     } catch (e: any) {
-      console.error('Unhandled error in processOCR', e)
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Extração (OCR)',
+        description: 'Erro no processamento do arquivo. Por favor, preencha manualmente.',
+      })
       return { success: false, reason: 'error' }
     } finally {
       setIsProcessingOCR(false)

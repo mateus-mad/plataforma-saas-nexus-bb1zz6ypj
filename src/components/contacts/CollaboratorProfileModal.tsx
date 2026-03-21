@@ -28,7 +28,12 @@ import {
 } from 'lucide-react'
 import { db } from '@/lib/database'
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void; onEdit?: () => void }
+type Props = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onEdit?: () => void
+  entityId?: string | null
+}
 
 const STATS = [
   { val: 'R$ 3.500,00', lbl: 'Salário Base', icon: DollarSign, c: 'text-blue-600' },
@@ -54,9 +59,9 @@ const Section = ({ t, icon: Icon, children }: any) => (
   </div>
 )
 
-export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }: Props) {
+export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, entityId }: Props) {
   const { toast } = useToast()
-  const [status, setStatus] = useState<'Ativo' | 'Desligado'>('Ativo')
+  const [status, setStatus] = useState<'ativo' | 'desligado'>('ativo')
   const [hasWhatsApp, setHasWhatsApp] = useState(false)
 
   useEffect(() => {
@@ -70,8 +75,8 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
   }, [open])
 
   const handleToggleStatus = () => {
-    const isDismissing = status === 'Ativo'
-    setStatus(isDismissing ? 'Desligado' : 'Ativo')
+    const isDismissing = status === 'ativo'
+    setStatus(isDismissing ? 'desligado' : 'ativo')
     toast({
       title: isDismissing ? 'Processo de Demissão' : 'Readmissão Concluída',
       description: isDismissing
@@ -139,7 +144,7 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
                   <DialogTitle className="text-2xl font-bold text-slate-800">
                     Mateus amorim dias
                   </DialogTitle>
-                  {status === 'Ativo' ? (
+                  {status === 'ativo' ? (
                     <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-sm flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Ativo
                     </Badge>
@@ -199,15 +204,15 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit }:
               <span className="hidden md:inline">Exportar</span>
             </Button>
             <Button
-              variant={status === 'Ativo' ? 'outline' : 'default'}
+              variant={status === 'ativo' ? 'outline' : 'default'}
               onClick={handleToggleStatus}
               className={
-                status === 'Ativo'
+                status === 'ativo'
                   ? 'border-rose-200 text-rose-600 hover:bg-rose-50 shadow-sm'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
               }
             >
-              {status === 'Ativo' ? (
+              {status === 'ativo' ? (
                 <>
                   <UserMinus className="w-4 h-4 md:mr-2" />{' '}
                   <span className="hidden md:inline">Demitir</span>

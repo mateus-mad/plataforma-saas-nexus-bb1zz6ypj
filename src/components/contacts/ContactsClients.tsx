@@ -60,7 +60,7 @@ export default function ContactsClients() {
   useRealtime('relacionamentos', loadData)
 
   const filtered = entities.filter((c) => {
-    if (!showInactive && c.status === 'Inativo') return false
+    if (!showInactive && c.status === 'inativo') return false
     if (search) {
       const s = search.toLowerCase()
       if (
@@ -191,8 +191,8 @@ export default function ContactsClients() {
               <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
                 <Badge
                   className={cn(
-                    'shadow-none font-semibold px-3 mr-1 sm:mr-3',
-                    c.status === 'Ativo'
+                    'shadow-none font-semibold px-3 mr-1 sm:mr-3 capitalize',
+                    c.status === 'ativo'
                       ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-slate-100 text-slate-500 hover:bg-slate-200',
                   )}

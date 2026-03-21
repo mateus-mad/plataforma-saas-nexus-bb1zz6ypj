@@ -49,7 +49,7 @@ export default function BatchOCRModal({
     const valid: { id: string; file: File; status: 'pending' }[] = []
 
     for (const f of newFiles) {
-      if (!['application/pdf', 'image/jpeg', 'image/png'].includes(f.type)) {
+      if (!['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'].includes(f.type)) {
         toast({
           variant: 'destructive',
           title: 'Formato não suportado',
@@ -106,13 +106,13 @@ export default function BatchOCRModal({
           toast({
             variant: 'destructive',
             title: 'Erro de Extração (OCR)',
-            description: 'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+            description: 'Erro no processamento do arquivo. Por favor, preencha manualmente.',
           })
         }
 
         const fd = new FormData()
         fd.append('type', 'colaborador')
-        fd.append('status', 'Rascunho')
+        fd.append('status', 'rascunho')
         fd.append('name', ocrResult?.name || fileObj.file.name.replace(/\.[^/.]+$/, ''))
 
         if (ocrResult?.document_number) {
@@ -175,7 +175,7 @@ export default function BatchOCRModal({
             </DialogTitle>
             <DialogDescription className="text-slate-500">
               Arraste múltiplos documentos (RG, CNH, CPF). O sistema irá processá-los e criar
-              cadastros com status <b>Rascunho</b> para sua revisão.
+              cadastros com status <b>rascunho</b> para sua revisão.
             </DialogDescription>
           </DialogHeader>
         </div>

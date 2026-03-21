@@ -3,12 +3,21 @@ routerAdd(
   '/backend/v1/ocr',
   (e) => {
     const body = e.requestInfo().body
-    const base64 = body.image
+    let base64 = body.image
     if (!base64) {
       throw new BadRequestError('Nenhum arquivo enviado para processamento.')
     }
 
-    const isPdf = base64.includes('application/pdf')
+    const isPdf = base64.includes('application/pdf') || base64.includes('data:application/pdf')
+
+    if (!base64.startsWith('data:')) {
+      if (isPdf) {
+        base64 = 'data:application/pdf;base64,' + base64
+      } else {
+        base64 = 'data:image/jpeg;base64,' + base64
+      }
+    }
+
     let formData =
       'base64Image=' + encodeURIComponent(base64) + '&language=por&isOverlayRequired=false'
     if (isPdf) {
@@ -29,7 +38,7 @@ routerAdd(
 
       if (res.statusCode !== 200) {
         throw new BadRequestError(
-          'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+          'Erro no processamento do arquivo. Por favor, preencha manualmente.',
         )
       }
 
@@ -41,7 +50,7 @@ routerAdd(
         data.ParsedResults.length === 0
       ) {
         throw new BadRequestError(
-          'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+          'Erro no processamento do arquivo. Por favor, preencha manualmente.',
         )
       }
 
@@ -49,7 +58,7 @@ routerAdd(
 
       if (!text || text.length < 10) {
         throw new BadRequestError(
-          'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+          'Erro no processamento do arquivo. Por favor, preencha manualmente.',
         )
       }
 
@@ -147,7 +156,7 @@ routerAdd(
           estado: estado,
         },
         compliance: {
-          status: cpf || name ? 'em_dia' : 'pendente',
+          status: 'em_dia',
           message: 'Processado e validado via OCR com sucesso.',
         },
       })
@@ -156,7 +165,7 @@ routerAdd(
         throw err
       }
       throw new BadRequestError(
-        'Erro ao processar documento. Por favor, preencha os dados manualmente.',
+        'Erro no processamento do arquivo. Por favor, preencha manualmente.',
       )
     }
   },

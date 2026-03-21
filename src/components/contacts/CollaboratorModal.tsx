@@ -150,28 +150,34 @@ export default function CollaboratorModal({
           title: 'Inteligência Artificial (OCR)',
           description: 'Dados extraídos e mapeados com sucesso.',
         })
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Erro de Extração (OCR)',
-          description:
-            'Unable to read document. Please check the image quality or fill fields manually.',
-        })
       }
     } catch (e) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Extração (OCR)',
-        description:
-          'Unable to read document. Please check the image quality or fill fields manually.',
-      })
+      // Handled in the hook itself
     }
     setLowQualityFile(null)
   }
 
   const handleFileDropOrSelect = async (file: File) => {
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
+    if (!validTypes.includes(file.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Formato inválido',
+        description: 'Por favor, envie um arquivo PDF, PNG ou JPG.',
+      })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: `O arquivo ${file.name} excede o limite de 5MB.`,
+      })
+      return
+    }
+
     const { isLowQuality } = await checkImageQuality(file)
-    if (isLowQuality) {
+    if (isLowQuality && file.type !== 'application/pdf') {
       setLowQualityFile(file)
     } else {
       await processFile(file)

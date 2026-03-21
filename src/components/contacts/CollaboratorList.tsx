@@ -76,7 +76,7 @@ export default function CollaboratorList({
   const isMissingDataOrExpired = (c: any) => {
     const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
     const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
-    const isExpired = expiry === 'expired' || expiry === 'expiring'
+    const isExpired = expiry === 'vencido' || expiry === 'pendente'
     return isMissing || isExpired
   }
 
@@ -84,7 +84,11 @@ export default function CollaboratorList({
     if (complianceMode && !isMissingDataOrExpired(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
-    if (statusFilter !== 'Todos' && (c.status || 'Ativo') !== statusFilter) return false
+    if (
+      statusFilter !== 'Todos' &&
+      (c.status || 'ativo').toLowerCase() !== statusFilter.toLowerCase()
+    )
+      return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -97,14 +101,13 @@ export default function CollaboratorList({
     const selectedData = filtered
       .filter((c) => selectedIds.includes(c.id))
       .map((c) => ({
-        Name: c.name || '',
-        Type: c.type || 'colaborador',
-        'Document Number': c.document_number || 'N/A',
-        Email: c.email || 'N/A',
-        Phone: c.phone || 'N/A',
-        'Status do Cadastro': c.status || 'Ativo',
-        'Expiration Date': c.expiry_date || c.data?.docs?.expiryDate || 'N/A',
-        'Compliance Status': c.compliance_status || 'pendente',
+        name: c.name || '',
+        type: c.type || 'colaborador',
+        document_number: c.document_number || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        expiry_date: c.expiry_date || c.data?.docs?.expiryDate || '',
+        compliance_status: c.compliance_status || 'pendente',
       }))
 
     if (selectedData.length === 0) return
@@ -121,7 +124,7 @@ export default function CollaboratorList({
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', 'exportacao_colaboradores.csv')
+    link.setAttribute('download', 'exportacao_selecionados.csv')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -194,13 +197,13 @@ export default function CollaboratorList({
             onClick={handleExportCSV}
             className="bg-slate-800 hover:bg-slate-700 h-8"
           >
-            <Download className="w-3.5 h-3.5 mr-2" /> Exportar CSV
+            <Download className="w-3.5 h-3.5 mr-2" /> Exportar Selecionados (CSV)
           </Button>
         )}
       </div>
 
       {filtered.map((c) => {
-        const status = c.status || 'Ativo'
+        const status = c.status || 'ativo'
         const radius = 26
         const circumference = 2 * Math.PI * radius
         const completion = isMissingData(c) ? 40 : 100
@@ -286,38 +289,38 @@ export default function CollaboratorList({
                   >
                     #{c.id.substring(0, 6)}
                   </Badge>
-                  {status === 'Desligado' && (
+                  {status === 'desligado' && (
                     <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-none shadow-none text-[10px] h-5">
                       Desligado
                     </Badge>
                   )}
-                  {status === 'Rascunho' && (
+                  {status === 'rascunho' && (
                     <Badge className="bg-slate-200 text-slate-700 border-none shadow-none text-[10px] h-5 font-bold">
                       Rascunho
                     </Badge>
                   )}
-                  {status === 'Pending Validation' && (
+                  {status === 'pendente' && (
                     <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[10px] h-5">
-                      Pendente Validação
+                      Pendente
                     </Badge>
                   )}
-                  {isMissingData(c) && status !== 'Rascunho' && (
+                  {isMissingData(c) && status !== 'rascunho' && (
                     <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none shadow-none text-[10px] h-5">
                       Dados Incompletos
                     </Badge>
                   )}
 
-                  {expiry === 'expired' && (
+                  {expiry === 'vencido' && (
                     <Badge className="bg-rose-500 text-white border-none shadow-none text-[10px] h-5">
                       Vencido
                     </Badge>
                   )}
-                  {expiry === 'expiring' && (
+                  {expiry === 'pendente' && (
                     <Badge className="bg-amber-500 text-white border-none shadow-none text-[10px] h-5">
                       Vence em breve
                     </Badge>
                   )}
-                  {expiry === 'valid' && status !== 'Rascunho' && !isMissingData(c) && (
+                  {expiry === 'em_dia' && status !== 'rascunho' && !isMissingData(c) && (
                     <Badge className="bg-emerald-500 text-white border-none shadow-none text-[10px] h-5">
                       Em dia
                     </Badge>
@@ -342,7 +345,7 @@ export default function CollaboratorList({
 
             <div className="flex items-center gap-2 w-full md:w-auto justify-end mt-2 md:mt-0 pt-3 md:pt-0 border-t border-slate-100 md:border-none">
               <Badge
-                className={`${status === 'Ativo' ? 'bg-emerald-500 hover:bg-emerald-600' : status === 'Rascunho' ? 'bg-slate-400' : status === 'Pending Validation' ? 'bg-amber-500' : 'bg-rose-500'} text-white shadow-sm px-3 mr-2`}
+                className={`${status === 'ativo' ? 'bg-emerald-500 hover:bg-emerald-600' : status === 'rascunho' ? 'bg-slate-400' : status === 'pendente' ? 'bg-amber-500' : 'bg-rose-500'} text-white shadow-sm px-3 mr-2 capitalize`}
               >
                 {status}
               </Badge>

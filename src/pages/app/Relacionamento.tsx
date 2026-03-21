@@ -150,9 +150,9 @@ export default function Relacionamento() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Todos">Todos (Status)</SelectItem>
-                        <SelectItem value="Ativo">Ativos</SelectItem>
-                        <SelectItem value="Rascunho">Rascunhos</SelectItem>
-                        <SelectItem value="Desligado">Desligados</SelectItem>
+                        <SelectItem value="ativo">Ativos</SelectItem>
+                        <SelectItem value="rascunho">Rascunhos</SelectItem>
+                        <SelectItem value="desligado">Desligados</SelectItem>
                       </SelectContent>
                     </Select>
 

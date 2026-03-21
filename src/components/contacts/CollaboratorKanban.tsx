@@ -62,7 +62,7 @@ export default function CollaboratorKanban({
   const isMissingDataOrExpired = (c: any) => {
     const isMissing = !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
     const expiry = getExpiryStatus(c.expiry_date || c.data?.docs?.expiryDate)
-    const isExpired = expiry === 'expired' || expiry === 'expiring'
+    const isExpired = expiry === 'vencido' || expiry === 'pendente'
     return isMissing || isExpired
   }
 
@@ -73,7 +73,11 @@ export default function CollaboratorKanban({
     if (complianceMode && !isMissingDataOrExpired(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
     if (sectorFilter !== 'Todos' && sector !== sectorFilter) return false
-    if (statusFilter !== 'Todos' && (c.status || 'Ativo') !== statusFilter) return false
+    if (
+      statusFilter !== 'Todos' &&
+      (c.status || 'ativo').toLowerCase() !== statusFilter.toLowerCase()
+    )
+      return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -109,25 +113,25 @@ export default function CollaboratorKanban({
       title: 'Rascunhos',
       color: 'border-slate-400',
       bg: 'bg-slate-400',
-      items: filtered.filter((c) => c.status === 'Rascunho'),
+      items: filtered.filter((c) => c.status === 'rascunho'),
     },
     {
       title: 'Ativos',
       color: 'border-emerald-500',
       bg: 'bg-emerald-500',
-      items: filtered.filter((c) => c.status === 'Ativo' || !c.status),
+      items: filtered.filter((c) => c.status === 'ativo' || !c.status),
     },
     {
       title: 'Pendentes / Férias',
       color: 'border-amber-500',
       bg: 'bg-amber-500',
-      items: filtered.filter((c) => c.status === 'Pending Validation' || c.status === 'Férias'),
+      items: filtered.filter((c) => c.status === 'pendente' || c.status === 'Férias'),
     },
     {
       title: 'Desligados',
       color: 'border-rose-500',
       bg: 'bg-rose-500',
-      items: filtered.filter((c) => c.status === 'Desligado'),
+      items: filtered.filter((c) => c.status === 'desligado'),
     },
   ]
 
@@ -226,22 +230,22 @@ export default function CollaboratorKanban({
                         <Badge variant="outline" className="bg-slate-50 text-[9px]">
                           {it.data?.trabalho?.setor || 'Sem Setor'}
                         </Badge>
-                        {isMissingData(it) && it.status !== 'Rascunho' && (
+                        {isMissingData(it) && it.status !== 'rascunho' && (
                           <Badge className="bg-amber-100 text-amber-700 border-none shadow-none text-[9px]">
                             Incompleto
                           </Badge>
                         )}
-                        {expiry === 'expired' && (
+                        {expiry === 'vencido' && (
                           <Badge className="bg-rose-500 text-white border-none shadow-none text-[9px]">
                             Vencido
                           </Badge>
                         )}
-                        {expiry === 'expiring' && (
+                        {expiry === 'pendente' && (
                           <Badge className="bg-amber-500 text-white border-none shadow-none text-[9px]">
                             Vence em breve
                           </Badge>
                         )}
-                        {expiry === 'valid' && it.status !== 'Rascunho' && !isMissingData(it) && (
+                        {expiry === 'em_dia' && it.status !== 'rascunho' && !isMissingData(it) && (
                           <Badge className="bg-emerald-500 text-white border-none shadow-none text-[9px]">
                             Em dia
                           </Badge>
