@@ -6,7 +6,7 @@ routerAdd(
     const cnpj = rawCnpj.replace(/\D/g, '')
 
     if (cnpj.length !== 14) {
-      throw new BadRequestError('CNPJ inválido')
+      return e.json(400, { error: 'bad_request', message: 'CNPJ inválido' })
     }
 
     try {
@@ -21,7 +21,7 @@ routerAdd(
       }
 
       if (res.statusCode === 404) {
-        throw new NotFoundError('CNPJ não encontrado na base de dados.')
+        return e.json(404, { error: 'not_found', message: 'CNPJ não encontrado na base de dados.' })
       }
 
       // Handle other non-200 responses without crashing
@@ -33,7 +33,7 @@ routerAdd(
       // Catch network-level errors (like DNS lookup failed, timeouts, connection refused)
       // and return a clear JSON error instead of a generic 500 stack trace.
       return e.json(503, {
-        error: 'serviço_indisponivel',
+        error: 'servico_indisponivel',
         message: 'Não foi possível conectar ao serviço de consulta de CNPJ.',
       })
     }

@@ -68,17 +68,29 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
       onChange('nomeRazao', res.razao_social || '')
       onChange('fantasia', res.nome_fantasia || '')
 
+      const cleanCnpj = res.cnpj || data.documento.replace(/\D/g, '')
+      onChange(
+        'documento',
+        cleanCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'),
+      )
+
       if (res.data_inicio_atividade) {
         onChange('dataAbertura', res.data_inicio_atividade)
       }
 
       if (onUpdateSection) {
         if (res.cep) onUpdateSection('endereco', 'cep', res.cep)
-        if (res.logradouro) onUpdateSection('endereco', 'logradouro', res.logradouro)
+
+        const logradouro = res.descricao_tipo_de_logradouro
+          ? `${res.descricao_tipo_de_logradouro} ${res.logradouro}`
+          : res.logradouro
+
+        if (logradouro) onUpdateSection('endereco', 'logradouro', logradouro)
         if (res.numero) onUpdateSection('endereco', 'numero', res.numero)
         if (res.bairro) onUpdateSection('endereco', 'bairro', res.bairro)
         if (res.municipio) onUpdateSection('endereco', 'cidade', res.municipio)
         if (res.uf) onUpdateSection('endereco', 'estado', res.uf)
+        if (res.complemento) onUpdateSection('endereco', 'comp', res.complemento)
       }
 
       toast({
@@ -91,7 +103,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         variant: 'destructive',
         title: 'Aviso',
         description:
-          'Erro ao buscar dados do CNPJ. O serviço da Receita Federal pode estar instável. Por favor, preencha manualmente.',
+          'Não foi possível recuperar os dados automaticamente. Por favor, preencha manualmente.',
       })
     } finally {
       setLoadingCnpj(false)
@@ -176,7 +188,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
           </button>
         </div>
         <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-          <Label className="text-sm font-semibold cursor-pointer">Fornecedor Ativo</Label>
+          <Label className="text-sm font-semibold cursor-pointer">Ativo</Label>
           <Switch
             checked={data.ativo !== false}
             onCheckedChange={(v) => onChange('ativo', v)}
