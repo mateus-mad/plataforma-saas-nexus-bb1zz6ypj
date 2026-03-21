@@ -10,10 +10,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Info, Search, Building, User, Upload, Plus, Trash2, Users } from 'lucide-react'
+import { Info, Search, Building, User, Upload, Plus, Trash2, Users, Loader2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { consultarCNPJ } from '@/services/cnpj'
 
 export const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -33,7 +34,7 @@ export const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) 
   </Label>
 )
 
-export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }: any) {
+export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readOnly }: any) {
   const { toast } = useToast()
   const isPJ = data.tipoPessoa === 'PJ'
   const err = (f: string) => (errors?.[`dados.${f}`] ? 'border-rose-500 bg-rose-50/30' : '')
@@ -46,17 +47,53 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
   ])
   const [showNewSeg, setShowNewSeg] = useState(false)
   const [newSeg, setNewSeg] = useState('')
+  const [loadingCnpj, setLoadingCnpj] = useState(false)
 
-  const handleSearchDoc = () => {
-    if (!isPJ) return
-    toast({ title: 'Buscando dados...', description: 'Consultando base da Receita e Website.' })
-    setTimeout(() => {
-      if (onAutofill) onAutofill()
+  const handleSearchDoc = async () => {
+    if (!isPJ || !data.documento) {
       toast({
-        title: 'Encontrado',
-        description: 'Dados, contatos e logotipo preenchidos com sucesso.',
+        variant: 'destructive',
+        title: 'Aviso',
+        description: 'Digite um CNPJ válido primeiro.',
       })
-    }, 1500)
+      return
+    }
+
+    setLoadingCnpj(true)
+    toast({ title: 'Buscando dados...', description: 'Consultando base da Receita Federal.' })
+
+    try {
+      const res = await consultarCNPJ(data.documento)
+
+      onChange('nomeRazao', res.razao_social || '')
+      onChange('fantasia', res.nome_fantasia || '')
+
+      if (res.data_inicio_atividade) {
+        onChange('dataAbertura', res.data_inicio_atividade)
+      }
+
+      if (onUpdateSection) {
+        if (res.cep) onUpdateSection('endereco', 'cep', res.cep)
+        if (res.logradouro) onUpdateSection('endereco', 'logradouro', res.logradouro)
+        if (res.numero) onUpdateSection('endereco', 'numero', res.numero)
+        if (res.bairro) onUpdateSection('endereco', 'bairro', res.bairro)
+        if (res.municipio) onUpdateSection('endereco', 'cidade', res.municipio)
+        if (res.uf) onUpdateSection('endereco', 'estado', res.uf)
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Dados e endereço preenchidos com sucesso.',
+      })
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: e.message || 'Não foi possível encontrar o CNPJ.',
+      })
+    } finally {
+      setLoadingCnpj(false)
+    }
   }
 
   const handleAddSegment = () => {
@@ -95,9 +132,15 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
               variant="outline"
               type="button"
               onClick={handleSearchDoc}
+              disabled={loadingCnpj || !isPJ}
               className="h-8 text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 shadow-sm"
             >
-              <Search className="w-3.5 h-3.5 mr-1.5" /> Busca Automática via Receita Federal
+              {loadingCnpj ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Search className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              Busca Automática via Receita Federal
             </Button>
           )}
         </div>
@@ -130,25 +173,25 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
             <User className="w-4 h-4" /> Pessoa Física
           </button>
         </div>
-        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
           <Label className="text-sm font-semibold cursor-pointer">Fornecedor Ativo</Label>
           <Switch
-            checked={data.ativo}
+            checked={data.ativo !== false}
             onCheckedChange={(v) => onChange('ativo', v)}
             disabled={readOnly}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-1.5">
           <LabelT l={isPJ ? 'CNPJ' : 'CPF'} req />
           <div className="flex gap-2">
             <Input
               value={data.documento || ''}
               onChange={(e) => onChange('documento', e.target.value)}
               disabled={readOnly}
-              className={cn('font-mono', err('documento'))}
+              className={cn('font-mono bg-white', err('documento'))}
             />
             {!readOnly && isPJ && (
               <Button
@@ -156,9 +199,14 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
                 variant="outline"
                 size="icon"
                 onClick={handleSearchDoc}
+                disabled={loadingCnpj}
                 className="shrink-0 text-blue-600 hover:text-blue-700 bg-blue-50 border-blue-200"
               >
-                <Search className="w-4 h-4" />
+                {loadingCnpj ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
               </Button>
             )}
           </div>
@@ -169,19 +217,23 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
             value={data.nomeRazao || ''}
             onChange={(e) => onChange('nomeRazao', e.target.value)}
             disabled={readOnly}
-            className={err('nomeRazao')}
+            className={cn('bg-white', err('nomeRazao'))}
           />
         </div>
-        {isPJ && (
+        {isPJ ? (
           <div className="space-y-1.5">
             <LabelT l="Nome Fantasia" />
             <Input
               value={data.fantasia || ''}
               onChange={(e) => onChange('fantasia', e.target.value)}
               disabled={readOnly}
+              className="bg-white"
             />
           </div>
+        ) : (
+          <div className="hidden md:block"></div>
         )}
+
         {isPJ && (
           <>
             <div className="space-y-1.5">
@@ -190,6 +242,7 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
                 value={data.ie || ''}
                 onChange={(e) => onChange('ie', e.target.value)}
                 disabled={readOnly}
+                className="bg-white"
               />
             </div>
             <div className="space-y-1.5">
@@ -198,6 +251,7 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
                 value={data.im || ''}
                 onChange={(e) => onChange('im', e.target.value)}
                 disabled={readOnly}
+                className="bg-white"
               />
             </div>
           </>
@@ -209,9 +263,10 @@ export function CompanyDadosTab({ data, onChange, onAutofill, errors, readOnly }
             value={isPJ ? data.dataAbertura || '' : data.dataNascimento || ''}
             onChange={(e) => onChange(isPJ ? 'dataAbertura' : 'dataNascimento', e.target.value)}
             disabled={readOnly}
+            className="bg-white"
           />
         </div>
-        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
+        <div className="space-y-1.5 md:col-span-3 lg:col-span-1">
           <LabelT l="Segmento de Atuação" />
           {showNewSeg && !readOnly ? (
             <div className="flex gap-2 animate-in fade-in">

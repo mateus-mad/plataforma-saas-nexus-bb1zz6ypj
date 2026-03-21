@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogHeader,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { useCompanyForm } from '@/hooks/useCompanyForm'
@@ -41,17 +35,8 @@ export default function CompanyModal({
   entityId?: string | null
 }) {
   const [activeTab, setActiveTab] = useState('dados')
-  const {
-    data,
-    updateData,
-    progress,
-    globalProgress,
-    errors,
-    validate,
-    saveEntity,
-    saveStatus,
-    autofillCNPJ,
-  } = useCompanyForm(type, entityId)
+  const { data, updateData, progress, globalProgress, errors, validate, saveEntity, saveStatus } =
+    useCompanyForm(type, entityId)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -207,7 +192,7 @@ export default function CompanyModal({
               <CompanyDadosTab
                 data={data.dados}
                 onChange={(f: string, v: any) => updateData('dados', f, v)}
-                onAutofill={autofillCNPJ}
+                onUpdateSection={(section: string, f: string, v: any) => updateData(section, f, v)}
                 errors={errors}
                 readOnly={false}
               />

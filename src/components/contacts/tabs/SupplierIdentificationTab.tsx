@@ -10,8 +10,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Building2, User, Plus, Search } from 'lucide-react'
+import { Building2, User, Plus, Search, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { consultarCNPJ } from '@/services/cnpj'
 
 export default function SupplierIdentificationTab({ data, updateData }: any) {
   const d = data.dados || {}
@@ -47,30 +48,42 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
     setLoadingCnpj(true)
     toast({ title: 'Buscando CNPJ', description: 'Consultando base da Receita Federal...' })
 
-    setTimeout(() => {
-      // Data simulada retornada da API CNPJ
+    try {
+      const res = await consultarCNPJ(d.documento)
+
       const fetchedData = {
-        nomeRazao: 'NEXUS LOGÍSTICA S.A.',
-        fantasia: 'NexusLog Transporte',
-        ie: 'ISENTO',
-        im: '987654321',
-        dataNascimento: '2015-08-20',
-        segmento: 'Logística',
+        nomeRazao: res.razao_social || '',
+        fantasia: res.nome_fantasia || '',
+        dataNascimento: res.data_inicio_atividade || '',
       }
 
       // Atualiza apenas os campos que não foram editados manualmente pelo usuário
       Object.keys(fetchedData).forEach((key) => {
-        if (!editedFields[key]) {
+        if (!editedFields[key] && fetchedData[key as keyof typeof fetchedData]) {
           updateData('dados', key, fetchedData[key as keyof typeof fetchedData])
         }
       })
+
+      if (res.cep) updateData('endereco', 'cep', res.cep)
+      if (res.logradouro) updateData('endereco', 'logradouro', res.logradouro)
+      if (res.numero) updateData('endereco', 'numero', res.numero)
+      if (res.bairro) updateData('endereco', 'bairro', res.bairro)
+      if (res.municipio) updateData('endereco', 'cidade', res.municipio)
+      if (res.uf) updateData('endereco', 'estado', res.uf)
 
       toast({
         title: 'Sucesso',
         description: 'Dados sincronizados. Alterações manuais mantidas com segurança.',
       })
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: e.message || 'Não foi possível encontrar o CNPJ.',
+      })
+    } finally {
       setLoadingCnpj(false)
-    }, 1200)
+    }
   }
 
   return (
@@ -116,7 +129,11 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
                 className="shrink-0 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
                 title="Sincronizar com Receita Federal"
               >
-                <Search className="w-4 h-4" />
+                {loadingCnpj ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
               </Button>
             )}
           </div>

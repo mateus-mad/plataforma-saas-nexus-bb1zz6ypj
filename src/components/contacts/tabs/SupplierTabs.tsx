@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { LabelT } from './CompanyTabs'
+import { Label } from '@/components/ui/label'
 import {
   Building,
   User,
@@ -21,6 +23,7 @@ import {
   CalendarIcon,
   Percent,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react'
 import {
   LineChart,
@@ -42,10 +45,59 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
+import { consultarCNPJ } from '@/services/cnpj'
 
 // Implementation of SupplierIdentificationTab
 export function SupplierIdentificationTab({ data, updateData, validateCompliance }: any) {
+  const { toast } = useToast()
   const isPJ = data.dados?.tipoPessoa === 'PJ'
+  const [loadingCnpj, setLoadingCnpj] = useState(false)
+
+  const handleCnpjSearch = async () => {
+    if (!data.dados?.documento) {
+      toast({
+        variant: 'destructive',
+        title: 'Aviso',
+        description: 'Digite um CNPJ válido primeiro.',
+      })
+      return
+    }
+
+    setLoadingCnpj(true)
+    toast({ title: 'Buscando dados...', description: 'Consultando base da Receita Federal.' })
+
+    try {
+      const res = await consultarCNPJ(data.dados.documento)
+
+      updateData('dados', 'nomeRazao', res.razao_social || '')
+      updateData('dados', 'fantasia', res.nome_fantasia || '')
+
+      if (res.data_inicio_atividade) {
+        updateData('dados', 'dataAbertura', res.data_inicio_atividade)
+      }
+
+      if (res.cep) updateData('endereco', 'cep', res.cep)
+      if (res.logradouro) updateData('endereco', 'logradouro', res.logradouro)
+      if (res.numero) updateData('endereco', 'numero', res.numero)
+      if (res.bairro) updateData('endereco', 'bairro', res.bairro)
+      if (res.municipio) updateData('endereco', 'cidade', res.municipio)
+      if (res.uf) updateData('endereco', 'estado', res.uf)
+
+      toast({
+        title: 'Sucesso',
+        description: 'Dados e endereço preenchidos com sucesso.',
+      })
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: e.message || 'Não foi possível encontrar o CNPJ.',
+      })
+    } finally {
+      setLoadingCnpj(false)
+    }
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
@@ -144,9 +196,15 @@ export function SupplierIdentificationTab({ data, updateData, validateCompliance
                 type="button"
                 variant="outline"
                 size="icon"
+                onClick={handleCnpjSearch}
+                disabled={loadingCnpj}
                 className="shrink-0 text-blue-600 hover:text-blue-700 bg-blue-50 border-blue-200"
               >
-                <Search className="w-4 h-4" />
+                {loadingCnpj ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
               </Button>
             )}
           </div>

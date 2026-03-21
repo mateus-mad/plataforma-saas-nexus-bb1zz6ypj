@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T00:40:15.435Z",
+  "generatedAt": "2026-03-21T00:48:51.989Z",
   "collections": [
     {
       "name": "users",
@@ -139,7 +139,10 @@
           "selectValues": ["pendente", "em_dia", "vencido"]
         }
       ],
-      "indexes": ["CREATE INDEX `idx_status_rel` ON `relacionamentos` (status)"]
+      "indexes": [
+        "CREATE INDEX `idx_status_rel` ON `relacionamentos` (status)",
+        "CREATE INDEX `idx_relacionamentos_doc` ON `relacionamentos` (document_number)"
+      ]
     },
     {
       "name": "whatsapp_configs",
