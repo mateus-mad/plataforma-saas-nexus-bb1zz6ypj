@@ -101,7 +101,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
       console.error('CNPJ Lookup Error:', e)
       toast({
         variant: 'destructive',
-        title: 'Aviso',
+        title: 'Erro na Consulta',
         description:
           e.message ||
           'Não foi possível recuperar os dados automaticamente. Por favor, preencha manualmente.',

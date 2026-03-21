@@ -24,8 +24,15 @@ routerAdd(
         return e.json(404, { error: 'not_found', message: 'CNPJ não encontrado na base de dados.' })
       }
 
+      if (res.statusCode >= 500) {
+        return e.json(503, {
+          error: 'servico_indisponivel',
+          message: 'Não foi possível conectar ao serviço de consulta de CNPJ.',
+        })
+      }
+
       // Handle other non-200 responses without crashing
-      return e.json(502, {
+      return e.json(res.statusCode || 502, {
         error: 'bad_gateway',
         message: 'O serviço de consulta retornou um erro inesperado.',
       })

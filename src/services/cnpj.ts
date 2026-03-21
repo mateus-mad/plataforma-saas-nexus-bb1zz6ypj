@@ -10,9 +10,11 @@ export const consultarCNPJ = async (cnpj: string) => {
   } catch (error) {
     if (error instanceof ClientResponseError) {
       // Status 0 indicates a network-level error (CORS, connection refused, offline)
-      // Status 502/503 indicates an upstream service issue
-      if (error.status === 0 || error.status === 502 || error.status === 503) {
-        throw new Error('Não foi possível conectar ao serviço de consulta de CNPJ.')
+      // Status >= 500 indicates an upstream service issue
+      if (error.status === 0 || error.status >= 500) {
+        throw new Error(
+          'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, preencha os dados manualmente.',
+        )
       }
 
       // Use the structured error message from the backend if available
@@ -22,6 +24,8 @@ export const consultarCNPJ = async (cnpj: string) => {
     }
 
     // Fallback for any other unexpected JS errors
-    throw new Error('Não foi possível conectar ao serviço de consulta de CNPJ.')
+    throw new Error(
+      'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, preencha os dados manualmente.',
+    )
   }
 }
