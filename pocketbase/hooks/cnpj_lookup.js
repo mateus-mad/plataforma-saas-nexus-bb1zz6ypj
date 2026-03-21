@@ -16,13 +16,26 @@ routerAdd(
         timeout: 15,
       })
 
-      if (res.statusCode !== 200) {
-        throw new BadRequestError('Erro ao consultar CNPJ na Receita Federal')
+      if (res.statusCode === 200) {
+        return e.json(200, res.json)
       }
 
-      return e.json(200, res.json)
+      if (res.statusCode === 404) {
+        throw new NotFoundError('CNPJ não encontrado na base de dados.')
+      }
+
+      // Handle other non-200 responses without crashing
+      return e.json(502, {
+        error: 'bad_gateway',
+        message: 'O serviço de consulta retornou um erro inesperado.',
+      })
     } catch (err) {
-      throw new InternalServerError('Falha na comunicação com a API: ' + err.message)
+      // Catch network-level errors (like DNS lookup failed, timeouts, connection refused)
+      // and return a clear JSON error instead of a generic 500 stack trace.
+      return e.json(503, {
+        error: 'serviço_indisponivel',
+        message: 'Não foi possível conectar ao serviço de consulta de CNPJ.',
+      })
     }
   },
   $apis.requireAuth(),

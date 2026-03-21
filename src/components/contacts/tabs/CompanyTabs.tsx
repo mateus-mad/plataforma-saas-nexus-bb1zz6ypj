@@ -86,10 +86,12 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         description: 'Dados e endereço preenchidos com sucesso.',
       })
     } catch (e: any) {
+      console.error('CNPJ Lookup Error:', e)
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: e.message || 'Não foi possível encontrar o CNPJ.',
+        title: 'Aviso',
+        description:
+          'Erro ao buscar dados do CNPJ. O serviço da Receita Federal pode estar instável. Por favor, preencha manualmente.',
       })
     } finally {
       setLoadingCnpj(false)
