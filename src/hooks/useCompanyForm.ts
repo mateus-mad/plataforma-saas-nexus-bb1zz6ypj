@@ -19,12 +19,15 @@ const DEFAULT_COMPANY_DATA = {
     numero: '',
     cidade: '',
     estado: '',
+    bairro: '',
+    comp: '',
   },
   contato: {
     responsavel: '',
     email: '',
     telefone: '',
     emailCobranca: '',
+    pessoas: [],
   },
   financeiro: {
     limiteCredito: '',
@@ -32,6 +35,7 @@ const DEFAULT_COMPANY_DATA = {
   },
   bancario: {
     contas: [],
+    pix: [],
   },
   acordos: {
     lista: [],
@@ -47,6 +51,7 @@ const DEFAULT_COMPANY_DATA = {
 export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | null) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [data, setData] = useState<any>({
     ...DEFAULT_COMPANY_DATA,
     dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
@@ -61,6 +66,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
         dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
       })
     }
+    setHasUnsavedChanges(false)
   }, [entityId, type])
 
   const loadEntity = async (id: string) => {
@@ -77,6 +83,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
   }
 
   const updateData = async (section: string, field: string | null, value: any) => {
+    setHasUnsavedChanges(true)
     let newData: any
     setData((prev: any) => {
       if (field === null) {
@@ -101,10 +108,14 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       const fd = new FormData()
       fd.append('data', JSON.stringify(newData))
       fd.append('name', newData.dados?.nomeRazao || 'Sem Nome')
+      fd.append('address_json', JSON.stringify(newData.endereco))
+      fd.append('financial_metrics', JSON.stringify(newData.financeiro))
+
       try {
         await updateEntity(entityId, fd)
         setSaveStatus('saved')
         setTimeout(() => setSaveStatus('idle'), 2000)
+        setHasUnsavedChanges(false)
       } catch (err) {
         setSaveStatus('idle')
       }
@@ -118,10 +129,12 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       fd.append('name', data.dados?.nomeRazao || 'Sem Nome')
       fd.append('type', type === 'client' ? 'cliente' : 'fornecedor')
       fd.append('document_number', data.dados?.documento || '')
-      fd.append('email', data.contato?.email || '')
+      fd.append('email', data.contato?.emailCobranca || data.contato?.email || '')
       fd.append('phone', data.contato?.telefone || '')
-      fd.append('status', data.dados?.ativo !== false ? 'Ativo' : 'Inativo')
+      fd.append('status', data.dados?.ativo !== false ? 'ativo' : 'inativo')
       fd.append('data', JSON.stringify(data))
+      fd.append('address_json', JSON.stringify(data.endereco))
+      fd.append('financial_metrics', JSON.stringify(data.financeiro))
 
       if (entityId) {
         await updateEntity(entityId, fd)
@@ -130,6 +143,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       }
 
       setSaveStatus('saved')
+      setHasUnsavedChanges(false)
       setTimeout(() => setSaveStatus('idle'), 2000)
       return true
     } catch (err) {
@@ -145,14 +159,6 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     await updateData('dados', 'complianceStatus', 'valid')
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
-  }
-
-  const autofillCNPJ = async () => {
-    setSaveStatus('saving')
-    await new Promise((r) => setTimeout(r, 1500))
-    const newData = { ...data, dados: { ...data.dados, nomeRazao: 'Empresa Auto Preenchida S/A' } }
-    setData(newData)
-    setSaveStatus('idle')
   }
 
   const getProgress = (sec: string) => {
@@ -191,6 +197,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     saveStatus,
     validateCompliance,
     saveEntity,
-    autofillCNPJ,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
   }
 }

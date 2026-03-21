@@ -196,7 +196,7 @@ export default function CollaboratorList({
         const imgUrl = c.photo
           ? pb.files.getURL(c, c.photo)
           : c.data?.pessoal?.foto ||
-            `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${c.id}`
+            `https://img.usecurling.com/ppl/thumbnail?gender=${c.data?.pessoal?.genero === 'Feminino' ? 'female' : 'male'}&seed=${c.id}`
 
         const complianceStatus = c.compliance_status || 'pendente'
 

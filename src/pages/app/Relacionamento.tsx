@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -38,6 +38,7 @@ import { useToast } from '@/hooks/use-toast'
 
 export default function Relacionamento() {
   const { view } = useParams()
+  const navigate = useNavigate()
   const currentView = view || 'dashboard'
 
   const { setOpen } = useSidebar()

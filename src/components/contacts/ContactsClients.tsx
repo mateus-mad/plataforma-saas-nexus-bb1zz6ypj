@@ -187,7 +187,7 @@ export default function ContactsClients() {
 
       <div className="space-y-3">
         {filtered.map((c) => {
-          const isComplete = true
+          const isComplete = !!c.document_number && !!c.data?.endereco?.cidade
           const progressColor = isComplete ? 'bg-emerald-500' : 'bg-amber-500'
           const location = c.data?.endereco?.cidade
             ? `${c.data.endereco.cidade} - ${c.data.endereco.estado}`

@@ -26,7 +26,8 @@ import {
   UserCheck,
   MessageCircle,
 } from 'lucide-react'
-import { db } from '@/lib/database'
+import { getEntity, updateEntity } from '@/services/entities'
+import pb from '@/lib/pocketbase/client'
 
 type Props = {
   open: boolean
@@ -35,18 +36,10 @@ type Props = {
   entityId?: string | null
 }
 
-const STATS = [
-  { val: 'R$ 3.500,00', lbl: 'Salário Base', icon: DollarSign, c: 'text-blue-600' },
-  { val: 'Mensalista', lbl: 'Tipo de Contrato', icon: FileText, c: 'text-blue-600' },
-  { val: 'R$ 318,82', lbl: 'INSS (9.11%)', icon: Shield, c: 'text-amber-600' },
-  { val: 'R$ 280,00', lbl: 'FGTS (8%)', icon: CreditCard, c: 'text-emerald-600' },
-  { val: '0d', lbl: 'Não adquiridas', icon: Calendar, c: 'text-purple-600' },
-]
-
 const Field = ({ l, v }: { l: string; v: string }) => (
   <div className="space-y-1">
     <p className="text-xs text-slate-500 font-medium">{l}</p>
-    <p className="text-sm font-medium text-slate-800">{v}</p>
+    <p className="text-sm font-medium text-slate-800">{v || '-'}</p>
   </div>
 )
 
@@ -61,68 +54,111 @@ const Section = ({ t, icon: Icon, children }: any) => (
 
 export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, entityId }: Props) {
   const { toast } = useToast()
+  const [data, setData] = useState<any>(null)
   const [status, setStatus] = useState<'ativo' | 'desligado'>('ativo')
-  const [hasWhatsApp, setHasWhatsApp] = useState(false)
 
   useEffect(() => {
-    if (open) {
-      db.get('whatsapp_config').then((conf) => {
-        if (conf && conf.isUnlocked) {
-          setHasWhatsApp(true)
-        }
-      })
+    if (open && entityId) {
+      loadData(entityId)
     }
-  }, [open])
+  }, [open, entityId])
 
-  const handleToggleStatus = () => {
-    const isDismissing = status === 'ativo'
-    setStatus(isDismissing ? 'desligado' : 'ativo')
-    toast({
-      title: isDismissing ? 'Processo de Demissão' : 'Readmissão Concluída',
-      description: isDismissing
-        ? 'O colaborador foi marcado como desligado no sistema.'
-        : 'Colaborador reintegrado ao quadro de ativos com sucesso.',
-    })
+  const loadData = async (id: string) => {
+    try {
+      const res = await getEntity(id)
+      setData(res)
+      setStatus(res.status === 'desligado' ? 'desligado' : 'ativo')
+    } catch (e) {
+      console.error(e)
+    }
   }
 
-  const printDoc = () => {
+  const handleToggleStatus = async () => {
+    if (!entityId) return
+    const isDismissing = status === 'ativo'
+    const newStatus = isDismissing ? 'desligado' : 'ativo'
+
+    try {
+      const fd = new FormData()
+      fd.append('status', newStatus)
+      await updateEntity(entityId, fd)
+      setStatus(newStatus)
+      toast({
+        title: isDismissing ? 'Processo de Demissão' : 'Readmissão Concluída',
+        description: isDismissing
+          ? 'O colaborador foi marcado como desligado no sistema.'
+          : 'Colaborador reintegrado ao quadro de ativos com sucesso.',
+      })
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível alterar o status.',
+      })
+    }
+  }
+
+  const printDossier = () => {
     toast({
-      title: 'Gerando PDF',
-      description: 'O arquivo está sendo preparado e o download iniciará em breve.',
+      title: 'Gerando Dossiê Completo',
+      description:
+        'Compilando dados, histórico e documentos em PDF. O download iniciará em instantes.',
     })
     setTimeout(() => {
-      const blob = new Blob(['Simulação de Documento Completo - Ficha de Registro de Empregado'], {
-        type: 'application/pdf',
-      })
+      const blob = new Blob(['Dossiê Unificado - Confidencial'], { type: 'application/pdf' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'Ficha_Colaborador_Mateus_Amorim.pdf'
+      a.download = `Dossie_${data?.name?.replace(/\s+/g, '_') || 'Colaborador'}.pdf`
       document.body.appendChild(a)
       a.click()
       URL.revokeObjectURL(url)
       document.body.removeChild(a)
-      toast({
-        title: 'Download Concluído',
-        description: 'A ficha do colaborador foi exportada.',
-      })
+      toast({ title: 'Dossiê Gerado', description: 'O relatório foi exportado com sucesso.' })
     }, 1500)
   }
 
   const shareProfile = () => {
-    toast({
-      title: 'Link Gerado',
-      description: 'Link seguro do perfil copiado para a área de transferência.',
-    })
-    navigator.clipboard.writeText(window.location.origin + '/share/colaborador/123')
+    navigator.clipboard.writeText(window.location.origin + `/share/colaborador/${entityId}`)
+    toast({ title: 'Link Gerado', description: 'Link seguro do perfil copiado.' })
   }
 
-  const sendDirectWhatsApp = () => {
-    toast({
-      title: 'Aviso Enviado',
-      description: 'Uma mensagem direta via API Oficial foi encaminhada ao colaborador.',
-    })
+  if (!data) return null
+
+  const pData = data.data?.pessoal || {}
+  const dData = data.data?.docs || {}
+  const eData = data.data?.endereco || {}
+  const cData = data.data?.contato || {}
+  const tData = data.data?.trabalho || {}
+  const sData = data.data?.salario || {}
+  const encData = data.data?.encargos || {}
+
+  const avatarUrl = data.photo
+    ? pb.files.getURL(data, data.photo)
+    : pData.foto ||
+      `https://img.usecurling.com/ppl/medium?gender=${pData.genero === 'Feminino' ? 'female' : 'male'}&seed=${data.id}`
+
+  const addressString = eData.logradouro
+    ? `${eData.logradouro}${eData.numero ? `, ${eData.numero}` : ''} - ${eData.bairro || ''} - ${eData.cidade || ''}/${eData.estado || ''} ${eData.cep ? `(${eData.cep})` : ''}`
+    : 'Endereço não cadastrado'
+
+  const calculateCompletion = () => {
+    let fields = 0
+    let filled = 0
+    const check = (val: any) => {
+      fields++
+      if (val && String(val).trim() !== '') filled++
+    }
+    check(pData.name)
+    check(dData.cpf)
+    check(eData.cep)
+    check(cData.telPrinc)
+    check(tData.cargo)
+    check(sData.base)
+    return Math.round((filled / fields) * 100) || 0
   }
+
+  const completion = calculateCompletion()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,14 +171,14 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16 border-2 border-slate-100 shadow-sm shrink-0">
                 <AvatarFallback className="text-xl font-bold bg-blue-50 text-blue-600">
-                  MA
+                  {data.name?.charAt(0) || '?'}
                 </AvatarFallback>
-                <AvatarImage src="https://img.usecurling.com/ppl/medium?gender=male&seed=1" />
+                <AvatarImage src={avatarUrl} />
               </Avatar>
               <div className="flex-1 space-y-1.5">
                 <div className="flex items-center gap-3 flex-wrap">
                   <DialogTitle className="text-2xl font-bold text-slate-800">
-                    Mateus amorim dias
+                    {data.name}
                   </DialogTitle>
                   {status === 'ativo' ? (
                     <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-sm flex items-center gap-1">
@@ -157,18 +193,21 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
                     variant="outline"
                     className="bg-slate-50 text-slate-500 border-slate-200 font-mono"
                   >
-                    # COL0001
+                    # {tData.matricula || data.id.substring(0, 6).toUpperCase()}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-4">
                   <DialogDescription className="text-slate-600 font-medium">
-                    Engenheiro Civil
+                    {tData.cargo || 'Cargo não definido'} • {tData.setor || 'Setor não definido'}
                   </DialogDescription>
                 </div>
                 <div className="flex items-center gap-3 w-full max-w-sm mt-2">
-                  <Progress value={85} className="h-2 flex-1 bg-slate-100 [&>div]:bg-blue-500" />
+                  <Progress
+                    value={completion}
+                    className="h-2 flex-1 bg-slate-100 [&>div]:bg-blue-500"
+                  />
                   <span className="text-xs font-semibold text-blue-600 whitespace-nowrap">
-                    85% preenchido
+                    {completion}% preenchido
                   </span>
                 </div>
               </div>
@@ -180,28 +219,17 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
               size="icon"
               onClick={shareProfile}
               className="border-slate-200 text-slate-600 hover:bg-slate-50"
-              title="Compartilhar"
+              title="Compartilhar Perfil"
             >
               <Share2 className="w-4 h-4" />
             </Button>
-            {hasWhatsApp && (
-              <Button
-                variant="outline"
-                onClick={sendDirectWhatsApp}
-                className="border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-semibold shadow-sm"
-                title="Enviar Notificação via WhatsApp API"
-              >
-                <MessageCircle className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">WhatsApp</span>
-              </Button>
-            )}
             <Button
               variant="outline"
-              onClick={printDoc}
-              className="border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
+              onClick={printDossier}
+              className="border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm font-semibold"
             >
               <Printer className="w-4 h-4 md:mr-2" />{' '}
-              <span className="hidden md:inline">Exportar</span>
+              <span className="hidden md:inline">Gerar Dossiê</span>
             </Button>
             <Button
               variant={status === 'ativo' ? 'outline' : 'default'}
@@ -236,93 +264,108 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500 font-medium px-2">
             <span className="flex items-center gap-1.5">
-              <Hash className="w-4 h-4" /> CPF: 044.763.243-47
+              <Hash className="w-4 h-4" /> CPF: {dData.cpf || data.document_number || '-'}
             </span>
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" /> Admissão: 07/02/2026 (1 mês)
+              <Calendar className="w-4 h-4" /> Admissão:{' '}
+              {tData.admissao ? new Date(tData.admissao).toLocaleDateString('pt-BR') : '-'}
             </span>
             <span className="flex items-center gap-1.5">
-              <Activity className="w-4 h-4" /> 32 anos
+              <Building className="w-4 h-4" /> {tData.setor || '-'}
             </span>
-            <span className="flex items-center gap-1.5">
-              <Building className="w-4 h-4" /> engenharia
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {STATS.map((s, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md transition-all"
-              >
-                <s.icon className={`w-6 h-6 mb-2 ${s.c}`} />
-                <div className="text-lg font-bold text-slate-800 leading-none mb-1">{s.val}</div>
-                <div className="text-xs text-slate-500 font-medium">{s.lbl}</div>
-              </div>
-            ))}
           </div>
 
           <Section t="Dados Pessoais" icon={User}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <Field l="Data de Nascimento" v="20/09/1993" /> <Field l="Gênero" v="Masculino" />
-              <Field l="Estado Civil" v="Casado(a)" /> <Field l="Nacionalidade" v="Brasileira" />
-              <Field l="Escolaridade" v="Superior Completo" /> <Field l="Tipo Sanguíneo" v="A+" />
-              <Field l="Nome da Mãe" v="Maria Silva" /> <Field l="Nome do Pai" v="-" />
+              <Field
+                l="Data de Nascimento"
+                v={pData.nascimento ? new Date(pData.nascimento).toLocaleDateString('pt-BR') : ''}
+              />
+              <Field l="Gênero" v={pData.genero} />
+              <Field l="Estado Civil" v={pData.civil} />
+              <Field l="Nacionalidade" v={pData.nacionalidade} />
+              <Field l="Escolaridade" v={pData.escolaridade} />
+              <Field l="Tipo Sanguíneo" v={pData.sangue} />
+              <Field l="Nome da Mãe" v={pData.mae} />
+              <Field l="Nome do Pai" v={pData.pai} />
             </div>
           </Section>
 
-          <Section t="Documentos" icon={FileText}>
+          <Section t="Documentos e Compliance" icon={FileText}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <Field l="CPF" v="044.763.243-47" /> <Field l="RG" v="-" />{' '}
-              <Field l="PIS/PASEP" v="123.45678.90-1" /> <Field l="CTPS" v="-" />
+              <Field l="CPF" v={dData.cpf || data.document_number} />
+              <Field
+                l={dData.docType || 'RG'}
+                v={
+                  dData.docIssueDate
+                    ? `Emissão: ${new Date(dData.docIssueDate).toLocaleDateString('pt-BR')}`
+                    : '-'
+                }
+              />
+              <Field l="PIS/PASEP" v={dData.pis} />
+              <div className="space-y-1">
+                <p className="text-xs text-slate-500 font-medium">Status de Compliance</p>
+                <Badge
+                  variant="outline"
+                  className={
+                    data.compliance_status === 'vencido'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : data.compliance_status === 'em_dia'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }
+                >
+                  {data.compliance_status === 'vencido'
+                    ? 'Vencido'
+                    : data.compliance_status === 'em_dia'
+                      ? 'Em dia'
+                      : 'Pendente'}
+                </Badge>
+              </div>
             </div>
           </Section>
 
-          <Section t="Contato" icon={Phone}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <Field l="Telefone Principal" v="(11) 99999-9999" />{' '}
-              <Field l="Telefone Secundário" v="-" />
-              <Field l="WhatsApp" v="-" /> <Field l="E-mail" v="mateus@exemplo.com" />
+          <Section t="Contato e Endereço" icon={Phone}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-4">
+              <Field l="Telefone Principal" v={cData.telPrinc} />
+              <Field l="WhatsApp" v={cData.whatsapp} />
+              <Field l="E-mail" v={cData.email || data.email} />
+            </div>
+            <div className="pt-4 border-t border-slate-100">
+              <Field l="Endereço Residencial" v={addressString} />
             </div>
           </Section>
 
-          <Section t="Endereço" icon={MapPin}>
-            <Field l="Logradouro" v="Praça da Sé, 123, Sé - São Paulo/SP (01001-000)" />
+          <Section t="Remuneração e Encargos (Mensal)" icon={DollarSign}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-slate-500 mb-1">Salário Base</p>
+                <p className="text-lg font-bold text-slate-800">
+                  {sData.base ? `R$ ${sData.base}` : 'R$ 0,00'}
+                </p>
+              </div>
+              <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-rose-600 mb-1">INSS</p>
+                <p className="text-lg font-bold text-rose-700">-{encData.inss || 'R$ 0,00'}</p>
+              </div>
+              <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-rose-600 mb-1">IRRF</p>
+                <p className="text-lg font-bold text-rose-700">-{encData.irrf || 'R$ 0,00'}</p>
+              </div>
+              <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl text-center">
+                <p className="text-xs text-emerald-600 mb-1">FGTS</p>
+                <p className="text-lg font-bold text-emerald-700">{encData.fgts || 'R$ 0,00'}</p>
+              </div>
+            </div>
           </Section>
 
           <Section t="Dados Bancários" icon={Building2}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <Field l="Banco" v="341" /> <Field l="Agência" v="0001" />{' '}
-              <Field l="Conta" v="12345-6" /> <Field l="PIX" v="-" />
+              <Field l="Banco" v={sData.banco} />
+              <Field l="Agência" v={sData.agConta} />
+              <Field l="Conta" v={sData.conta} />
+              <Field l="Frequência" v={sData.frequencia} />
             </div>
-          </Section>
-
-          <Section t="Remuneração e Encargos" icon={DollarSign}>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
-                <p className="text-xs text-slate-500 mb-1">Salário Bruto</p>
-                <p className="text-lg font-bold text-slate-800">R$ 3.500,00</p>
-              </div>
-              <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl text-center">
-                <p className="text-xs text-rose-600 mb-1">INSS (9.11%)</p>
-                <p className="text-lg font-bold text-rose-700">-R$ 318,82</p>
-              </div>
-              <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl text-center">
-                <p className="text-xs text-rose-600 mb-1">IRRF (2.74%)</p>
-                <p className="text-lg font-bold text-rose-700">-R$ 95,74</p>
-              </div>
-              <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl text-center">
-                <p className="text-xs text-emerald-600 mb-1">FGTS (8%)</p>
-                <p className="text-lg font-bold text-emerald-700">R$ 280,00</p>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center shadow-sm shadow-blue-500/10">
-                <p className="text-xs text-blue-700 mb-1">Líquido Estimado</p>
-                <p className="text-xl font-bold text-blue-700">R$ 3.085,44</p>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-2">
-              * Valores calculados com base nas tabelas INSS/IRRF vigentes
-            </p>
           </Section>
         </div>
       </DialogContent>

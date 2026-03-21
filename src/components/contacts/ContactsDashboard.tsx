@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Users,
@@ -22,39 +23,79 @@ import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
+import { getEntities } from '@/services/entities'
+import { useRealtime } from '@/hooks/use-realtime'
 
 const VOLUME_DATA = [
-  { month: 'Jan', novos: 12 },
-  { month: 'Fev', novos: 15 },
-  { month: 'Mar', novos: 8 },
-  { month: 'Abr', novos: 20 },
-  { month: 'Mai', offset: 25, novos: 25 },
-  { month: 'Jun', novos: 18 },
+  { month: 'Jan', cliente: 12, fornecedor: 5, colaborador: 8 },
+  { month: 'Fev', cliente: 15, fornecedor: 7, colaborador: 10 },
+  { month: 'Mar', cliente: 8, fornecedor: 12, colaborador: 4 },
+  { month: 'Abr', cliente: 20, fornecedor: 9, colaborador: 15 },
+  { month: 'Mai', cliente: 25, fornecedor: 15, colaborador: 20 },
+  { month: 'Jun', cliente: 18, fornecedor: 8, colaborador: 5 },
 ]
 
-const REVENUE_DATA = [
-  { month: 'Jan', civil: 40000, solar: 50000, metalurgica: 30000 },
-  { month: 'Fev', civil: 45000, solar: 55000, metalurgica: 35000 },
-  { month: 'Mar', civil: 50000, solar: 60000, metalurgica: 40000 },
-  { month: 'Abr', civil: 60000, solar: 70000, metalurgica: 50000 },
-  { month: 'Mai', civil: 70000, solar: 80000, metalurgica: 60000 },
+const ADMISSION_DATA = [
+  { month: 'Jan', engenheiro: 4, administrativo: 2, operario: 5 },
+  { month: 'Fev', engenheiro: 3, administrativo: 1, operario: 8 },
+  { month: 'Mar', engenheiro: 6, administrativo: 3, operario: 12 },
+  { month: 'Abr', engenheiro: 2, administrativo: 4, operario: 6 },
+  { month: 'Mai', engenheiro: 7, administrativo: 2, operario: 15 },
 ]
 
 const chartConfig = {
-  novos: { label: 'Novos Clientes', color: 'hsl(var(--primary))' },
-  civil: { label: 'Civil', color: 'hsl(var(--chart-1))' },
-  solar: { label: 'Solar', color: 'hsl(var(--chart-2))' },
-  metalurgica: { label: 'Metalúrgica', color: 'hsl(var(--chart-3))' },
+  cliente: { label: 'Clientes', color: 'hsl(var(--primary))' },
+  fornecedor: { label: 'Fornecedores', color: 'hsl(var(--chart-2))' },
+  colaborador: { label: 'Colaboradores', color: 'hsl(var(--chart-3))' },
+}
+
+const admissionConfig = {
+  engenheiro: { label: 'Engenheiros', color: 'hsl(var(--chart-1))' },
+  administrativo: { label: 'Administrativo', color: 'hsl(var(--chart-2))' },
+  operario: { label: 'Operacional', color: 'hsl(var(--chart-3))' },
 }
 
 export default function ContactsDashboard() {
   const { toast } = useToast()
+  const [counts, setCounts] = useState({
+    clients: 0,
+    suppliers: 0,
+    collaborators: 0,
+    incomplete: 0,
+  })
+
+  const loadData = async () => {
+    try {
+      const rels = await getEntities()
+
+      let incompleteCount = 0
+      rels.forEach((r) => {
+        if (!r.document_number || !r.name || r.name === 'Sem Nome') {
+          incompleteCount++
+        }
+      })
+
+      setCounts({
+        clients: rels.filter((r) => r.type === 'cliente').length,
+        suppliers: rels.filter((r) => r.type === 'fornecedor').length,
+        collaborators: rels.filter((r) => r.type === 'colaborador').length,
+        incomplete: incompleteCount,
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+  useRealtime('relacionamentos', loadData)
 
   const handleSimulateAlerts = () => {
     toast({
       title: 'Disparo Automático Executado',
       description:
-        '3 alertas de vencimento enviados com sucesso para os E-mails de Cobrança configurados nos cadastros.',
+        'Alertas de vencimento e auditoria enviados com sucesso para os contatos configurados.',
     })
   }
 
@@ -70,10 +111,11 @@ export default function ContactsDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">
-            Performance & Automação (BI)
+            Performance & Automação (HR/Comercial)
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Métricas de crescimento do relacionamento comercial e controle de riscos e admissões.
+            Métricas de crescimento de relacionamentos e controle unificado de compliance e
+            admissões.
           </p>
         </div>
       </div>
@@ -85,8 +127,8 @@ export default function ContactsDashboard() {
             <UserSquare2 className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">145</div>
-            <p className="text-xs text-emerald-600 mt-1 font-medium">+12 no último mês</p>
+            <div className="text-2xl font-bold text-slate-800">{counts.clients}</div>
+            <p className="text-xs text-emerald-600 mt-1 font-medium">Cadastrados na base</p>
           </CardContent>
         </Card>
         <Card className="border-amber-100 shadow-sm">
@@ -95,8 +137,8 @@ export default function ContactsDashboard() {
             <Truck className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">83</div>
-            <p className="text-xs text-amber-600 mt-1 font-medium">Ativos no sistema</p>
+            <div className="text-2xl font-bold text-slate-800">{counts.suppliers}</div>
+            <p className="text-xs text-amber-600 mt-1 font-medium">Cadastrados na base</p>
           </CardContent>
         </Card>
         <Card className="border-blue-100 shadow-sm">
@@ -107,17 +149,19 @@ export default function ContactsDashboard() {
             <Users className="w-4 h-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">214</div>
-            <p className="text-xs text-blue-600 mt-1 font-medium">92% ativos</p>
+            <div className="text-2xl font-bold text-slate-800">{counts.collaborators}</div>
+            <p className="text-xs text-blue-600 mt-1 font-medium">Cadastrados na base</p>
           </CardContent>
         </Card>
         <Card className="bg-rose-50 border-rose-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-rose-800">Perfis Incompletos</CardTitle>
+            <CardTitle className="text-sm font-medium text-rose-800">
+              Perfis Incompletos / Risco
+            </CardTitle>
             <AlertTriangle className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-700">12</div>
+            <div className="text-2xl font-bold text-rose-700">{counts.incomplete}</div>
             <p className="text-xs text-rose-600 mt-1 font-medium">Faltam dados essenciais</p>
           </CardContent>
         </Card>
@@ -127,7 +171,7 @@ export default function ContactsDashboard() {
         <Card className="shadow-sm border-slate-200">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-slate-800">
-              Volume de Aquisição (Novos Clientes)
+              Volume de Aquisição (Novos Relacionamentos)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -144,10 +188,23 @@ export default function ContactsDashboard() {
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar
-                    dataKey="novos"
-                    fill="var(--color-novos)"
-                    radius={[4, 4, 0, 0]}
+                    dataKey="cliente"
+                    stackId="a"
+                    fill="var(--color-cliente)"
+                    radius={[0, 0, 0, 0]}
                     barSize={40}
+                  />
+                  <Bar
+                    dataKey="fornecedor"
+                    stackId="a"
+                    fill="var(--color-fornecedor)"
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="colaborador"
+                    stackId="a"
+                    fill="var(--color-colaborador)"
+                    radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -158,21 +215,24 @@ export default function ContactsDashboard() {
         <Card className="shadow-sm border-slate-200">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-slate-800">
-              Crescimento de Faturamento por Segmento
+              Admissões por Profissão / Setor
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[280px] w-full">
+            <ChartContainer config={admissionConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart
+                  data={ADMISSION_DATA}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
                   <defs>
-                    <linearGradient id="colorCivil" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-civil)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--color-civil)" stopOpacity={0} />
+                    <linearGradient id="colorEng" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-engenheiro)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-engenheiro)" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-solar)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--color-solar)" stopOpacity={0} />
+                    <linearGradient id="colorAdm" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-administrativo)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-administrativo)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -182,35 +242,28 @@ export default function ContactsDashboard() {
                     tickLine={false}
                     tick={{ fill: '#64748b' }}
                   />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v) => `R${v / 1000}k`}
-                    tick={{ fill: '#64748b' }}
-                  />
-                  <ChartTooltip
-                    content={<ChartTooltipContent formatter={(v) => `R$ ${v.toLocaleString()}`} />}
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Area
+                    type="monotone"
+                    dataKey="engenheiro"
+                    stackId="1"
+                    stroke="var(--color-engenheiro)"
+                    fill="url(#colorEng)"
                   />
                   <Area
                     type="monotone"
-                    dataKey="civil"
+                    dataKey="administrativo"
                     stackId="1"
-                    stroke="var(--color-civil)"
-                    fill="url(#colorCivil)"
+                    stroke="var(--color-administrativo)"
+                    fill="url(#colorAdm)"
                   />
                   <Area
                     type="monotone"
-                    dataKey="solar"
+                    dataKey="operario"
                     stackId="1"
-                    stroke="var(--color-solar)"
-                    fill="url(#colorSolar)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="metalurgica"
-                    stackId="1"
-                    stroke="var(--color-metalurgica)"
-                    fill="var(--color-metalurgica)"
+                    stroke="var(--color-operario)"
+                    fill="var(--color-operario)"
                     fillOpacity={0.1}
                   />
                 </AreaChart>
@@ -299,7 +352,7 @@ export default function ContactsDashboard() {
               e-mails automáticos <span className="font-semibold text-blue-700">
                 30 dias antes
               </span>{' '}
-              do vencimento para o <b>E-mail de Cobrança</b> configurado.
+              do vencimento.
             </p>
             <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl shadow-sm">
               <div className="flex items-center gap-3">

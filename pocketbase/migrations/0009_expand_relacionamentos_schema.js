@@ -1,0 +1,51 @@
+migrate(
+  (app) => {
+    const rels = app.findCollectionByNameOrId('relacionamentos')
+
+    if (!rels.fields.getByName('nationality'))
+      rels.fields.add(new TextField({ name: 'nationality' }))
+    if (!rels.fields.getByName('gender'))
+      rels.fields.add(
+        new SelectField({ name: 'gender', values: ['masc', 'fem', 'outros'], maxSelect: 1 }),
+      )
+    if (!rels.fields.getByName('parents_names'))
+      rels.fields.add(new TextField({ name: 'parents_names' }))
+    if (!rels.fields.getByName('birth_city')) rels.fields.add(new TextField({ name: 'birth_city' }))
+    if (!rels.fields.getByName('birth_uf')) rels.fields.add(new TextField({ name: 'birth_uf' }))
+    if (!rels.fields.getByName('birth_date')) rels.fields.add(new DateField({ name: 'birth_date' }))
+    if (!rels.fields.getByName('pis_pasep')) rels.fields.add(new TextField({ name: 'pis_pasep' }))
+    if (!rels.fields.getByName('doc_emission_date'))
+      rels.fields.add(new DateField({ name: 'doc_emission_date' }))
+    if (!rels.fields.getByName('doc_type')) rels.fields.add(new TextField({ name: 'doc_type' }))
+    if (!rels.fields.getByName('address_json'))
+      rels.fields.add(new JSONField({ name: 'address_json' }))
+    if (!rels.fields.getByName('work_details'))
+      rels.fields.add(new JSONField({ name: 'work_details' }))
+    if (!rels.fields.getByName('salary_details'))
+      rels.fields.add(new JSONField({ name: 'salary_details' }))
+    if (!rels.fields.getByName('benefits_config'))
+      rels.fields.add(new JSONField({ name: 'benefits_config' }))
+    if (!rels.fields.getByName('financial_metrics'))
+      rels.fields.add(new JSONField({ name: 'financial_metrics' }))
+
+    app.save(rels)
+  },
+  (app) => {
+    const rels = app.findCollectionByNameOrId('relacionamentos')
+    rels.fields.removeByName('nationality')
+    rels.fields.removeByName('gender')
+    rels.fields.removeByName('parents_names')
+    rels.fields.removeByName('birth_city')
+    rels.fields.removeByName('birth_uf')
+    rels.fields.removeByName('birth_date')
+    rels.fields.removeByName('pis_pasep')
+    rels.fields.removeByName('doc_emission_date')
+    rels.fields.removeByName('doc_type')
+    rels.fields.removeByName('address_json')
+    rels.fields.removeByName('work_details')
+    rels.fields.removeByName('salary_details')
+    rels.fields.removeByName('benefits_config')
+    rels.fields.removeByName('financial_metrics')
+    app.save(rels)
+  },
+)

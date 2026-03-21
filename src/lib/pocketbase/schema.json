@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T13:29:35.459Z",
+  "generatedAt": "2026-03-21T17:16:02.626Z",
   "collections": [
     {
       "name": "users",
@@ -137,6 +137,91 @@
           "required": false,
           "system": false,
           "selectValues": ["pendente", "em_dia", "vencido"]
+        },
+        {
+          "name": "nationality",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "gender",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["masc", "fem", "outros"]
+        },
+        {
+          "name": "parents_names",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "birth_city",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "birth_uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "birth_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pis_pasep",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "doc_emission_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "doc_type",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "address_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "work_details",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "salary_details",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "benefits_config",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "financial_metrics",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -239,6 +324,112 @@
           "required": true,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "configurations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["cargo", "setor", "jornada"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "contracts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "relacionamento_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "relacionamentos"
+        },
+        {
+          "name": "value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": false,
+          "system": false
         },
         {
           "name": "created",

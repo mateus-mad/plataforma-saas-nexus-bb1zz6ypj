@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import {
   Select,
@@ -74,6 +75,7 @@ export default function CollaboratorModal({
   const [isDraggingOCR, setIsDraggingOCR] = useState(false)
   const [docType, setDocType] = useState('RG')
   const [lowQualityFile, setLowQualityFile] = useState<File | null>(null)
+  const [showDirtyWarning, setShowDirtyWarning] = useState(false)
 
   const {
     data,
@@ -88,6 +90,8 @@ export default function CollaboratorModal({
     isFetchingESocial,
     saveStatus,
     saveEntity,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
   } = useCollaboratorForm(entityId)
 
   const { toast } = useToast()
@@ -114,6 +118,14 @@ export default function CollaboratorModal({
     { id: 'historico', label: 'Histórico', prog: null, icon: History },
     { id: 'anexos', label: 'Anexos', prog: null, icon: Paperclip },
   ]
+
+  const handleCloseAttempt = () => {
+    if (hasUnsavedChanges && isEditing) {
+      setShowDirtyWarning(true)
+    } else {
+      onOpenChange(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!validate()) {
@@ -167,11 +179,11 @@ export default function CollaboratorModal({
       })
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: `O arquivo ${file.name} excede o limite de 5MB.`,
+        description: `O arquivo excede o limite de 20MB.`,
       })
       return
     }
@@ -210,11 +222,16 @@ export default function CollaboratorModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) handleCloseAttempt()
+        }}
+      >
         <DialogContent className="max-w-[1100px] h-[95vh] flex flex-col p-0 gap-0 bg-slate-50 border-none rounded-2xl shadow-2xl overflow-hidden [&>button]:hidden">
           <div className="p-5 pb-0 bg-white border-b border-slate-200 shrink-0 relative z-10">
             <button
-              onClick={() => onOpenChange(false)}
+              onClick={handleCloseAttempt}
               className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors"
             >
               <X className="w-4 h-4" />
@@ -271,23 +288,23 @@ export default function CollaboratorModal({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-3 mt-6 px-1 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full">
-              {TABS.map((tab) => {
-                const tabHasError = Object.keys(errors).some((k) => k.startsWith(tab.id))
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      'flex flex-col min-w-[100px] px-3 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 border border-transparent shadow-sm',
-                      activeTab === tab.id
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-100'
-                        : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-slate-200',
-                      tabHasError && activeTab !== tab.id && 'border-rose-200 text-rose-600',
-                    )}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <div className="flex items-center gap-1.5">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+              <TabsList className="h-auto bg-transparent w-full justify-start overflow-x-auto pb-3 px-1 custom-scrollbar gap-2">
+                {TABS.map((tab) => {
+                  const tabHasError = Object.keys(errors).some((k) => k.startsWith(tab.id))
+                  return (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.id}
+                      className={cn(
+                        'flex flex-col min-w-[110px] px-3 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 shadow-sm border',
+                        activeTab === tab.id
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700'
+                          : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200 data-[state=active]:bg-white',
+                        tabHasError && activeTab !== tab.id && 'border-rose-200 text-rose-600',
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 w-full mb-1">
                         <tab.icon
                           className={cn(
                             'w-4 h-4',
@@ -297,22 +314,22 @@ export default function CollaboratorModal({
                         />
                         <span>{tab.label}</span>
                       </div>
-                    </div>
-                    {tab.prog !== null && (
-                      <div className="w-full flex items-center gap-2 mt-1">
-                        <div className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
-                          <div
-                            className={cn('h-full', getProgressColor(tab.prog))}
-                            style={{ width: `${tab.prog}%` }}
-                          />
+                      {tab.prog !== null && (
+                        <div className="w-full flex items-center gap-2 mt-1">
+                          <div className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className={cn('h-full', getProgressColor(tab.prog))}
+                              style={{ width: `${tab.prog}%` }}
+                            />
+                          </div>
+                          <span className="text-[9px] text-slate-400 font-bold">{tab.prog}%</span>
                         </div>
-                        <span className="text-[9px] text-slate-400 font-bold">{tab.prog}%</span>
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
+                      )}
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50 custom-scrollbar">
@@ -494,7 +511,7 @@ export default function CollaboratorModal({
             <div className="flex justify-end gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleCloseAttempt}
                 className="font-semibold text-slate-600 shadow-sm"
               >
                 Fechar Ficha
@@ -536,6 +553,36 @@ export default function CollaboratorModal({
               onClick={() => lowQualityFile && processFile(lowQualityFile)}
             >
               Tentar Extrair (OCR)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDirtyWarning} onOpenChange={setShowDirtyWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-rose-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Alterações Não Salvas
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Você possui alterações na ficha que não foram salvas na nuvem. Deseja descartar essas
+              alterações e fechar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDirtyWarning(false)}>
+              Continuar Editando
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowDirtyWarning(false)
+                onOpenChange(false)
+                setHasUnsavedChanges(false)
+                if (entityId) loadEntity(entityId)
+              }}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              Descartar e Fechar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -64,9 +64,6 @@ export default function CollaboratorKanban({
     return isMissing || isExpired
   }
 
-  const isMissingData = (c: any) =>
-    !c.document_number || !c.photo || !c.name || c.name === 'Sem Nome'
-
   const filtered = entities.filter((c) => {
     if (complianceMode && !isMissingDataOrExpired(c)) return false
     const sector = c.data?.trabalho?.setor || 'N/A'
@@ -158,7 +155,7 @@ export default function CollaboratorKanban({
               const imgUrl = it.photo
                 ? pb.files.getURL(it, it.photo)
                 : it.data?.pessoal?.foto ||
-                  `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${it.id}`
+                  `https://img.usecurling.com/ppl/thumbnail?gender=${it.data?.pessoal?.genero === 'Feminino' ? 'female' : 'male'}&seed=${it.id}`
 
               const complianceStatus = it.compliance_status || 'pendente'
 

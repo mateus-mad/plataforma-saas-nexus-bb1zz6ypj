@@ -1,6 +1,19 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { CheckCircle2, AlertCircle } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Search, Loader2, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
+import { consultarCEP } from '@/services/cep'
+import { useToast } from '@/hooks/use-toast'
+import { getConfigurations, createConfiguration } from '@/services/configurations'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 const F = ({ l, v, onChange, disabled }: any) => (
   <div className="space-y-1.5">
@@ -9,7 +22,7 @@ const F = ({ l, v, onChange, disabled }: any) => (
       value={v || ''}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className="shadow-sm"
+      className="shadow-sm bg-white"
     />
   </div>
 )
@@ -61,9 +74,61 @@ export function DocsTab({ data, onChange, readOnly }: any) {
 }
 
 export function AddressTab({ data, onChange, readOnly }: any) {
+  const [loadingCep, setLoadingCep] = useState(false)
+  const { toast } = useToast()
+
+  const handleCepSearch = async () => {
+    if (!data.cep || data.cep.replace(/\D/g, '').length !== 8) {
+      toast({
+        variant: 'destructive',
+        title: 'CEP inválido',
+        description: 'Digite um CEP válido com 8 dígitos.',
+      })
+      return
+    }
+    setLoadingCep(true)
+    const res = await consultarCEP(data.cep)
+    setLoadingCep(false)
+
+    if (res.error) {
+      toast({ variant: 'destructive', title: 'Erro', description: res.message })
+    } else {
+      onChange('logradouro', res.data.logradouro)
+      onChange('bairro', res.data.bairro)
+      onChange('cidade', res.data.localidade)
+      onChange('estado', res.data.uf)
+      toast({ title: 'Sucesso', description: 'Endereço preenchido automaticamente.' })
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
-      <F l="CEP" v={data.cep} onChange={(v: string) => onChange('cep', v)} disabled={readOnly} />
+      <div className="space-y-1.5">
+        <Label className="font-semibold text-slate-700">CEP</Label>
+        <div className="flex gap-2">
+          <Input
+            value={data.cep || ''}
+            onChange={(e) => onChange('cep', e.target.value)}
+            disabled={readOnly}
+            className="bg-white shadow-sm"
+          />
+          {!readOnly && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCepSearch}
+              disabled={loadingCep}
+              className="shrink-0"
+            >
+              {loadingCep ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
       <F
         l="Logradouro"
         v={data.logradouro}
@@ -124,6 +189,42 @@ export function ContactTab({ data, onChange, readOnly }: any) {
 }
 
 export function WorkTab({ data, onChange, readOnly }: any) {
+  const [cargos, setCargos] = useState<any[]>([])
+  const [setores, setSetores] = useState<any[]>([])
+  const [newCargo, setNewCargo] = useState('')
+  const [newSetor, setNewSetor] = useState('')
+  const [addingCargo, setAddingCargo] = useState(false)
+  const [addingSetor, setAddingSetor] = useState(false)
+
+  useEffect(() => {
+    getConfigurations('cargo')
+      .then(setCargos)
+      .catch(() => {})
+    getConfigurations('setor')
+      .then(setSetores)
+      .catch(() => {})
+  }, [])
+
+  const handleAddCargo = async () => {
+    if (newCargo.trim()) {
+      const c = await createConfiguration({ name: newCargo.trim(), type: 'cargo' })
+      setCargos([...cargos, c])
+      onChange('cargo', c.name)
+      setNewCargo('')
+      setAddingCargo(false)
+    }
+  }
+
+  const handleAddSetor = async () => {
+    if (newSetor.trim()) {
+      const c = await createConfiguration({ name: newSetor.trim(), type: 'setor' })
+      setSetores([...setores, c])
+      onChange('setor', c.name)
+      setNewSetor('')
+      setAddingSetor(false)
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
       <F
@@ -132,22 +233,139 @@ export function WorkTab({ data, onChange, readOnly }: any) {
         onChange={(v: string) => onChange('matricula', v)}
         disabled={readOnly}
       />
-      <F
-        l="Cargo"
-        v={data.cargo}
-        onChange={(v: string) => onChange('cargo', v)}
-        disabled={readOnly}
-      />
-      <F
-        l="Setor / Departamento"
-        v={data.setor}
-        onChange={(v: string) => onChange('setor', v)}
-        disabled={readOnly}
-      />
+
+      <div className="space-y-1.5">
+        <Label className="font-semibold text-slate-700">Cargo</Label>
+        {addingCargo && !readOnly ? (
+          <div className="flex gap-2">
+            <Input
+              autoFocus
+              value={newCargo}
+              onChange={(e) => setNewCargo(e.target.value)}
+              placeholder="Novo cargo..."
+              className="bg-white"
+            />
+            <Button
+              onClick={handleAddCargo}
+              size="sm"
+              className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Salvar
+            </Button>
+            <Button
+              onClick={() => setAddingCargo(false)}
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+            >
+              Cancelar
+            </Button>
+          </div>
+        ) : (
+          <Select
+            value={data.cargo}
+            onValueChange={(v) => {
+              if (v === 'ADD') setAddingCargo(true)
+              else onChange('cargo', v)
+            }}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white shadow-sm">
+              <SelectValue placeholder="Selecione um cargo..." />
+            </SelectTrigger>
+            <SelectContent>
+              {cargos.map((c) => (
+                <SelectItem key={c.id} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
+              {!readOnly && (
+                <SelectItem
+                  value="ADD"
+                  className="text-blue-600 font-bold bg-blue-50 mt-1 cursor-pointer"
+                >
+                  + Adicionar Novo Cargo
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="font-semibold text-slate-700">Setor / Departamento</Label>
+        {addingSetor && !readOnly ? (
+          <div className="flex gap-2">
+            <Input
+              autoFocus
+              value={newSetor}
+              onChange={(e) => setNewSetor(e.target.value)}
+              placeholder="Novo setor..."
+              className="bg-white"
+            />
+            <Button
+              onClick={handleAddSetor}
+              size="sm"
+              className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Salvar
+            </Button>
+            <Button
+              onClick={() => setAddingSetor(false)}
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+            >
+              Cancelar
+            </Button>
+          </div>
+        ) : (
+          <Select
+            value={data.setor}
+            onValueChange={(v) => {
+              if (v === 'ADD') setAddingSetor(true)
+              else onChange('setor', v)
+            }}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white shadow-sm">
+              <SelectValue placeholder="Selecione um setor..." />
+            </SelectTrigger>
+            <SelectContent>
+              {setores.map((c) => (
+                <SelectItem key={c.id} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
+              {!readOnly && (
+                <SelectItem
+                  value="ADD"
+                  className="text-blue-600 font-bold bg-blue-50 mt-1 cursor-pointer"
+                >
+                  + Adicionar Novo Setor
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
       <F
         l="Data de Admissão"
         v={data.admissao}
         onChange={(v: string) => onChange('admissao', v)}
+        disabled={readOnly}
+      />
+      <F
+        l="Tipo de Contrato"
+        v={data.contrato}
+        onChange={(v: string) => onChange('contrato', v)}
+        disabled={readOnly}
+      />
+      <F
+        l="Horas Semanais"
+        v={data.horas}
+        onChange={(v: string) => onChange('horas', v)}
         disabled={readOnly}
       />
     </div>
@@ -158,7 +376,7 @@ export function SalaryTab({ data, onChange, readOnly }: any) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
       <F
-        l="Salário Base"
+        l="Salário Base (R$)"
         v={data.base}
         onChange={(v: string) => onChange('base', v)}
         disabled={readOnly}
@@ -179,6 +397,18 @@ export function SalaryTab({ data, onChange, readOnly }: any) {
         l="Conta Corrente"
         v={data.conta}
         onChange={(v: string) => onChange('conta', v)}
+        disabled={readOnly}
+      />
+      <F
+        l="Frequência Pagamento"
+        v={data.frequencia}
+        onChange={(v: string) => onChange('frequencia', v)}
+        disabled={readOnly}
+      />
+      <F
+        l="Comissões (Regras)"
+        v={data.comissoes}
+        onChange={(v: string) => onChange('comissoes', v)}
         disabled={readOnly}
       />
     </div>
@@ -212,25 +442,33 @@ export function BenefitsTab({ data, onChange, readOnly }: any) {
 
 export function ChargesTab({ data, onChange, readOnly }: any) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
-      <F
-        l="Desconto INSS"
-        v={data.inss}
-        onChange={(v: string) => onChange('inss', v)}
-        disabled={readOnly}
-      />
-      <F
-        l="Depósito FGTS"
-        v={data.fgts}
-        onChange={(v: string) => onChange('fgts', v)}
-        disabled={readOnly}
-      />
-      <F
-        l="Retenção IRRF"
-        v={data.irrf}
-        onChange={(v: string) => onChange('irrf', v)}
-        disabled={readOnly}
-      />
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl text-sm shadow-sm">
+        <p>
+          Os encargos são calculados automaticamente com base no Salário Base (Tabela INSS/IRRF
+          Vigente). Preencha manualmente apenas para ajustes.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <F
+          l="Desconto INSS Estimado"
+          v={data.inss}
+          onChange={(v: string) => onChange('inss', v)}
+          disabled={readOnly}
+        />
+        <F
+          l="Depósito FGTS Estimado"
+          v={data.fgts}
+          onChange={(v: string) => onChange('fgts', v)}
+          disabled={readOnly}
+        />
+        <F
+          l="Retenção IRRF Estimada"
+          v={data.irrf}
+          onChange={(v: string) => onChange('irrf', v)}
+          disabled={readOnly}
+        />
+      </div>
     </div>
   )
 }

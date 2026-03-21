@@ -83,6 +83,32 @@ const DEFAULT_DATA = {
   anexos: [],
 }
 
+function calculateEncargos(salary: number) {
+  let inss = 0
+  if (salary <= 1412.0) inss = salary * 0.075
+  else if (salary <= 2666.68) inss = 1412 * 0.075 + (salary - 1412) * 0.09
+  else if (salary <= 4000.03) inss = 1412 * 0.075 + 1254.68 * 0.09 + (salary - 2666.68) * 0.12
+  else
+    inss =
+      1412 * 0.075 + 1254.68 * 0.09 + 1333.35 * 0.12 + (Math.min(salary, 7786.02) - 4000.03) * 0.14
+
+  let baseIr = salary - inss
+  let irrf = 0
+  if (baseIr <= 2259.2) irrf = 0
+  else if (baseIr <= 2826.65) irrf = baseIr * 0.075 - 169.44
+  else if (baseIr <= 3751.05) irrf = baseIr * 0.15 - 381.44
+  else if (baseIr <= 4664.68) irrf = baseIr * 0.225 - 662.77
+  else irrf = baseIr * 0.275 - 896.0
+
+  const fgts = salary * 0.08
+
+  return {
+    inss: inss > 0 ? `R$ ${inss.toFixed(2).replace('.', ',')}` : 'R$ 0,00',
+    irrf: irrf > 0 ? `R$ ${irrf.toFixed(2).replace('.', ',')}` : 'R$ 0,00',
+    fgts: `R$ ${fgts.toFixed(2).replace('.', ',')}`,
+  }
+}
+
 const cropFaceFromImage = async (file: File): Promise<File | null> => {
   return new Promise((resolve) => {
     const img = new Image()
@@ -95,7 +121,6 @@ const cropFaceFromImage = async (file: File): Promise<File | null> => {
           w: img.width * 0.3,
           h: img.height * 0.5,
         }
-
         if ('FaceDetector' in window) {
           const detector = new (window as any).FaceDetector()
           const faces = await detector.detect(img)
@@ -109,21 +134,16 @@ const cropFaceFromImage = async (file: File): Promise<File | null> => {
             }
           }
         }
-
         const canvas = document.createElement('canvas')
         canvas.width = rect.w
         canvas.height = rect.h
         const ctx = canvas.getContext('2d')
         if (!ctx) return resolve(null)
-
         ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h)
         canvas.toBlob(
           (blob) => {
-            if (blob) {
-              resolve(new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' }))
-            } else {
-              resolve(null)
-            }
+            if (blob) resolve(new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' }))
+            else resolve(null)
           },
           'image/jpeg',
           0.9,
@@ -143,6 +163,7 @@ export function useCollaboratorForm(entityId: string | null) {
   const [isFetchingESocial, setIsFetchingESocial] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [data, setData] = useState<any>(DEFAULT_DATA)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -151,6 +172,7 @@ export function useCollaboratorForm(entityId: string | null) {
     } else {
       setData(DEFAULT_DATA)
     }
+    setHasUnsavedChanges(false)
   }, [entityId])
 
   const loadEntity = async (id: string) => {
@@ -180,7 +202,9 @@ export function useCollaboratorForm(entityId: string | null) {
   }
 
   const updateData = async (section: string, field: string, value: any, file?: File) => {
+    setHasUnsavedChanges(true)
     let newData = { ...data }
+
     if (section === 'anexos') {
       if (entityId) {
         const currentIds = data.anexos.map((a: any) => a.id)
@@ -192,7 +216,7 @@ export function useCollaboratorForm(entityId: string | null) {
             try {
               await deleteAttachment(id)
             } catch (e) {
-              console.error('Failed to delete attachment', e)
+              console.error(e)
             }
           }
         }
@@ -208,7 +232,7 @@ export function useCollaboratorForm(entityId: string | null) {
             anexo.id = created.id
             delete anexo.file
           } catch (e) {
-            console.error('Failed to create attachment', e)
+            console.error(e)
           }
         }
       }
@@ -224,9 +248,23 @@ export function useCollaboratorForm(entityId: string | null) {
 
       if (section === 'docs' && field === 'expiryDate') {
         const compStatus = calculateComplianceStatus(value)
-        newData.docs.compliance = {
-          ...newData.docs.compliance,
-          status: compStatus,
+        newData.docs.compliance = { ...newData.docs.compliance, status: compStatus }
+      }
+
+      if (section === 'salario' && field === 'base') {
+        const sal = parseFloat(
+          String(value)
+            .replace(/[^\d,]/g, '')
+            .replace(',', '.'),
+        )
+        if (!isNaN(sal)) {
+          const encargos = calculateEncargos(sal)
+          newData.encargos = {
+            ...newData.encargos,
+            inss: encargos.inss,
+            irrf: encargos.irrf,
+            fgts: encargos.fgts,
+          }
         }
       }
     }
@@ -250,25 +288,47 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('name', newData.pessoal.name || '')
       fd.append('document_number', newData.docs.cpf || '')
 
-      if (newData.docs?.expiryDate) {
-        fd.append('expiry_date', newData.docs.expiryDate)
-      }
-      const compStatus = calculateComplianceStatus(newData.docs?.expiryDate)
-      fd.append('compliance_status', compStatus)
+      if (newData.docs?.expiryDate) fd.append('expiry_date', newData.docs.expiryDate)
+      fd.append('compliance_status', calculateComplianceStatus(newData.docs?.expiryDate))
+
+      if (newData.pessoal.nacionalidade) fd.append('nationality', newData.pessoal.nacionalidade)
+      if (newData.pessoal.genero)
+        fd.append(
+          'gender',
+          newData.pessoal.genero === 'Masculino'
+            ? 'masc'
+            : newData.pessoal.genero === 'Feminino'
+              ? 'fem'
+              : 'outros',
+        )
+      if (newData.pessoal.mae || newData.pessoal.pai)
+        fd.append('parents_names', `${newData.pessoal.mae || ''} / ${newData.pessoal.pai || ''}`)
+      if (newData.pessoal.cidade) fd.append('birth_city', newData.pessoal.cidade)
+      if (newData.pessoal.uf) fd.append('birth_uf', newData.pessoal.uf)
+      if (newData.pessoal.nascimento)
+        fd.append('birth_date', new Date(newData.pessoal.nascimento).toISOString())
+
+      if (newData.docs.pis) fd.append('pis_pasep', newData.docs.pis)
+      if (newData.docs.docIssueDate)
+        fd.append('doc_emission_date', new Date(newData.docs.docIssueDate).toISOString())
+      if (newData.docs.docType) fd.append('doc_type', newData.docs.docType)
+
+      fd.append('address_json', JSON.stringify(newData.endereco))
+      fd.append('work_details', JSON.stringify(newData.trabalho))
+      fd.append('salary_details', JSON.stringify(newData.salario))
+      fd.append('benefits_config', JSON.stringify(newData.beneficios))
+      fd.append('financial_metrics', JSON.stringify(newData.encargos))
 
       const record = await getEntity(entityId)
-      if (record.status === 'rascunho') {
-        fd.append('status', 'ativo')
-      }
+      if (record.status === 'rascunho') fd.append('status', 'ativo')
 
-      if (section === 'pessoal' && field === 'foto' && file) {
-        fd.append('photo', file)
-      }
+      if (section === 'pessoal' && field === 'foto' && file) fd.append('photo', file)
 
       try {
         await updateEntity(entityId, fd)
         setSaveStatus('saved')
         setTimeout(() => setSaveStatus('idle'), 2000)
+        setHasUnsavedChanges(false)
       } catch (e) {
         setSaveStatus('idle')
       }
@@ -292,7 +352,7 @@ export function useCollaboratorForm(entityId: string | null) {
     }
   }
 
-  const saveEntity = async () => {
+  const saveEntityLocal = async () => {
     setSaveStatus('saving')
     try {
       const fd = new FormData()
@@ -302,20 +362,41 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('email', data.contato.email || '')
       fd.append('phone', data.contato.telPrinc || '')
 
-      if (data.docs?.expiryDate) {
-        fd.append('expiry_date', data.docs.expiryDate)
-      }
-      const compStatus = calculateComplianceStatus(data.docs?.expiryDate)
-      fd.append('compliance_status', compStatus)
+      if (data.docs?.expiryDate) fd.append('expiry_date', data.docs.expiryDate)
+      fd.append('compliance_status', calculateComplianceStatus(data.docs?.expiryDate))
+
+      if (data.pessoal.nacionalidade) fd.append('nationality', data.pessoal.nacionalidade)
+      if (data.pessoal.genero)
+        fd.append(
+          'gender',
+          data.pessoal.genero === 'Masculino'
+            ? 'masc'
+            : data.pessoal.genero === 'Feminino'
+              ? 'fem'
+              : 'outros',
+        )
+      if (data.pessoal.mae || data.pessoal.pai)
+        fd.append('parents_names', `${data.pessoal.mae || ''} / ${data.pessoal.pai || ''}`)
+      if (data.pessoal.cidade) fd.append('birth_city', data.pessoal.cidade)
+      if (data.pessoal.uf) fd.append('birth_uf', data.pessoal.uf)
+      if (data.pessoal.nascimento)
+        fd.append('birth_date', new Date(data.pessoal.nascimento).toISOString())
+
+      if (data.docs.pis) fd.append('pis_pasep', data.docs.pis)
+      if (data.docs.docIssueDate)
+        fd.append('doc_emission_date', new Date(data.docs.docIssueDate).toISOString())
+      if (data.docs.docType) fd.append('doc_type', data.docs.docType)
+
+      fd.append('address_json', JSON.stringify(data.endereco))
+      fd.append('work_details', JSON.stringify(data.trabalho))
+      fd.append('salary_details', JSON.stringify(data.salario))
+      fd.append('benefits_config', JSON.stringify(data.beneficios))
+      fd.append('financial_metrics', JSON.stringify(data.encargos))
 
       let recordId = entityId
       if (entityId) {
         const record = await getEntity(entityId)
-        if (record.status === 'rascunho') {
-          fd.append('status', 'ativo')
-        } else {
-          fd.append('status', record.status || 'ativo')
-        }
+        fd.append('status', record.status === 'rascunho' ? 'ativo' : record.status || 'ativo')
       } else {
         fd.append('status', 'ativo')
       }
@@ -323,16 +404,12 @@ export function useCollaboratorForm(entityId: string | null) {
       const payloadData = { ...data }
       delete payloadData.anexos
       if (payloadData.pessoal) delete payloadData.pessoal.photoFile
-
       fd.append('data', JSON.stringify(payloadData))
 
-      if (data.pessoal.photoFile) {
-        fd.append('photo', data.pessoal.photoFile)
-      }
+      if (data.pessoal.photoFile) fd.append('photo', data.pessoal.photoFile)
 
-      if (entityId) {
-        await updateEntity(entityId, fd)
-      } else {
+      if (entityId) await updateEntity(entityId, fd)
+      else {
         const created = await createEntity(fd)
         recordId = created.id
       }
@@ -349,11 +426,11 @@ export function useCollaboratorForm(entityId: string | null) {
       }
 
       setSaveStatus('saved')
+      setHasUnsavedChanges(false)
       setTimeout(() => setSaveStatus('idle'), 2000)
       return true
     } catch (err) {
-      const fieldErrors = extractFieldErrors(err)
-      setErrors((prev) => ({ ...prev, ...fieldErrors }))
+      setErrors((prev) => ({ ...prev, ...extractFieldErrors(err) }))
       setSaveStatus('idle')
       return false
     }
@@ -361,6 +438,7 @@ export function useCollaboratorForm(entityId: string | null) {
 
   const processOCR = async (file: File, docType: string = 'RG') => {
     setIsProcessingOCR(true)
+    setHasUnsavedChanges(true)
     try {
       const type = 'Documento de Identificação'
       let newAnexo: any = {
@@ -382,7 +460,7 @@ export function useCollaboratorForm(entityId: string | null) {
           newAnexo.id = created.id
           delete newAnexo.file
         } catch (attErr) {
-          console.error('Failed to create attachment during OCR', attErr)
+          console.error(attErr)
         }
       }
 
@@ -396,8 +474,7 @@ export function useCollaboratorForm(entityId: string | null) {
         toast({
           variant: 'destructive',
           title: 'Erro na extração OCR',
-          description:
-            'Não foi possível extrair dados. Você pode continuar com preenchimento manual.',
+          description: 'Não foi possível extrair dados automaticamente.',
         })
         setIsProcessingOCR(false)
         return { success: false, reason: 'error' }
@@ -409,17 +486,10 @@ export function useCollaboratorForm(entityId: string | null) {
             ...newData.pessoal,
             name: ocrResult.name || newData.pessoal.name,
             nascimento: ocrResult.nascimento || newData.pessoal.nascimento,
-            mae: ocrResult.mae || newData.pessoal.mae,
-            nacionalidade: ocrResult.nacionalidade || newData.pessoal.nacionalidade,
-            cidade: ocrResult.cidadeNasc || newData.pessoal.cidade,
-            uf: ocrResult.ufNasc || newData.pessoal.uf,
           }
         }
-
         if (ocrResult.document_number) {
           const newExpiry = ocrResult.expiryDate || newData.docs.expiryDate
-          const complianceStatus = calculateComplianceStatus(newExpiry)
-
           newData.docs = {
             ...newData.docs,
             cpf: ocrResult.document_number || newData.docs.cpf,
@@ -428,11 +498,10 @@ export function useCollaboratorForm(entityId: string | null) {
             expiryDate: newExpiry,
             compliance: {
               ...newData.docs.compliance,
-              status: complianceStatus,
+              status: calculateComplianceStatus(newExpiry),
             },
           }
         }
-
         if (ocrResult.address) {
           const addr = ocrResult.address
           newData.endereco = {
@@ -445,7 +514,6 @@ export function useCollaboratorForm(entityId: string | null) {
             estado: addr.estado || newData.endereco.estado,
           }
         }
-
         try {
           const faceFile = await cropFaceFromImage(file)
           if (faceFile) {
@@ -453,45 +521,17 @@ export function useCollaboratorForm(entityId: string | null) {
             newData.pessoal.foto = URL.createObjectURL(faceFile)
           }
         } catch (cropErr) {
-          console.error('Error cropping face', cropErr)
+          console.error(cropErr)
         }
       }
 
       setData(newData)
-
-      if (entityId) {
-        try {
-          const fd = new FormData()
-          const pd = { ...newData }
-          delete pd.anexos
-          if (pd.pessoal) delete pd.pessoal.photoFile
-
-          fd.append('data', JSON.stringify(pd))
-          if (ocrResult) {
-            if (ocrResult.name) fd.append('name', ocrResult.name)
-            if (ocrResult.document_number) fd.append('document_number', ocrResult.document_number)
-            if (ocrResult.expiryDate) fd.append('expiry_date', ocrResult.expiryDate)
-            const compStatus = calculateComplianceStatus(ocrResult.expiryDate)
-            fd.append('compliance_status', compStatus)
-          }
-
-          if (newData.pessoal.photoFile) {
-            fd.append('photo', newData.pessoal.photoFile)
-          }
-
-          await updateEntity(entityId, fd)
-        } catch (updateErr) {
-          console.error('Failed to update entity with OCR data', updateErr)
-        }
-      }
-
       return { success: true }
     } catch (e: any) {
       toast({
         variant: 'destructive',
         title: 'Erro na extração OCR',
-        description:
-          'Não foi possível extrair dados. Você pode continuar com preenchimento manual.',
+        description: 'Não foi possível extrair dados.',
       })
       return { success: false, reason: 'error' }
     } finally {
@@ -513,20 +553,7 @@ export function useCollaboratorForm(entityId: string | null) {
       }
       const newData = { ...data, esocial: esocialData }
       setData(newData)
-
-      if (entityId) {
-        setSaveStatus('saving')
-        const fd = new FormData()
-        const pd = { ...newData }
-        delete pd.anexos
-        if (pd.pessoal) delete pd.pessoal.photoFile
-
-        fd.append('data', JSON.stringify(pd))
-        await updateEntity(entityId, fd)
-        setSaveStatus('saved')
-        setTimeout(() => setSaveStatus('idle'), 2000)
-      }
-
+      setHasUnsavedChanges(true)
       return true
     } catch (e) {
       return false
@@ -584,6 +611,8 @@ export function useCollaboratorForm(entityId: string | null) {
     fetchESocial,
     isFetchingESocial,
     saveStatus,
-    saveEntity,
+    saveEntity: saveEntityLocal,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
   }
 }
