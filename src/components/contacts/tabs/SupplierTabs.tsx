@@ -28,6 +28,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { consultarCNPJ } from '@/services/cnpj'
+import { AuditHistoryTab } from './AuditHistoryTab'
 
 export function SupplierIdentificationTab({ data, updateData, validateCompliance }: any) {
   const { toast } = useToast()
@@ -349,6 +350,6 @@ export function SupplierRelationshipTab({ data, updateData }: any) {
   )
 }
 
-export function SupplierHistoryTab() {
-  return <div className="text-center p-8 text-slate-500">Histórico de Auditoria do Fornecedor</div>
+export function SupplierHistoryTab({ data }: any) {
+  return <AuditHistoryTab data={data} />
 }

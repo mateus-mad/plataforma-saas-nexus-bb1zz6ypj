@@ -10,55 +10,40 @@ import {
 import { History, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
+import pb from '@/lib/pocketbase/client'
+
 export default function ContactsAudit() {
   const [search, setSearch] = useState('')
-  const [auditLogs, setAuditLogs] = useState([
-    {
-      id: 1,
-      date: new Date(Date.now() - 1000 * 60 * 30).toLocaleString('pt-BR'),
-      user: 'Admin (Você)',
-      action: 'Exclusão',
-      entity: 'Colaborador (João Silva)',
-      detail: 'Exclusão de registro com senha validada',
-      module: 'RH',
-    },
-    {
-      id: 2,
-      date: new Date(Date.now() - 1000 * 60 * 60 * 2).toLocaleString('pt-BR'),
-      user: 'Maria RH',
-      action: 'Atualização',
-      entity: 'Colaborador (Mateus Amorim)',
-      detail: 'Alterou Salário Base para R$ 3.500,00',
-      module: 'RH',
-    },
-    {
-      id: 3,
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24).toLocaleString('pt-BR'),
-      user: 'Sistema',
-      action: 'Criação',
-      entity: 'Cliente (SolarTech)',
-      detail: 'Cadastro via link de autopreenchimento WhatsApp',
-      module: 'Comercial',
-    },
-    {
-      id: 4,
-      date: new Date(Date.now() - 1000 * 60 * 60 * 48).toLocaleString('pt-BR'),
-      user: 'Admin (Você)',
-      action: 'Atualização',
-      entity: 'Fornecedor (MetalForte)',
-      detail: 'Atualizou dados bancários e Limite de Crédito',
-      module: 'Suprimentos',
-    },
-    {
-      id: 5,
-      date: new Date(Date.now() - 1000 * 60 * 60 * 72).toLocaleString('pt-BR'),
-      user: 'Sistema',
-      action: 'Criação',
-      entity: 'Colaborador (Rascunho)',
-      detail: 'Rascunho criado via OCR em Lote',
-      module: 'RH',
-    },
-  ])
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const records = await pb.collection('audit_logs').getFullList({
+          sort: '-created',
+          expand: 'user_id, relacionamento_id',
+        })
+
+        const formattedLogs = records.map((r) => ({
+          id: r.id,
+          date: new Date(r.created).toLocaleString('pt-BR'),
+          user: r.expand?.user_id?.name || r.expand?.user_id?.email || 'Sistema',
+          action: r.action,
+          entity: r.expand?.relacionamento_id?.name || 'Registro Excluído',
+          detail: r.field_name ? `Alterou: ${r.field_name}` : 'Atualização de registro',
+          module: r.module === 'relacionamentos' ? 'Contatos' : r.module,
+        }))
+
+        setAuditLogs(formattedLogs)
+      } catch (err) {
+        console.error('Error fetching audit logs:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchLogs()
+  }, [])
 
   const filteredLogs = auditLogs.filter(
     (log) =>
@@ -108,7 +93,13 @@ export default function ContactsAudit() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLogs.length > 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                  Carregando registros...
+                </TableCell>
+              </TableRow>
+            ) : filteredLogs.length > 0 ? (
               filteredLogs.map((a) => (
                 <TableRow key={a.id} className="hover:bg-slate-50/50">
                   <TableCell className="font-mono text-xs text-slate-500 whitespace-nowrap">

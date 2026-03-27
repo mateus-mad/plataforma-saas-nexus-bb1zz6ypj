@@ -33,9 +33,9 @@ import ManagerPayments from '@/pages/manager/ManagerPayments'
 import ManagerPricing from '@/pages/manager/ManagerPricing'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth()
+  const { isValid, loading } = useAuth()
   if (loading) return null
-  if (!user) return <Navigate to="/login" replace />
+  if (!isValid) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
