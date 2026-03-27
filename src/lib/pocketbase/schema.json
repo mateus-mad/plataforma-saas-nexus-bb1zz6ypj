@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T17:46:18.386Z",
+  "generatedAt": "2026-03-27T23:43:15.477Z",
   "collections": [
     {
       "name": "users",
@@ -222,11 +222,27 @@
           "type": "json",
           "required": false,
           "system": false
+        },
+        {
+          "name": "hire_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "termination_date",
+          "type": "date",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX `idx_status_rel` ON `relacionamentos` (status)",
-        "CREATE INDEX `idx_relacionamentos_doc` ON `relacionamentos` (document_number)"
+        "CREATE INDEX `idx_relacionamentos_doc` ON `relacionamentos` (document_number)",
+        "CREATE INDEX `idx_relacionamentos_type` ON `relacionamentos` (type)",
+        "CREATE INDEX `idx_relacionamentos_compliance_status` ON `relacionamentos` (compliance_status)",
+        "CREATE UNIQUE INDEX `idx_unique_doc_user` ON `relacionamentos` (document_number,user_id) WHERE document_number != ''",
+        "CREATE UNIQUE INDEX `idx_unique_email_user` ON `relacionamentos` (email,user_id) WHERE email != ''"
       ]
     },
     {

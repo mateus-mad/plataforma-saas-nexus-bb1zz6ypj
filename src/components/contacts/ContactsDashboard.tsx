@@ -35,24 +35,8 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { getEntities } from '@/services/entities'
 import { useRealtime } from '@/hooks/use-realtime'
-
-const VOLUME_DATA = [
-  { month: 'Jan', cliente: 12, fornecedor: 5, colaborador: 8 },
-  { month: 'Fev', cliente: 15, fornecedor: 7, colaborador: 10 },
-  { month: 'Mar', cliente: 8, fornecedor: 12, colaborador: 4 },
-  { month: 'Abr', cliente: 20, fornecedor: 9, colaborador: 15 },
-  { month: 'Mai', cliente: 25, fornecedor: 15, colaborador: 20 },
-  { month: 'Jun', cliente: 18, fornecedor: 8, colaborador: 5 },
-]
-
-const ADMISSION_DATA = [
-  { month: 'Jan', admissao: 15, demissao: 2 },
-  { month: 'Fev', admissao: 12, demissao: 5 },
-  { month: 'Mar', admissao: 22, demissao: 3 },
-  { month: 'Abr', admissao: 18, demissao: 8 },
-  { month: 'Mai', admissao: 25, demissao: 4 },
-  { month: 'Jun', admissao: 10, demissao: 2 },
-]
+import { format, parseISO } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 const chartConfig = {
   cliente: { label: 'Clientes', color: 'hsl(var(--primary))' },
@@ -74,6 +58,8 @@ export default function ContactsDashboard() {
     incomplete: 0,
   })
   const [segmentFilter, setSegmentFilter] = useState('Todos')
+  const [volumeData, setVolumeData] = useState<any[]>([])
+  const [admissionData, setAdmissionData] = useState<any[]>([])
 
   const loadData = async () => {
     try {
@@ -84,13 +70,74 @@ export default function ContactsDashboard() {
       let cSupplier = 0
       let cColab = 0
 
+      const volMap: Record<string, any> = {}
+      const admMap: Record<string, any> = {}
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date()
+        d.setMonth(d.getMonth() - i)
+        const mStr = format(d, 'MMM', { locale: ptBR })
+        volMap[mStr] = { month: mStr, cliente: 0, fornecedor: 0, colaborador: 0 }
+        admMap[mStr] = { month: mStr, admissao: 0, demissao: 0 }
+      }
+
       rels.forEach((r) => {
-        if (!r.document_number || !r.name || r.name === 'Sem Nome') {
-          incompleteCount++
+        let isComplete = true
+        if (!r.name || r.name === 'Sem Nome' || !r.document_number) {
+          isComplete = false
         }
+        if (
+          r.type === 'colaborador' &&
+          !r.hire_date &&
+          !r.work_details?.hire_date &&
+          !r.data?.trabalho?.admissao
+        ) {
+          isComplete = false
+        }
+
+        if (!isComplete) incompleteCount++
+
         if (r.type === 'cliente') cClient++
         if (r.type === 'fornecedor') cSupplier++
         if (r.type === 'colaborador') cColab++
+
+        if (r.created) {
+          const cDate = parseISO(r.created)
+          const mStr = format(cDate, 'MMM', { locale: ptBR })
+          if (volMap[mStr]) {
+            if (r.type === 'cliente') volMap[mStr].cliente++
+            if (r.type === 'fornecedor') volMap[mStr].fornecedor++
+            if (r.type === 'colaborador') volMap[mStr].colaborador++
+          }
+        }
+
+        if (r.type === 'colaborador') {
+          const hDateRaw = r.hire_date || r.work_details?.hire_date || r.data?.trabalho?.admissao
+          if (hDateRaw) {
+            const hDate =
+              typeof hDateRaw === 'string' && hDateRaw.includes('/')
+                ? parseISO(hDateRaw.split('/').reverse().join('-'))
+                : parseISO(hDateRaw)
+
+            if (!isNaN(hDate.getTime())) {
+              const mStr = format(hDate, 'MMM', { locale: ptBR })
+              if (admMap[mStr]) admMap[mStr].admissao++
+            }
+          }
+          const tDateRaw =
+            r.termination_date || r.work_details?.termination_date || r.data?.trabalho?.demissao
+          if (tDateRaw) {
+            const tDate =
+              typeof tDateRaw === 'string' && tDateRaw.includes('/')
+                ? parseISO(tDateRaw.split('/').reverse().join('-'))
+                : parseISO(tDateRaw)
+
+            if (!isNaN(tDate.getTime())) {
+              const mStr = format(tDate, 'MMM', { locale: ptBR })
+              if (admMap[mStr]) admMap[mStr].demissao++
+            }
+          }
+        }
       })
 
       setCounts({
@@ -99,6 +146,9 @@ export default function ContactsDashboard() {
         collaborators: cColab,
         incomplete: incompleteCount,
       })
+
+      setVolumeData(Object.values(volMap))
+      setAdmissionData(Object.values(admMap))
     } catch (e) {
       console.error(e)
     }
@@ -209,7 +259,7 @@ export default function ContactsDashboard() {
           <CardContent className="flex-1">
             <ChartContainer config={chartConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={VOLUME_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={volumeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis
                     dataKey="month"
@@ -264,7 +314,7 @@ export default function ContactsDashboard() {
             <ChartContainer config={admissionConfig} className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
-                  data={ADMISSION_DATA}
+                  data={admissionData}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>

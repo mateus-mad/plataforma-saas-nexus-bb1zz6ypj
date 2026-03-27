@@ -69,8 +69,23 @@ routerAdd(
             .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
         : ''
 
+      const cnpjMatch = text.match(/\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}/)
+      const cnpj = cnpjMatch
+        ? cnpjMatch[0]
+            .replace(/[^\d-]/g, '')
+            .replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+        : ''
+
       const rgMatch = text.match(/(?:RG|R\.G\.|Registro Geral)[^\d]*([\d\.-]+)/i)
       const rg = rgMatch ? rgMatch[1].replace(/[^\d\.-]/g, '') : ''
+
+      const cnhMatch = text.match(/(?:CNH|Habilita[çc][ãa]o|Registro)[^\d]*(\d{11})/i)
+      const cnh = cnhMatch ? cnhMatch[1] : ''
+
+      const pisMatch = text.match(
+        /(?:PIS|PASEP|NIT)[^\d]*(\d{3}[\.\s]?\d{5}[\.\s]?\d{2}[\.\s]?\d{1})/i,
+      )
+      const pis = pisMatch ? pisMatch[1].replace(/\D/g, '') : ''
 
       const dates = text.match(/\d{2}\/\d{2}\/\d{4}/g) || []
       const nascimento = dates.length > 0 ? dates[0] : ''
@@ -140,10 +155,28 @@ routerAdd(
         }
       }
 
+      let docType = 'Outro'
+      let document_number = ''
+
+      if (cnpj) {
+        docType = 'CNPJ'
+        document_number = cnpj
+      } else if (cpf) {
+        docType = 'CPF'
+        document_number = cpf
+      } else if (cnh) {
+        docType = 'CNH'
+        document_number = cnh
+      } else if (rg) {
+        docType = 'RG'
+        document_number = rg
+      }
+
       return e.json(200, {
         name: name || 'Documento Extraído',
-        document_number: cpf || rg,
-        docType: cpf ? 'CPF' : rg ? 'RG' : 'Outro',
+        document_number: document_number || '',
+        docType: docType,
+        pis: pis || '',
         nascimento: nascimento,
         docIssueDate: docIssueDate,
         expiryDate: expiryDate,
