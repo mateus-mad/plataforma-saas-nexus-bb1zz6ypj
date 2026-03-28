@@ -10,7 +10,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Info, Search, Building, User, Upload, Plus, Trash2, Users, Loader2 } from 'lucide-react'
+import {
+  Info,
+  Search,
+  Building,
+  User,
+  Upload,
+  Plus,
+  Trash2,
+  Users,
+  Loader2,
+  MapPin,
+} from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
