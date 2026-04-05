@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getEntity, createEntity, updateEntity } from '@/services/entities'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
@@ -57,14 +57,22 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
   })
 
+  const dataRef = useRef(data)
+
+  useEffect(() => {
+    dataRef.current = data
+  }, [data])
+
   useEffect(() => {
     if (entityId) {
       loadEntity(entityId)
     } else {
-      setData({
+      const initialData = {
         ...DEFAULT_COMPANY_DATA,
         dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
-      })
+      }
+      dataRef.current = initialData
+      setData(initialData)
     }
     setHasUnsavedChanges(false)
   }, [entityId, type])
@@ -74,8 +82,10 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       const record = await getEntity(id)
       const parsedData = record.data || { ...DEFAULT_COMPANY_DATA }
       if (record.photo) {
+        parsedData.dados = parsedData.dados || {}
         parsedData.dados.logo = pb.files.getURL(record, record.photo)
       }
+      dataRef.current = parsedData
       setData(parsedData)
     } catch (e) {
       console.error(e)
@@ -84,18 +94,22 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
 
   const updateData = async (section: string, field: string | null, value: any) => {
     setHasUnsavedChanges(true)
+
+    const currentData = dataRef.current || DEFAULT_COMPANY_DATA
+    const sectionData = currentData[section] || {}
+
     let newData: any
-    setData((prev: any) => {
-      if (field === null) {
-        newData = { ...prev, [section]: value }
-      } else {
-        newData = {
-          ...prev,
-          [section]: { ...prev[section], [field]: value },
-        }
+    if (field === null) {
+      newData = { ...currentData, [section]: value }
+    } else {
+      newData = {
+        ...currentData,
+        [section]: { ...sectionData, [field]: value },
       }
-      return newData
-    })
+    }
+
+    dataRef.current = newData
+    setData(newData)
 
     if (field && errors[`${section}.${field}`]) {
       const newE = { ...errors }
@@ -108,8 +122,8 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       const fd = new FormData()
       fd.append('data', JSON.stringify(newData))
       fd.append('name', newData.dados?.nomeRazao || 'Sem Nome')
-      fd.append('address_json', JSON.stringify(newData.endereco))
-      fd.append('financial_metrics', JSON.stringify(newData.financeiro))
+      fd.append('address_json', JSON.stringify(newData.endereco || {}))
+      fd.append('financial_metrics', JSON.stringify(newData.financeiro || {}))
 
       try {
         await updateEntity(entityId, fd)
@@ -125,16 +139,17 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
   const saveEntity = async () => {
     setSaveStatus('saving')
     try {
+      const currentData = dataRef.current || data || DEFAULT_COMPANY_DATA
       const fd = new FormData()
-      fd.append('name', data.dados?.nomeRazao || 'Sem Nome')
+      fd.append('name', currentData.dados?.nomeRazao || 'Sem Nome')
       fd.append('type', type === 'client' ? 'cliente' : 'fornecedor')
-      fd.append('document_number', data.dados?.documento || '')
-      fd.append('email', data.contato?.emailCobranca || data.contato?.email || '')
-      fd.append('phone', data.contato?.telefone || '')
-      fd.append('status', data.dados?.ativo !== false ? 'ativo' : 'inativo')
-      fd.append('data', JSON.stringify(data))
-      fd.append('address_json', JSON.stringify(data.endereco))
-      fd.append('financial_metrics', JSON.stringify(data.financeiro))
+      fd.append('document_number', currentData.dados?.documento || '')
+      fd.append('email', currentData.contato?.emailCobranca || currentData.contato?.email || '')
+      fd.append('phone', currentData.contato?.telefone || '')
+      fd.append('status', currentData.dados?.ativo !== false ? 'ativo' : 'inativo')
+      fd.append('data', JSON.stringify(currentData))
+      fd.append('address_json', JSON.stringify(currentData.endereco || {}))
+      fd.append('financial_metrics', JSON.stringify(currentData.financeiro || {}))
 
       if (entityId) {
         await updateEntity(entityId, fd)

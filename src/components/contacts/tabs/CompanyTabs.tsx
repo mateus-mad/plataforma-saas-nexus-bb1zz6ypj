@@ -62,7 +62,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
   const [loadingCnpj, setLoadingCnpj] = useState(false)
 
   const handleSearchDoc = async () => {
-    if (!isPJ || !data.documento) {
+    if (!isPJ || !data?.documento) {
       toast({
         variant: 'destructive',
         title: 'Aviso',
@@ -77,7 +77,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
     try {
       const res = await consultarCNPJ(data.documento)
 
-      if (res.error) {
+      if (res.error || !res.data) {
         toast({
           variant: 'destructive',
           title: 'Erro na Consulta',
@@ -88,7 +88,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         return
       }
 
-      const info = res.data
+      const info = res.data || {}
 
       onChange('nomeRazao', info.razao_social || '')
       onChange('fantasia', info.nome_fantasia || '')
@@ -99,7 +99,7 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         onChange('logo', logoUrl)
       }
 
-      const cleanCnpj = info.cnpj || data.documento.replace(/\D/g, '')
+      const cleanCnpj = info.cnpj || data?.documento?.replace(/\D/g, '') || ''
       onChange(
         'documento',
         cleanCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'),
@@ -527,7 +527,7 @@ export function CompanyAddressTab({ data, onChange, readOnly }: any) {
   const { toast } = useToast()
 
   const handleCepSearch = async () => {
-    if (!data.cep || data.cep.replace(/\D/g, '').length !== 8) {
+    if (!data?.cep || data.cep.replace(/\D/g, '').length !== 8) {
       toast({
         variant: 'destructive',
         title: 'CEP inválido',
@@ -539,13 +539,18 @@ export function CompanyAddressTab({ data, onChange, readOnly }: any) {
     const res = await consultarCEP(data.cep)
     setLoadingCep(false)
 
-    if (res.error) {
-      toast({ variant: 'destructive', title: 'Erro', description: res.message })
+    if (res.error || !res.data) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: res.message || 'CEP não encontrado.',
+      })
     } else {
-      onChange('logradouro', res.data.logradouro)
-      onChange('bairro', res.data.bairro)
-      onChange('cidade', res.data.localidade)
-      onChange('estado', res.data.uf)
+      const info = res.data || {}
+      onChange('logradouro', info.logradouro || '')
+      onChange('bairro', info.bairro || '')
+      onChange('cidade', info.localidade || '')
+      onChange('estado', info.uf || '')
       toast({ title: 'Sucesso', description: 'Endereço preenchido automaticamente.' })
     }
   }

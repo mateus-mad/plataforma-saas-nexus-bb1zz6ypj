@@ -228,7 +228,7 @@ export default function CompanyModal({
             <div className="max-w-4xl mx-auto min-h-full">
               {activeTab === 'dados' && (
                 <CompanyDadosTab
-                  data={data.dados}
+                  data={data?.dados || {}}
                   onChange={(f: string, v: any) => updateData('dados', f, v)}
                   onUpdateSection={(section: string, f: string, v: any) =>
                     updateData(section, f, v)
@@ -239,7 +239,7 @@ export default function CompanyModal({
               )}
               {activeTab === 'endereco' && (
                 <CompanyAddressTab
-                  data={data.endereco}
+                  data={data?.endereco || {}}
                   onChange={(f: string, v: any) => updateData('endereco', f, v)}
                   errors={errors}
                   readOnly={false}
@@ -247,7 +247,7 @@ export default function CompanyModal({
               )}
               {activeTab === 'contato' && (
                 <CompanyContatoTab
-                  data={data.contato}
+                  data={data?.contato || {}}
                   onChange={(f: string, v: any) => updateData('contato', f, v)}
                   errors={errors}
                   readOnly={false}
@@ -255,7 +255,7 @@ export default function CompanyModal({
               )}
               {activeTab === 'financeiro' && (
                 <CompanyFinanceiroTab
-                  data={data.financeiro}
+                  data={data?.financeiro || {}}
                   type={type}
                   onChange={(f: string, v: any) => updateData('financeiro', f, v)}
                   errors={errors}
@@ -264,14 +264,14 @@ export default function CompanyModal({
               )}
               {activeTab === 'bancario' && (
                 <CompanyBankingTab
-                  data={data}
+                  data={data || {}}
                   onChange={(section: string, v: any) => updateData(section, null, v)}
                   readOnly={false}
                 />
               )}
               {activeTab === 'acordos' && (
                 <CompanyAgreementsTab
-                  data={data.acordos}
+                  data={data?.acordos || {}}
                   onChange={(f: string, v: any) => updateData('acordos', f, v)}
                   readOnly={false}
                 />
