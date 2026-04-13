@@ -56,6 +56,7 @@ export default function ContactsDashboard() {
     suppliers: 0,
     collaborators: 0,
     incomplete: 0,
+    onboardings: 0,
   })
   const [segmentFilter, setSegmentFilter] = useState('Todos')
   const [volumeData, setVolumeData] = useState<any[]>([])
@@ -71,6 +72,7 @@ export default function ContactsDashboard() {
       let cClient = 0
       let cSupplier = 0
       let cColab = 0
+      let cOnboarding = 0
 
       const volMap: Record<string, any> = {}
       const admMap: Record<string, any> = {}
@@ -104,6 +106,8 @@ export default function ContactsDashboard() {
         if (r.type === 'cliente') cClient++
         if (r.type === 'fornecedor') cSupplier++
         if (r.type === 'colaborador') cColab++
+
+        if (r.validation_metadata) cOnboarding++
 
         if (qualityFilter === 'Todos' || r.type === qualityFilter.toLowerCase()) {
           const meta = r.extraction_metadata || {}
@@ -183,6 +187,7 @@ export default function ContactsDashboard() {
         suppliers: cSupplier,
         collaborators: cColab,
         incomplete: incompleteCount,
+        onboardings: cOnboarding,
       })
 
       setVolumeData(Object.values(volMap))
@@ -232,7 +237,7 @@ export default function ContactsDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="border-emerald-100 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">Total Clientes</CardTitle>
@@ -279,6 +284,18 @@ export default function ContactsDashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-rose-700">{counts.incomplete}</div>
             <p className="text-xs text-rose-600 mt-1 font-medium">Requerem atenção (Risco)</p>
+          </CardContent>
+        </Card>
+        <Card className="border-purple-100 shadow-sm bg-purple-50/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-purple-800">
+              Onboarding Externo
+            </CardTitle>
+            <Send className="w-4 h-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-700">{counts.onboardings}</div>
+            <p className="text-xs text-purple-600 mt-1 font-medium">Cadastros validados</p>
           </CardContent>
         </Card>
       </div>

@@ -20,3 +20,9 @@ export const saveWhatsAppConfig = async (data: any, existingId?: string) => {
     return pb.collection('whatsapp_configs').create(payload)
   }
 }
+
+export const sendOnboardingLink = async (relacionamentoId: string) => {
+  return pb.send(`/backend/v1/send-onboarding/${relacionamentoId}`, {
+    method: 'POST',
+  })
+}

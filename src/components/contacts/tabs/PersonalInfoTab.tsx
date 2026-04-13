@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { User, Info, Camera } from 'lucide-react'
+import { User, Info, Camera, AlertTriangle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -21,6 +21,7 @@ export function FieldInput({
   type = 'text',
   className,
   placeholder,
+  validationError,
 }: any) {
   if (isExtracting) return <Skeleton className="h-10 w-full rounded-md" />
   return (
@@ -41,11 +42,18 @@ export function FieldInput({
           className,
           isMissing &&
             'border-yellow-400 bg-yellow-50/50 focus-visible:ring-yellow-400 transition-colors',
+          validationError &&
+            'border-rose-500 bg-rose-50/50 focus-visible:ring-rose-500 text-rose-900 transition-colors',
         )}
       />
-      {isMissing && (
+      {isMissing && !validationError && (
         <p className="text-[11px] leading-tight text-yellow-600 mt-1.5 font-medium animate-in fade-in">
           Verify manually: Data not found in the document/API.
+        </p>
+      )}
+      {validationError && (
+        <p className="text-[11px] leading-tight text-rose-600 mt-1.5 font-bold animate-in fade-in flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> {validationError}
         </p>
       )}
     </div>
@@ -367,6 +375,11 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
                 onChange={(e: any) => onChange(field, e.target.value)}
                 className={cn('shadow-sm', err(field))}
                 disabled={readOnly}
+                validationError={
+                  field === 'nascimento' && data?.validation_metadata?.expiry?.includes('vencido')
+                    ? data.validation_metadata.expiry
+                    : undefined
+                }
               />
             </div>
           ))}

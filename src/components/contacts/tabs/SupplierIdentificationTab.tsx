@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Building2, User, Plus, Search, Loader2 } from 'lucide-react'
+import { Building2, User, Plus, Search, Loader2, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { consultarCNPJ } from '@/services/cnpj'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -28,6 +28,7 @@ export function FieldInput({
   type = 'text',
   className,
   placeholder,
+  validationError,
 }: any) {
   if (isExtracting) return <Skeleton className="h-10 w-full rounded-md" />
   return (
@@ -48,11 +49,18 @@ export function FieldInput({
           className,
           isMissing &&
             'border-yellow-400 bg-yellow-50/50 focus-visible:ring-yellow-400 transition-colors',
+          validationError &&
+            'border-rose-500 bg-rose-50/50 focus-visible:ring-rose-500 text-rose-900 transition-colors',
         )}
       />
-      {isMissing && (
+      {isMissing && !validationError && (
         <p className="text-[11px] leading-tight text-yellow-600 mt-1.5 font-medium animate-in fade-in">
           Verify manually: Data not found in the document/API.
+        </p>
+      )}
+      {validationError && (
+        <p className="text-[11px] leading-tight text-rose-600 mt-1.5 font-bold animate-in fade-in flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> {validationError}
         </p>
       )}
     </div>
@@ -227,12 +235,23 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
         <div className="space-y-2">
           <Label className="font-semibold text-slate-700">{isPJ ? 'CNPJ' : 'CPF'}</Label>
           <div className="flex gap-2">
-            <Input
-              value={d.documento || ''}
-              onChange={(e) => handleUpdate('documento', e.target.value)}
-              className="font-mono flex-1"
-              placeholder={isPJ ? '00.000.000/0001-00' : '000.000.000-00'}
-            />
+            <div className="flex-1">
+              <Input
+                value={d.documento || ''}
+                onChange={(e) => handleUpdate('documento', e.target.value)}
+                className={cn(
+                  'font-mono w-full',
+                  data.validation_metadata?.document?.includes('inválido') &&
+                    'border-rose-500 bg-rose-50/50 text-rose-900 focus-visible:ring-rose-500',
+                )}
+                placeholder={isPJ ? '00.000.000/0001-00' : '000.000.000-00'}
+              />
+              {data.validation_metadata?.document?.includes('inválido') && (
+                <p className="text-[11px] leading-tight text-rose-600 mt-1.5 font-bold animate-in fade-in flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Documento Inválido (Compliance falhou)
+                </p>
+              )}
+            </div>
             {isPJ && (
               <Button
                 variant="outline"

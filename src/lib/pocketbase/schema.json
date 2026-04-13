@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-13T00:08:23.665Z",
+  "generatedAt": "2026-04-13T00:13:59.967Z",
   "collections": [
     {
       "name": "users",
@@ -240,6 +240,18 @@
           "type": "json",
           "required": false,
           "system": false
+        },
+        {
+          "name": "onboarding_token",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "validation_metadata",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -248,7 +260,8 @@
         "CREATE INDEX `idx_relacionamentos_type` ON `relacionamentos` (type)",
         "CREATE INDEX `idx_relacionamentos_compliance_status` ON `relacionamentos` (compliance_status)",
         "CREATE UNIQUE INDEX `idx_unique_doc_user` ON `relacionamentos` (document_number,user_id) WHERE document_number != ''",
-        "CREATE UNIQUE INDEX `idx_unique_email_user` ON `relacionamentos` (email,user_id) WHERE email != ''"
+        "CREATE UNIQUE INDEX `idx_unique_email_user` ON `relacionamentos` (email,user_id) WHERE email != ''",
+        "CREATE UNIQUE INDEX `idx_relacionamentos_onboarding_token` ON `relacionamentos` (onboarding_token) WHERE onboarding_token != ''"
       ]
     },
     {

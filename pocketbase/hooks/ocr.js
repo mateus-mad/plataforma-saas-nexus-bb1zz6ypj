@@ -228,6 +228,5 @@ routerAdd(
       throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
     }
   },
-  $apis.requireAuth(),
   $apis.bodyLimit(20 * 1024 * 1024), // Aumentado para 20MB para evitar erro 400 em arquivos grandes
 )

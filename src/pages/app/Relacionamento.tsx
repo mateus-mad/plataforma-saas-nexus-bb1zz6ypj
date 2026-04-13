@@ -35,6 +35,7 @@ import NotificationCenter from '@/components/contacts/NotificationCenter'
 import { ErrorBoundary } from '@/components/contacts/ErrorBoundary'
 
 import { useToast } from '@/hooks/use-toast'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export default function Relacionamento() {
   const { view } = useParams()
@@ -66,26 +67,58 @@ export default function Relacionamento() {
   const [batchOcrOpen, setBatchOcrOpen] = useState(false)
   const { toast } = useToast()
 
+  useRealtime('relacionamentos', (e: any) => {
+    if (
+      e.action === 'update' &&
+      e.record.status === 'Pendente' &&
+      e.record.onboarding_token === ''
+    ) {
+      toast({
+        title: 'Onboarding Externo Recebido',
+        description: `Novos documentos de ${e.record.name || 'um contato'} estão aguardando validação.`,
+      })
+    }
+  })
+
   const handleOpenModal = (type: 'edit' | 'new' | 'profile', id: string | null = null) =>
     setModalState({ isOpen: true, type, id })
   const handleCloseModal = () => setModalState((prev) => ({ ...prev, isOpen: false }))
 
-  const generateOnboardingLink = () => {
-    const token = Math.random().toString(36).substring(2, 10)
-    const link = `${window.location.origin}/onboarding/${token}`
-    return link
-  }
+  const [isSendingLink, setIsSendingLink] = useState(false)
 
-  const sendWhatsApp = () => {
-    const link = generateOnboardingLink()
-    const text = encodeURIComponent(
-      `Olá! Por favor, acesse o link para preencher seus dados de admissão na nossa plataforma de RH: ${link}`,
-    )
-    window.open(`https://wa.me/?text=${text}`, '_blank')
-    toast({
-      title: 'Link Gerado e Copiado',
-      description: 'Link seguro de uso único aberto no WhatsApp Web.',
-    })
+  const sendWhatsApp = async () => {
+    setIsSendingLink(true)
+    try {
+      const formData = new FormData()
+      formData.append('name', 'Novo Contato (Onboarding Externo)')
+      formData.append('type', 'colaborador')
+      formData.append('status', 'rascunho')
+      formData.append('compliance_status', 'pendente')
+
+      const { createEntity } = await import('@/services/entities')
+      const entity = await createEntity(formData)
+
+      const { sendOnboardingLink } = await import('@/services/whatsapp')
+      const res = await sendOnboardingLink(entity.id)
+
+      const text = encodeURIComponent(
+        `Olá! Por favor, acesse o link para enviar seus documentos remotamente: ${res.link}`,
+      )
+      window.open(`https://wa.me/?text=${text}`, '_blank')
+
+      toast({
+        title: 'Onboarding Iniciado',
+        description: 'Link seguro de uso único gerado e pronto no WhatsApp.',
+      })
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível gerar o link de onboarding.',
+      })
+    } finally {
+      setIsSendingLink(false)
+    }
   }
 
   return (
@@ -106,9 +139,11 @@ export default function Relacionamento() {
                     <Button
                       variant="outline"
                       onClick={sendWhatsApp}
+                      disabled={isSendingLink}
                       className="border-green-200 text-green-700 hover:bg-green-50 shadow-sm"
                     >
-                      <MessageCircle className="w-4 h-4 mr-2" /> Enviar Link
+                      <MessageCircle className="w-4 h-4 mr-2" />{' '}
+                      {isSendingLink ? 'Gerando...' : 'Enviar Link'}
                     </Button>
                     <Button
                       variant="outline"
