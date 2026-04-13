@@ -11,6 +11,7 @@ import {
   Users,
   Truck,
   History,
+  Clock,
 } from 'lucide-react'
 import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES } from '@/config/modules'
 import useModuleStore from '@/stores/useModuleStore'
@@ -75,7 +76,17 @@ export function AppSidebar() {
 
   const categoriesToRender = isAdminMode ? MANAGER_MENU_CATEGORIES : MENU_CATEGORIES
 
-  const visibleCategories = categoriesToRender
+  const pontoCategory = {
+    name: 'Ponto',
+    icon: Clock,
+    items: [
+      { name: 'Registrar Ponto', path: '/app/ponto/registrar', icon: Clock },
+      { name: 'Espelho de Ponto', path: '/app/ponto/espelho', icon: History },
+      ...(isAdminMode ? [{ name: 'Gestão de Ponto', path: '/app/ponto/gestao', icon: Users }] : []),
+    ],
+  }
+
+  const visibleCategories = [...categoriesToRender, pontoCategory]
     .map((category) => {
       if (category.path || isAdminMode) return category
 

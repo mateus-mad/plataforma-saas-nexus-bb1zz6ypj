@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-13T00:29:43.263Z",
+  "generatedAt": "2026-04-13T00:39:03.941Z",
   "collections": [
     {
       "name": "users",
@@ -414,6 +414,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "data",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []
@@ -556,6 +562,76 @@
       "indexes": [
         "CREATE INDEX `idx_audit_logs_relacionamento` ON `audit_logs` (`relacionamento_id`)",
         "CREATE INDEX `idx_audit_logs_created` ON `audit_logs` (`created`)"
+      ]
+    },
+    {
+      "name": "time_entries",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "relacionamento_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "relacionamentos"
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "timestamp",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["entrada", "pausa_inicio", "pausa_fim", "saida"]
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_time_entries_user_id ON time_entries (user_id)",
+        "CREATE INDEX idx_time_entries_timestamp ON time_entries (timestamp)"
       ]
     }
   ]

@@ -32,6 +32,10 @@ import ManagerLicenses from '@/pages/manager/ManagerLicenses'
 import ManagerPayments from '@/pages/manager/ManagerPayments'
 import ManagerPricing from '@/pages/manager/ManagerPricing'
 
+import RegistrarPonto from '@/pages/app/ponto/RegistrarPonto'
+import EspelhoPonto from '@/pages/app/ponto/EspelhoPonto'
+import GestaoPonto from '@/pages/app/ponto/GestaoPonto'
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isValid, loading } = useAuth()
   if (loading) return null
@@ -81,6 +85,10 @@ const App = () => (
                     <Route path="/app/configuracoes" element={<Settings />} />
                     <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
                     <Route path="/app/em-breve" element={<ComingSoon />} />
+
+                    <Route path="/app/ponto/registrar" element={<RegistrarPonto />} />
+                    <Route path="/app/ponto/espelho" element={<EspelhoPonto />} />
+                    <Route path="/app/ponto/gestao" element={<GestaoPonto />} />
 
                     <Route path="/app/manager" element={<ManagerDashboard />} />
                     <Route path="/app/manager/tickets" element={<ManagerTickets />} />

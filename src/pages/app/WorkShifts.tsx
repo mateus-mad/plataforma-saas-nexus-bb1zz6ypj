@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,7 +19,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Clock, AlertTriangle, ArrowLeft, Plus } from 'lucide-react'
+import { Clock, AlertTriangle, ArrowLeft, Plus, Activity } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Table,
@@ -30,24 +30,52 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { getConfigurations, createConfiguration } from '@/services/configurations'
 
 export default function WorkShifts() {
-  const [shifts, setShifts] = useState([
-    { id: 1, name: 'Comercial Padrão', type: 'CLT Padrão', hours: '8h/dia (44h/sem)' },
-    { id: 2, name: 'Operação Noturna', type: 'CLT Padrão', hours: '8h/dia (44h/sem)' },
-  ])
+  const [shifts, setShifts] = useState<any[]>([])
   const [open, setOpen] = useState(false)
   const [type, setType] = useState('CLT Padrão')
   const [name, setName] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const handleSave = () => {
-    setShifts([
-      ...shifts,
-      { id: Date.now(), name, type, hours: type === 'Flexível' ? 'Variável' : '8h/dia (44h/sem)' },
-    ])
-    setOpen(false)
-    setName('')
-    setType('CLT Padrão')
+  const loadShifts = async () => {
+    try {
+      const data = await getConfigurations('jornada')
+      setShifts(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadShifts()
+  }, [])
+
+  const handleSave = async () => {
+    if (!name) return
+    setSaving(true)
+    try {
+      await createConfiguration({
+        name,
+        type: 'jornada',
+        data: {
+          shiftType: type,
+          hours: type === 'Flexível' ? 'Variável' : '8h/dia (44h/sem)',
+        },
+      })
+      await loadShifts()
+      setOpen(false)
+      setName('')
+      setType('CLT Padrão')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -119,11 +147,11 @@ export default function WorkShifts() {
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
+                <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
                   Cancelar
                 </Button>
-                <Button onClick={handleSave} disabled={!name}>
-                  Salvar Jornada
+                <Button onClick={handleSave} disabled={!name || saving}>
+                  {saving ? 'Salvando...' : 'Salvar Jornada'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -141,22 +169,38 @@ export default function WorkShifts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {shifts.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium text-slate-800">{s.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-slate-50 font-normal">
-                        {s.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-600">{s.hours}</TableCell>
-                    <TableCell>
-                      <Badge className="bg-emerald-100 text-emerald-700 border-none hover:bg-emerald-200">
-                        Ativa
-                      </Badge>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      <Activity className="w-5 h-5 animate-spin mx-auto text-slate-400" />
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : shifts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      Nenhuma jornada cadastrada.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  shifts.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium text-slate-800">{s.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-slate-50 font-normal">
+                          {s.data?.shiftType || 'Padrão'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {s.data?.hours || 'Não definida'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-none hover:bg-emerald-200">
+                          Ativa
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
