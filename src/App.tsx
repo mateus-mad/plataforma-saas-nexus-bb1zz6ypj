@@ -35,6 +35,7 @@ import ManagerPricing from '@/pages/manager/ManagerPricing'
 import RegistrarPonto from '@/pages/app/ponto/RegistrarPonto'
 import EspelhoPonto from '@/pages/app/ponto/EspelhoPonto'
 import GestaoPonto from '@/pages/app/ponto/GestaoPonto'
+import PontoDashboard from '@/pages/app/ponto/PontoDashboard'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isValid, loading } = useAuth()
@@ -86,6 +87,7 @@ const App = () => (
                     <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
                     <Route path="/app/em-breve" element={<ComingSoon />} />
 
+                    <Route path="/app/ponto" element={<PontoDashboard />} />
                     <Route path="/app/ponto/registrar" element={<RegistrarPonto />} />
                     <Route path="/app/ponto/espelho" element={<EspelhoPonto />} />
                     <Route path="/app/ponto/gestao" element={<GestaoPonto />} />

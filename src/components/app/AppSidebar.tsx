@@ -76,24 +76,20 @@ export function AppSidebar() {
 
   const categoriesToRender = isAdminMode ? MANAGER_MENU_CATEGORIES : MENU_CATEGORIES
 
-  const pontoCategory = {
-    name: 'Ponto',
-    icon: Clock,
-    items: [
-      { name: 'Registrar Ponto', path: '/app/ponto/registrar', icon: Clock },
-      { name: 'Espelho de Ponto', path: '/app/ponto/espelho', icon: History },
-      ...(isAdminMode ? [{ name: 'Gestão de Ponto', path: '/app/ponto/gestao', icon: Users }] : []),
-    ],
-  }
-
-  const visibleCategories = [...categoriesToRender, pontoCategory]
+  const visibleCategories = categoriesToRender
     .map((category) => {
       if (category.path || isAdminMode) return category
 
       if (category.items) {
-        const visibleItems = category.items.filter(
-          (item) => category.name === 'Contatos' || contractedModules.includes(item.name),
-        )
+        const visibleItems = category.items.filter((item: any) => {
+          if (item.requireAdmin && !isAdminMode) return false
+          return (
+            category.name === 'Contatos' ||
+            category.name === 'Ponto' ||
+            contractedModules.includes(item.name) ||
+            contractedModules.includes('Controle de Ponto')
+          )
+        })
         return { ...category, items: visibleItems }
       }
       return category

@@ -52,6 +52,12 @@ export const ACTIVE_MODULES = [
     icon: CircleDollarSign,
     description: 'Controle financeiro para gestão de fluxo de caixa.',
   },
+  {
+    name: 'Controle de Ponto',
+    path: '/app/ponto',
+    icon: Clock,
+    description: 'Registro e gestão inteligente de jornada de trabalho.',
+  },
 ]
 
 export const UPCOMING_MODULES = [
@@ -129,11 +135,6 @@ export const UPCOMING_MODULES = [
     name: 'Sistema de Monitoramento Solar',
     icon: Activity,
     description: 'Acompanhamento de geração de energia em tempo real.',
-  },
-  {
-    name: 'Controle de Ponto',
-    icon: Clock,
-    description: 'Registro e gestão inteligente de jornada de trabalho.',
   },
   {
     name: 'Sistema de Automação de Tarefas',
@@ -272,12 +273,36 @@ export const MENU_CATEGORIES = [
         isUpcoming: true,
         description: 'Gestão de colaboradores',
       },
+    ],
+  },
+  {
+    name: 'Ponto',
+    icon: Clock,
+    items: [
       {
-        name: 'Controle de Ponto',
-        path: '/app/em-breve?module=Controle%20de%20Ponto',
+        name: 'Painel Geral',
+        path: '/app/ponto',
+        icon: LayoutDashboard,
+        description: 'Visão geral da jornada',
+      },
+      {
+        name: 'Registrar Ponto',
+        path: '/app/ponto/registrar',
         icon: Clock,
-        isUpcoming: true,
-        description: 'Jornada de trabalho',
+        description: 'Bater ponto',
+      },
+      {
+        name: 'Espelho de Ponto',
+        path: '/app/ponto/espelho',
+        icon: History,
+        description: 'Histórico de marcações',
+      },
+      {
+        name: 'Gestão de Ponto',
+        path: '/app/ponto/gestao',
+        icon: Users,
+        requireAdmin: true,
+        description: 'Administração da equipe',
       },
     ],
   },

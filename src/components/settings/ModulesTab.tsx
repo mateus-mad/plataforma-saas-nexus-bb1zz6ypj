@@ -10,13 +10,38 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Check, Layers, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function ModulesTab() {
   const { contractedModules, contractModule, removeModule } = useModuleStore()
 
-  const modules = MENU_CATEGORIES.flatMap((cat) =>
-    cat.items ? cat.items.map((item) => ({ ...item, category: cat.name })) : [],
-  )
+  const modules = MENU_CATEGORIES.flatMap((cat) => {
+    if (cat.name === 'Contatos') {
+      return [
+        {
+          name: 'Contatos',
+          path: '/app/contatos',
+          icon: cat.icon,
+          description: 'Gestão centralizada para colaboradores, clientes e fornecedores.',
+          category: 'Módulos Base',
+          isUpcoming: false,
+        },
+      ]
+    }
+    if (cat.name === 'Ponto') {
+      return [
+        {
+          name: 'Controle de Ponto',
+          path: '/app/ponto',
+          icon: cat.icon,
+          description: 'Registro e gestão inteligente de jornada de trabalho.',
+          category: 'Recursos Humanos',
+          isUpcoming: false,
+        },
+      ]
+    }
+    return cat.items ? cat.items.map((item) => ({ ...item, category: cat.name })) : []
+  })
 
   return (
     <div className="space-y-6 mt-6">
@@ -88,8 +113,8 @@ export default function ModulesTab() {
               <CardFooter className="pt-4 border-t bg-slate-50/80">
                 {isContracted ? (
                   <div className="flex gap-2 w-full">
-                    <Button variant="outline" className="flex-1 border-slate-300">
-                      Configurar
+                    <Button variant="outline" className="flex-1 border-slate-300" asChild>
+                      <Link to={mod.path || '#'}>Configurar</Link>
                     </Button>
                     <Button
                       variant="outline"
