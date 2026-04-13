@@ -93,7 +93,9 @@ export default function RegistrarPonto() {
         const ipRes = await fetch('https://api.ipify.org?format=json')
         const ipData = await ipRes.json()
         ip = ipData.ip
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Falha ao obter IP', e)
+      }
 
       const action = getNextAction()
 
