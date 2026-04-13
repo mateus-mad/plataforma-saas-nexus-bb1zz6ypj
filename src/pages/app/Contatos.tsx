@@ -39,7 +39,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 export default function Contatos() {
   const { view } = useParams()
   const navigate = useNavigate()
-  const currentView = view || 'dashboard'
+  const currentView = view || 'painel'
 
   const { setOpen } = useSidebar()
 
@@ -124,13 +124,13 @@ export default function Contatos() {
       <div className="flex flex-col gap-4 h-[calc(100vh-6rem)] animate-fade-in">
         <div className="flex-1 flex flex-col min-w-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
-            {currentView === 'dashboard' && <ContactsDashboard />}
+            {(currentView === 'painel' || currentView === 'dashboard') && <ContactsDashboard />}
 
             {currentView === 'colaboradores' && (
               <div className="space-y-6 pb-10">
                 <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
                   <h2 className="text-2xl font-bold tracking-tight text-slate-800">
-                    Colaboradores
+                    Cadastro de Colaboradores
                   </h2>
                   <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
                     <NotificationCenter />

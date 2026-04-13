@@ -73,32 +73,16 @@ export function AppSidebar() {
     }
   }
 
-  const categoriesToRender = isAdminMode
-    ? MANAGER_MENU_CATEGORIES
-    : MENU_CATEGORIES.map((cat) => {
-        if (cat.name.includes('Relacionamento') || cat.name.includes('Contato')) {
-          return {
-            ...cat,
-            name: 'Contato',
-            path: undefined,
-            items: [
-              { name: 'Painel Geral', path: '/app/contatos/dashboard', icon: LayoutDashboard },
-              { name: 'Colaborador', path: '/app/contatos/colaboradores', icon: Users },
-              { name: 'Clientes', path: '/app/contatos/clientes', icon: Users },
-              { name: 'Fornecedor', path: '/app/contatos/fornecedores', icon: Truck },
-              { name: 'Auditoria', path: '/app/contatos/auditoria', icon: History },
-            ],
-          }
-        }
-        return cat
-      })
+  const categoriesToRender = isAdminMode ? MANAGER_MENU_CATEGORIES : MENU_CATEGORIES
 
   const visibleCategories = categoriesToRender
     .map((category) => {
       if (category.path || isAdminMode) return category
 
       if (category.items) {
-        const visibleItems = category.items.filter((item) => contractedModules.includes(item.name))
+        const visibleItems = category.items.filter(
+          (item) => category.name === 'Contatos' || contractedModules.includes(item.name),
+        )
         return { ...category, items: visibleItems }
       }
       return category
