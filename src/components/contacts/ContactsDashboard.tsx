@@ -25,6 +25,7 @@ import {
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
 import {
   Select,
   SelectContent,
