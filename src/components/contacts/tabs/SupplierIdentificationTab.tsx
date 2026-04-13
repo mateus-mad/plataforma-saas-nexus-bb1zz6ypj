@@ -150,6 +150,13 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
 
       if (data.id) {
         await pb
+          .collection('relacionamentos')
+          .update(data.id, {
+            'extraction_metadata+': { auto_filled: captured },
+          })
+          .catch(() => {})
+
+        await pb
           .collection('audit_logs')
           .create({
             relacionamento_id: data.id,

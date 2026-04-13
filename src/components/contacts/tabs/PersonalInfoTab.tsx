@@ -104,48 +104,139 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
 
     setIsExtracting(true)
     setMissingFields({})
-    toast({ title: 'Extracting data...', description: 'Analyzing document via OCR...' })
+    toast({ title: 'Extraindo dados...', description: 'Analisando documento via Inteligência...' })
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      const missing: Record<string, boolean> = {
-        nacionalidade: true,
-        genero: true,
-        civil: true,
-        escolaridade: true,
-        mae: true,
-        pai: true,
-        cidade: true,
-        uf: true,
-        sangue: true,
+      if (data?.id) {
+        try {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('relacionamento_id', data.id)
+          fd.append('category', 'Documento de Identificação (OCR)')
+          if (pb.authStore.record?.id) {
+            fd.append('user_id', pb.authStore.record.id)
+          }
+          await pb.collection('attachments').create(fd)
+        } catch (e) {
+          console.error('Erro ao salvar anexo', e)
+        }
       }
 
-      onChange('name', 'João da Silva')
-      onChange('nascimento', '1990-01-01')
+      const reader = new FileReader()
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const res = await pb.send('/backend/v1/ocr', {
+        method: 'POST',
+        body: JSON.stringify({ image: base64, docType: 'RG' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const missing: Record<string, boolean> = {
+        nacionalidade: !res.nacionalidade,
+        genero: !res.genero,
+        civil: true,
+        escolaridade: true,
+        mae: !res.mae,
+        pai: !res.pai,
+        cidade: !res.cidade_nasc,
+        uf: !res.uf_nasc,
+        sangue: true,
+        nascimento: !res.nascimento,
+      }
+
+      if (res.name) onChange('name', res.name)
+      if (res.nascimento)
+        onChange(
+          'nascimento',
+          res.nascimento.includes('/')
+            ? res.nascimento.split('/').reverse().join('-')
+            : res.nascimento,
+        )
+      if (res.nacionalidade) onChange('nacionalidade', res.nacionalidade)
+      if (res.genero) onChange('genero', res.genero)
+      if (res.mae) onChange('mae', res.mae)
+      if (res.pai) onChange('pai', res.pai)
+      if (res.cidade_nasc) onChange('cidade', res.cidade_nasc)
+      if (res.uf_nasc) onChange('uf', res.uf_nasc)
+
       setMissingFields(missing)
 
+      if (res.address?.cep) {
+        try {
+          toast({ title: 'CEP Identificado', description: 'Buscando endereço em segundo plano...' })
+          const cepRes = await pb.send(`/backend/v1/cep-lookup/${res.address.cep}`, {
+            method: 'GET',
+          })
+          if (cepRes.logradouro) {
+            toast({
+              title: 'Endereço Localizado (Via API)',
+              description: `${cepRes.logradouro}, ${cepRes.bairro} - ${cepRes.cidade}/${cepRes.estado}`,
+            })
+          }
+        } catch (e) {
+          console.error('Erro ao buscar CEP', e)
+        }
+      }
+
+      if (res.document_number) {
+        try {
+          const docNum = res.document_number.replace(/\D/g, '')
+          if (docNum.length === 14) {
+            toast({
+              title: 'CNPJ Identificado',
+              description: 'Consultando base da Receita Federal...',
+            })
+            const cnpjRes = await pb.send(`/backend/v1/cnpj/${docNum}`, { method: 'GET' })
+            if (cnpjRes.razao_social) {
+              toast({ title: 'Empresa Localizada (Via CNPJ)', description: cnpjRes.razao_social })
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao buscar CNPJ', e)
+        }
+      }
+
       if (data?.id) {
+        const captured = Object.keys(missing).filter((k) => !missing[k])
+        captured.push('name')
+
+        await pb
+          .collection('relacionamentos')
+          .update(data.id, {
+            'extraction_metadata+': { auto_filled: captured },
+          })
+          .catch(() => {})
+
         await pb
           .collection('audit_logs')
           .create({
             relacionamento_id: data.id,
             user_id: pb.authStore.record?.id,
-            action: 'OCR Identity Card',
+            action: 'OCR Extraction',
             module: 'extraction',
             old_value: { status: 'Success' },
             new_value: {
-              captured: ['Nome Completo', 'Data Nascimento'],
-              missing: Object.keys(missing),
+              captured,
+              missing: Object.keys(missing).filter((k) => missing[k]),
             },
           })
           .catch(console.error)
       }
       toast({
-        title: 'Success',
-        description: 'Document data extracted. Please verify missing fields.',
+        title: 'Extração Concluída',
+        description:
+          'Dados populados com sucesso. Por favor, verifique os campos destacados em amarelo.',
       })
     } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Falha na Extração (OCR)',
+        description: 'O documento fornecido está ilegível ou o formato não é suportado no momento.',
+      })
       if (data?.id) {
         await pb
           .collection('audit_logs')

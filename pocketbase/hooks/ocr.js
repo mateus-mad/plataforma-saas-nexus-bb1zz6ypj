@@ -59,7 +59,7 @@ routerAdd(
         const nextYear = new Date()
         nextYear.setFullYear(nextYear.getFullYear() + 1)
         const dateStr = nextYear.toLocaleDateString('pt-BR')
-        text = `NOME\nColaborador Extraído Via OCR\nCPF 123.456.789-00\nVALIDADE ${dateStr}\nRUA PRINCIPAL 1000 SAO PAULO SP`
+        text = `NOME\nColaborador Extraído Via OCR\nCPF 123.456.789-00\nRG 12.345.678-9\nVALIDADE ${dateStr}\nDATA DE NASCIMENTO\n01/01/1990\nFILIAÇÃO\nMARIA DA SILVA\nJOSE DA SILVA\nNATURALIDADE\nSAO PAULO - SP\nNACIONALIDADE\nBRASILEIRA\nCEP 01001-000\nRUA PRINCIPAL 1000 SAO PAULO SP`
       }
 
       const cpfMatch = text.match(/\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}/)
@@ -108,6 +108,11 @@ routerAdd(
       }
 
       let name = ''
+      let mae = ''
+      let pai = ''
+      let naturalidade = ''
+      let nacionalidade = ''
+
       const lines = text
         .split('\n')
         .map((l) => l.trim())
@@ -115,12 +120,20 @@ routerAdd(
 
       for (let i = 0; i < lines.length; i++) {
         if (/(?:NOME|NOME DO TITULAR|IDENTIFICAÇÃO)/i.test(lines[i])) {
-          if (lines[i + 1]) {
-            name = lines[i + 1]
-          }
-          break
+          if (lines[i + 1]) name = lines[i + 1]
+        }
+        if (/(?:FILIAÇÃO|NOME DA MÃE|NOME DO PAI|PAIS)/i.test(lines[i])) {
+          if (lines[i + 1]) mae = lines[i + 1]
+          if (lines[i + 2] && lines[i + 2].length > 5) pai = lines[i + 2]
+        }
+        if (/(?:NATURALIDADE|LOCAL DE NASCIMENTO)/i.test(lines[i])) {
+          if (lines[i + 1]) naturalidade = lines[i + 1]
+        }
+        if (/(?:NACIONALIDADE)/i.test(lines[i])) {
+          if (lines[i + 1]) nacionalidade = lines[i + 1]
         }
       }
+
       if (!name && lines.length > 1) {
         const possibleNames = lines.filter(
           (l) => l === l.toUpperCase() && l.length > 5 && l.length < 40 && !/\d/.test(l),
@@ -129,8 +142,24 @@ routerAdd(
       }
       name = name.replace(/[^a-zA-ZÀ-ÿ\s]/g, '').trim()
 
-      const cepMatch = text.match(/\d{5}-\d{3}/)
-      const cep = cepMatch ? cepMatch[0] : ''
+      let cidade_nasc = ''
+      let uf_nasc = ''
+      if (naturalidade) {
+        const parts = naturalidade.split(/[-/]/)
+        if (parts.length > 1) {
+          cidade_nasc = parts[0].trim()
+          uf_nasc = parts[1].trim()
+        } else {
+          cidade_nasc = naturalidade
+        }
+      }
+
+      let genero = ''
+      if (/(?:FEMININO|FEM|MULHER)/i.test(text)) genero = 'Feminino'
+      else if (/(?:MASCULINO|MASC|HOMEM)/i.test(text)) genero = 'Masculino'
+
+      const cepMatch = text.match(/\d{5}-?\d{3}/)
+      const cep = cepMatch ? cepMatch[0].replace(/\D/g, '') : ''
       let logradouro = ''
       let numero = ''
       let bairro = ''
@@ -174,6 +203,12 @@ routerAdd(
 
       return e.json(200, {
         name: name || 'Documento Extraído',
+        mae,
+        pai,
+        nacionalidade,
+        cidade_nasc,
+        uf_nasc,
+        genero,
         document_number: document_number || '',
         docType: docType,
         pis: pis || '',

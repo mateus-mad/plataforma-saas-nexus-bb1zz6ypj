@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-12T23:59:10.460Z",
+  "generatedAt": "2026-04-13T00:08:23.665Z",
   "collections": [
     {
       "name": "users",
@@ -232,6 +232,12 @@
         {
           "name": "termination_date",
           "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "extraction_metadata",
+          "type": "json",
           "required": false,
           "system": false
         }
