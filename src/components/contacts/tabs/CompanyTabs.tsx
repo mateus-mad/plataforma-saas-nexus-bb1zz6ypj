@@ -27,6 +27,50 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { consultarCNPJ } from '@/services/cnpj'
 import { consultarCEP } from '@/services/cep'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ExtractionLogDialog } from '../ExtractionLogDialog'
+import pb from '@/lib/pocketbase/client'
+
+export function FieldInput({
+  isExtracting,
+  isMissing,
+  onClearMissing,
+  value,
+  onChange,
+  disabled,
+  type = 'text',
+  className,
+  placeholder,
+}: any) {
+  if (isExtracting) return <Skeleton className="h-10 w-full rounded-md" />
+  return (
+    <div>
+      <Input
+        type={type}
+        value={value}
+        onChange={(e) => {
+          onChange(e)
+          if (isMissing) onClearMissing()
+        }}
+        onFocus={() => {
+          if (isMissing) onClearMissing()
+        }}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={cn(
+          className,
+          isMissing &&
+            'border-yellow-400 bg-yellow-50/50 focus-visible:ring-yellow-400 transition-colors',
+        )}
+      />
+      {isMissing && (
+        <p className="text-[11px] leading-tight text-yellow-600 mt-1.5 font-medium animate-in fade-in">
+          Verify manually: Data not found in the document/API.
+        </p>
+      )}
+    </div>
+  )
+}
 
 export const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   <Label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1.5 text-sm">
@@ -60,6 +104,8 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
   const [showNewSeg, setShowNewSeg] = useState(false)
   const [newSeg, setNewSeg] = useState('')
   const [loadingCnpj, setLoadingCnpj] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [missingFields, setMissingFields] = useState<Record<string, boolean>>({})
 
   const handleSearchDoc = async () => {
     if (!isPJ || !data?.documento) {
@@ -72,6 +118,8 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
     }
 
     setLoadingCnpj(true)
+    setIsExtracting(true)
+    setMissingFields({})
     toast({ title: 'Buscando dados...', description: 'Consultando base da Receita Federal.' })
 
     try {
@@ -81,22 +129,45 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         toast({
           variant: 'destructive',
           title: 'Erro na Consulta',
-          description:
-            res.message ||
-            'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.',
+          description: res.message || 'Não foi possível conectar.',
         })
+        if (data.id) {
+          await pb
+            .collection('audit_logs')
+            .create({
+              relacionamento_id: data.id,
+              user_id: pb.authStore.record?.id,
+              action: 'CNPJ API',
+              module: 'extraction',
+              old_value: { status: 'Error', message: res.message },
+              new_value: { captured: [], missing: [] },
+            })
+            .catch(console.error)
+        }
         return
       }
 
       const info = res.data || {}
+      const missing: Record<string, boolean> = {}
+      const captured: string[] = []
 
-      onChange('nomeRazao', info.razao_social || '')
-      onChange('fantasia', info.nome_fantasia || '')
+      if (info.razao_social) {
+        onChange('nomeRazao', info.razao_social)
+        captured.push('Razão Social')
+      } else missing.nomeRazao = true
+
+      if (info.nome_fantasia) {
+        onChange('fantasia', info.nome_fantasia)
+        captured.push('Nome Fantasia')
+      } else missing.fantasia = true
 
       if (info.nome_fantasia || info.razao_social) {
         const query = info.nome_fantasia || info.razao_social
-        const logoUrl = `https://img.usecurling.com/i?q=${encodeURIComponent(query)}&color=multicolor&shape=fill`
-        onChange('logo', logoUrl)
+        onChange(
+          'logo',
+          `https://img.usecurling.com/i?q=${encodeURIComponent(query)}&color=multicolor&shape=fill`,
+        )
+        captured.push('Logo')
       }
 
       const cleanCnpj = info.cnpj || data?.documento?.replace(/\D/g, '') || ''
@@ -104,40 +175,84 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         'documento',
         cleanCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'),
       )
+      if (cleanCnpj) captured.push('CNPJ')
 
       if (info.data_inicio_atividade) {
         onChange('dataAbertura', info.data_inicio_atividade)
+        captured.push('Data Abertura')
+      } else {
+        missing.dataAbertura = true
       }
 
       if (onUpdateSection) {
-        if (info.cep) onUpdateSection('endereco', 'cep', info.cep)
-
+        if (info.cep) {
+          onUpdateSection('endereco', 'cep', info.cep)
+          captured.push('CEP')
+        }
         const logradouro = info.descricao_tipo_de_logradouro
           ? `${info.descricao_tipo_de_logradouro} ${info.logradouro}`
           : info.logradouro
-
-        if (logradouro) onUpdateSection('endereco', 'logradouro', logradouro)
-        if (info.numero) onUpdateSection('endereco', 'numero', info.numero)
-        if (info.bairro) onUpdateSection('endereco', 'bairro', info.bairro)
-        if (info.municipio) onUpdateSection('endereco', 'cidade', info.municipio)
-        if (info.uf) onUpdateSection('endereco', 'estado', info.uf)
-        if (info.complemento) onUpdateSection('endereco', 'comp', info.complemento)
+        if (logradouro) {
+          onUpdateSection('endereco', 'logradouro', logradouro)
+          captured.push('Logradouro')
+        }
+        if (info.numero) {
+          onUpdateSection('endereco', 'numero', info.numero)
+          captured.push('Número')
+        }
+        if (info.bairro) {
+          onUpdateSection('endereco', 'bairro', info.bairro)
+          captured.push('Bairro')
+        }
+        if (info.municipio) {
+          onUpdateSection('endereco', 'cidade', info.municipio)
+          captured.push('Cidade')
+        }
+        if (info.uf) {
+          onUpdateSection('endereco', 'estado', info.uf)
+          captured.push('Estado')
+        }
+        if (info.complemento) {
+          onUpdateSection('endereco', 'comp', info.complemento)
+          captured.push('Complemento')
+        }
       }
 
-      toast({
-        title: 'Sucesso',
-        description: 'Dados, logo e endereço preenchidos com sucesso via CNPJ.',
-      })
+      setMissingFields(missing)
+
+      if (data.id) {
+        await pb
+          .collection('audit_logs')
+          .create({
+            relacionamento_id: data.id,
+            user_id: pb.authStore.record?.id,
+            action: 'CNPJ API',
+            module: 'extraction',
+            old_value: { status: 'Success' },
+            new_value: { captured, missing: Object.keys(missing) },
+          })
+          .catch(console.error)
+      }
+
+      toast({ title: 'Sucesso', description: 'Dados e endereço preenchidos com sucesso via CNPJ.' })
     } catch (e: any) {
-      console.error('CNPJ Lookup Error:', e)
-      toast({
-        variant: 'destructive',
-        title: 'Erro na Consulta',
-        description:
-          'Não foi possível conectar ao serviço de consulta de CNPJ. Por favor, tente novamente mais tarde ou preencha manualmente.',
-      })
+      toast({ variant: 'destructive', title: 'Erro na Consulta', description: 'Ocorreu um erro.' })
+      if (data.id) {
+        await pb
+          .collection('audit_logs')
+          .create({
+            relacionamento_id: data.id,
+            user_id: pb.authStore.record?.id,
+            action: 'CNPJ API',
+            module: 'extraction',
+            old_value: { status: 'Error', message: e.message },
+            new_value: { captured: [], missing: [] },
+          })
+          .catch(console.error)
+      }
     } finally {
       setLoadingCnpj(false)
+      setIsExtracting(false)
     }
   }
 
@@ -189,6 +304,11 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
               )}
               Busca Automática via Receita Federal
             </Button>
+          )}
+          {data?.id && (
+            <div className="mt-2 inline-block ml-2">
+              <ExtractionLogDialog entityId={data.id} />
+            </div>
           )}
         </div>
       </div>
@@ -260,9 +380,12 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         </div>
         <div className="space-y-1.5">
           <LabelT l={isPJ ? 'Razão Social' : 'Nome Completo'} req />
-          <Input
-            value={data.nomeRazao || ''}
-            onChange={(e) => onChange('nomeRazao', e.target.value)}
+          <FieldInput
+            isExtracting={isExtracting}
+            isMissing={missingFields.nomeRazao}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, nomeRazao: false }))}
+            value={data?.nomeRazao || ''}
+            onChange={(e: any) => onChange('nomeRazao', e.target.value)}
             disabled={readOnly}
             className={cn('bg-white', err('nomeRazao'))}
           />
@@ -270,9 +393,12 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         {isPJ ? (
           <div className="space-y-1.5">
             <LabelT l="Nome Fantasia" />
-            <Input
-              value={data.fantasia || ''}
-              onChange={(e) => onChange('fantasia', e.target.value)}
+            <FieldInput
+              isExtracting={isExtracting}
+              isMissing={missingFields.fantasia}
+              onClearMissing={() => setMissingFields((p) => ({ ...p, fantasia: false }))}
+              value={data?.fantasia || ''}
+              onChange={(e: any) => onChange('fantasia', e.target.value)}
               disabled={readOnly}
               className="bg-white"
             />
@@ -305,10 +431,15 @@ export function CompanyDadosTab({ data, onChange, onUpdateSection, errors, readO
         )}
         <div className="space-y-1.5">
           <LabelT l={isPJ ? 'Data de Abertura' : 'Data de Nascimento'} />
-          <Input
+          <FieldInput
             type="date"
-            value={isPJ ? data.dataAbertura || '' : data.dataNascimento || ''}
-            onChange={(e) => onChange(isPJ ? 'dataAbertura' : 'dataNascimento', e.target.value)}
+            isExtracting={isExtracting}
+            isMissing={isPJ ? missingFields.dataAbertura : false}
+            onClearMissing={() => isPJ && setMissingFields((p) => ({ ...p, dataAbertura: false }))}
+            value={isPJ ? data?.dataAbertura || '' : data?.dataNascimento || ''}
+            onChange={(e: any) =>
+              onChange(isPJ ? 'dataAbertura' : 'dataNascimento', e.target.value)
+            }
             disabled={readOnly}
             className="bg-white"
           />
@@ -524,34 +655,84 @@ export function CompanyContatoTab({ data, onChange, readOnly }: any) {
 
 export function CompanyAddressTab({ data, onChange, readOnly }: any) {
   const [loadingCep, setLoadingCep] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [missingFields, setMissingFields] = useState<Record<string, boolean>>({})
   const { toast } = useToast()
 
   const handleCepSearch = async () => {
     if (!data?.cep || data.cep.replace(/\D/g, '').length !== 8) {
-      toast({
-        variant: 'destructive',
-        title: 'CEP inválido',
-        description: 'Digite um CEP válido com 8 dígitos.',
-      })
+      toast({ variant: 'destructive', title: 'CEP inválido', description: 'Digite um CEP válido.' })
       return
     }
     setLoadingCep(true)
-    const res = await consultarCEP(data.cep)
-    setLoadingCep(false)
+    setIsExtracting(true)
+    setMissingFields({})
 
-    if (res.error || !res.data) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: res.message || 'CEP não encontrado.',
-      })
-    } else {
-      const info = res.data || {}
-      onChange('logradouro', info.logradouro || '')
-      onChange('bairro', info.bairro || '')
-      onChange('cidade', info.localidade || '')
-      onChange('estado', info.uf || '')
-      toast({ title: 'Sucesso', description: 'Endereço preenchido automaticamente.' })
+    try {
+      const res = await consultarCEP(data.cep)
+
+      if (res.error || !res.data) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: res.message || 'CEP não encontrado.',
+        })
+        if (data.id) {
+          await pb
+            .collection('audit_logs')
+            .create({
+              relacionamento_id: data.id,
+              user_id: pb.authStore.record?.id,
+              action: 'CEP API',
+              module: 'extraction',
+              old_value: { status: 'Error', message: res.message },
+              new_value: { captured: [], missing: [] },
+            })
+            .catch(console.error)
+        }
+      } else {
+        const info = res.data || {}
+        const missing: Record<string, boolean> = {}
+        const captured: string[] = []
+
+        if (info.logradouro) {
+          onChange('logradouro', info.logradouro)
+          captured.push('Logradouro')
+        } else missing.logradouro = true
+        if (info.bairro) {
+          onChange('bairro', info.bairro)
+          captured.push('Bairro')
+        } else missing.bairro = true
+        if (info.localidade) {
+          onChange('cidade', info.localidade)
+          captured.push('Cidade')
+        } else missing.cidade = true
+        if (info.uf) {
+          onChange('estado', info.uf)
+          captured.push('Estado')
+        } else missing.estado = true
+
+        setMissingFields(missing)
+
+        if (data.id) {
+          await pb
+            .collection('audit_logs')
+            .create({
+              relacionamento_id: data.id,
+              user_id: pb.authStore.record?.id,
+              action: 'CEP API',
+              module: 'extraction',
+              old_value: { status: 'Success' },
+              new_value: { captured, missing: Object.keys(missing) },
+            })
+            .catch(console.error)
+        }
+
+        toast({ title: 'Sucesso', description: 'Endereço preenchido automaticamente.' })
+      }
+    } finally {
+      setLoadingCep(false)
+      setIsExtracting(false)
     }
   }
 
@@ -589,16 +770,19 @@ export function CompanyAddressTab({ data, onChange, readOnly }: any) {
         </div>
         <div className="space-y-1.5 md:col-span-2">
           <LabelT l="Logradouro" req />
-          <Input
-            value={data.logradouro || ''}
-            onChange={(e) => onChange('logradouro', e.target.value)}
+          <FieldInput
+            isExtracting={isExtracting}
+            isMissing={missingFields.logradouro}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, logradouro: false }))}
+            value={data?.logradouro || ''}
+            onChange={(e: any) => onChange('logradouro', e.target.value)}
             disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Número" req />
           <Input
-            value={data.numero || ''}
+            value={data?.numero || ''}
             onChange={(e) => onChange('numero', e.target.value)}
             disabled={readOnly}
           />
@@ -606,32 +790,41 @@ export function CompanyAddressTab({ data, onChange, readOnly }: any) {
         <div className="space-y-1.5 md:col-span-2">
           <LabelT l="Complemento" />
           <Input
-            value={data.comp || ''}
+            value={data?.comp || ''}
             onChange={(e) => onChange('comp', e.target.value)}
             disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Bairro" req />
-          <Input
-            value={data.bairro || ''}
-            onChange={(e) => onChange('bairro', e.target.value)}
+          <FieldInput
+            isExtracting={isExtracting}
+            isMissing={missingFields.bairro}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, bairro: false }))}
+            value={data?.bairro || ''}
+            onChange={(e: any) => onChange('bairro', e.target.value)}
             disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Cidade" req />
-          <Input
-            value={data.cidade || ''}
-            onChange={(e) => onChange('cidade', e.target.value)}
+          <FieldInput
+            isExtracting={isExtracting}
+            isMissing={missingFields.cidade}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, cidade: false }))}
+            value={data?.cidade || ''}
+            onChange={(e: any) => onChange('cidade', e.target.value)}
             disabled={readOnly}
           />
         </div>
         <div className="space-y-1.5">
           <LabelT l="Estado (UF)" req />
-          <Input
-            value={data.estado || ''}
-            onChange={(e) => onChange('estado', e.target.value)}
+          <FieldInput
+            isExtracting={isExtracting}
+            isMissing={missingFields.estado}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, estado: false }))}
+            value={data?.estado || ''}
+            onChange={(e: any) => onChange('estado', e.target.value)}
             disabled={readOnly}
           />
         </div>

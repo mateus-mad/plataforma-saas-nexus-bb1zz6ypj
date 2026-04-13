@@ -13,12 +13,59 @@ import { Button } from '@/components/ui/button'
 import { Building2, User, Plus, Search, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { consultarCNPJ } from '@/services/cnpj'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ExtractionLogDialog } from '../ExtractionLogDialog'
+import pb from '@/lib/pocketbase/client'
+import { cn } from '@/lib/utils'
+
+export function FieldInput({
+  isExtracting,
+  isMissing,
+  onClearMissing,
+  value,
+  onChange,
+  disabled,
+  type = 'text',
+  className,
+  placeholder,
+}: any) {
+  if (isExtracting) return <Skeleton className="h-10 w-full rounded-md" />
+  return (
+    <div>
+      <Input
+        type={type}
+        value={value}
+        onChange={(e) => {
+          onChange(e)
+          if (isMissing) onClearMissing()
+        }}
+        onFocus={() => {
+          if (isMissing) onClearMissing()
+        }}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={cn(
+          className,
+          isMissing &&
+            'border-yellow-400 bg-yellow-50/50 focus-visible:ring-yellow-400 transition-colors',
+        )}
+      />
+      {isMissing && (
+        <p className="text-[11px] leading-tight text-yellow-600 mt-1.5 font-medium animate-in fade-in">
+          Verify manually: Data not found in the document/API.
+        </p>
+      )}
+    </div>
+  )
+}
 
 export default function SupplierIdentificationTab({ data, updateData }: any) {
   const d = data.dados || {}
   const isPJ = d.tipoPessoa === 'PJ'
   const [newSeg, setNewSeg] = useState('')
   const [loadingCnpj, setLoadingCnpj] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [missingFields, setMissingFields] = useState<Record<string, boolean>>({})
   const [editedFields, setEditedFields] = useState<Record<string, boolean>>({})
   const [segments, setSegments] = useState([
     'Tecnologia',
@@ -46,30 +93,74 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
       return
     }
     setLoadingCnpj(true)
+    setIsExtracting(true)
+    setMissingFields({})
     toast({ title: 'Buscando CNPJ', description: 'Consultando base da Receita Federal...' })
 
     try {
       const res = await consultarCNPJ(d.documento)
 
-      const fetchedData = {
-        nomeRazao: res.razao_social || '',
-        fantasia: res.nome_fantasia || '',
-        dataNascimento: res.data_inicio_atividade || '',
+      if (res.error || !res.data) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: res.message || 'Não foi possível conectar.',
+        })
+        if (data.id) {
+          await pb
+            .collection('audit_logs')
+            .create({
+              relacionamento_id: data.id,
+              user_id: pb.authStore.record?.id,
+              action: 'CNPJ API',
+              module: 'extraction',
+              old_value: { status: 'Error', message: res.message },
+              new_value: { captured: [], missing: [] },
+            })
+            .catch(console.error)
+        }
+        return
       }
 
-      // Atualiza apenas os campos que não foram editados manualmente pelo usuário
-      Object.keys(fetchedData).forEach((key) => {
-        if (!editedFields[key] && fetchedData[key as keyof typeof fetchedData]) {
-          updateData('dados', key, fetchedData[key as keyof typeof fetchedData])
-        }
-      })
+      const info = res.data || {}
+      const missing: Record<string, boolean> = {}
+      const captured: string[] = []
 
-      if (res.cep) updateData('endereco', 'cep', res.cep)
-      if (res.logradouro) updateData('endereco', 'logradouro', res.logradouro)
-      if (res.numero) updateData('endereco', 'numero', res.numero)
-      if (res.bairro) updateData('endereco', 'bairro', res.bairro)
-      if (res.municipio) updateData('endereco', 'cidade', res.municipio)
-      if (res.uf) updateData('endereco', 'estado', res.uf)
+      const checkField = (field: string, value: any, label: string) => {
+        if (value) {
+          if (!editedFields[field]) updateData('dados', field, value)
+          captured.push(label)
+        } else {
+          missing[field] = true
+        }
+      }
+
+      checkField('nomeRazao', info.razao_social, 'Razão Social')
+      checkField('fantasia', info.nome_fantasia, 'Nome Fantasia')
+      checkField('dataNascimento', info.data_inicio_atividade, 'Data Abertura')
+
+      if (info.cep) updateData('endereco', 'cep', info.cep)
+      if (info.logradouro) updateData('endereco', 'logradouro', info.logradouro)
+      if (info.numero) updateData('endereco', 'numero', info.numero)
+      if (info.bairro) updateData('endereco', 'bairro', info.bairro)
+      if (info.municipio) updateData('endereco', 'cidade', info.municipio)
+      if (info.uf) updateData('endereco', 'estado', info.uf)
+
+      setMissingFields(missing)
+
+      if (data.id) {
+        await pb
+          .collection('audit_logs')
+          .create({
+            relacionamento_id: data.id,
+            user_id: pb.authStore.record?.id,
+            action: 'CNPJ API',
+            module: 'extraction',
+            old_value: { status: 'Success' },
+            new_value: { captured, missing: Object.keys(missing) },
+          })
+          .catch(console.error)
+      }
 
       toast({
         title: 'Sucesso',
@@ -81,8 +172,22 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
         title: 'Erro',
         description: e.message || 'Não foi possível encontrar o CNPJ.',
       })
+      if (data.id) {
+        await pb
+          .collection('audit_logs')
+          .create({
+            relacionamento_id: data.id,
+            user_id: pb.authStore.record?.id,
+            action: 'CNPJ API',
+            module: 'extraction',
+            old_value: { status: 'Error', message: e.message },
+            new_value: { captured: [], missing: [] },
+          })
+          .catch(console.error)
+      }
     } finally {
       setLoadingCnpj(false)
+      setIsExtracting(false)
     }
   }
 
@@ -139,21 +244,30 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
           </div>
         </div>
         <div className="space-y-2 lg:col-span-2">
-          <Label className="font-semibold text-slate-700">
-            {isPJ ? 'Razão Social' : 'Nome Completo'}
-          </Label>
-          <Input
-            value={d.nomeRazao || ''}
-            onChange={(e) => handleUpdate('nomeRazao', e.target.value)}
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold text-slate-700">
+              {isPJ ? 'Razão Social' : 'Nome Completo'}
+            </Label>
+            {isPJ && data?.id && <ExtractionLogDialog entityId={data.id} />}
+          </div>
+          <FieldInput
+            isExtracting={isExtracting}
+            isMissing={missingFields.nomeRazao}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, nomeRazao: false }))}
+            value={d?.nomeRazao || ''}
+            onChange={(e: any) => handleUpdate('nomeRazao', e.target.value)}
           />
         </div>
 
         {isPJ && (
           <div className="space-y-2 lg:col-span-3">
             <Label className="font-semibold text-slate-700">Nome Fantasia</Label>
-            <Input
-              value={d.fantasia || ''}
-              onChange={(e) => handleUpdate('fantasia', e.target.value)}
+            <FieldInput
+              isExtracting={isExtracting}
+              isMissing={missingFields.fantasia}
+              onClearMissing={() => setMissingFields((p) => ({ ...p, fantasia: false }))}
+              value={d?.fantasia || ''}
+              onChange={(e: any) => handleUpdate('fantasia', e.target.value)}
             />
           </div>
         )}
@@ -162,10 +276,13 @@ export default function SupplierIdentificationTab({ data, updateData }: any) {
           <Label className="font-semibold text-slate-700">
             Data de {isPJ ? 'Abertura' : 'Nascimento'}
           </Label>
-          <Input
+          <FieldInput
             type="date"
-            value={d.dataNascimento || ''}
-            onChange={(e) => handleUpdate('dataNascimento', e.target.value)}
+            isExtracting={isExtracting}
+            isMissing={missingFields.dataNascimento}
+            onClearMissing={() => setMissingFields((p) => ({ ...p, dataNascimento: false }))}
+            value={d?.dataNascimento || ''}
+            onChange={(e: any) => handleUpdate('dataNascimento', e.target.value)}
           />
         </div>
 
