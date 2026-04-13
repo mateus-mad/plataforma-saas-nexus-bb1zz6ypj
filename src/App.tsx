@@ -15,7 +15,7 @@ import LandingPage from '@/pages/public/LandingPage'
 import Login from '@/pages/public/Login'
 import Onboarding from '@/pages/public/Onboarding'
 import Dashboard from '@/pages/app/Dashboard'
-import Relacionamento from '@/pages/app/Relacionamento'
+import Contatos from '@/pages/app/Contatos'
 import Financial from '@/pages/app/Financial'
 import Settings from '@/pages/app/Settings'
 import WorkShifts from '@/pages/app/WorkShifts'
@@ -67,16 +67,16 @@ const App = () => (
                     <Route path="/app" element={<Dashboard />} />
 
                     <Route
-                      path="/app/contatos"
-                      element={<Navigate to="/app/relacionamento" replace />}
+                      path="/app/relacionamento"
+                      element={<Navigate to="/app/contatos" replace />}
                     />
                     <Route
-                      path="/app/contatos/:view"
-                      element={<Navigate to="/app/relacionamento" replace />}
+                      path="/app/relacionamento/:view"
+                      element={<Navigate to="/app/contatos" replace />}
                     />
 
-                    <Route path="/app/relacionamento" element={<Relacionamento />} />
-                    <Route path="/app/relacionamento/:view" element={<Relacionamento />} />
+                    <Route path="/app/contatos" element={<Contatos />} />
+                    <Route path="/app/contatos/:view" element={<Contatos />} />
                     <Route path="/app/financeiro" element={<Financial />} />
                     <Route path="/app/configuracoes" element={<Settings />} />
                     <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />

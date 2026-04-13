@@ -1,6 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { Hexagon, Settings, LogOut, ChevronRight, Pin, PinOff } from 'lucide-react'
+import {
+  Hexagon,
+  Settings,
+  LogOut,
+  ChevronRight,
+  Pin,
+  PinOff,
+  LayoutDashboard,
+  Users,
+  Truck,
+  History,
+} from 'lucide-react'
 import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES } from '@/config/modules'
 import useModuleStore from '@/stores/useModuleStore'
 import useSecurityStore from '@/stores/useSecurityStore'
@@ -62,7 +73,25 @@ export function AppSidebar() {
     }
   }
 
-  const categoriesToRender = isAdminMode ? MANAGER_MENU_CATEGORIES : MENU_CATEGORIES
+  const categoriesToRender = isAdminMode
+    ? MANAGER_MENU_CATEGORIES
+    : MENU_CATEGORIES.map((cat) => {
+        if (cat.name.includes('Relacionamento') || cat.name.includes('Contato')) {
+          return {
+            ...cat,
+            name: 'Contato',
+            path: undefined,
+            items: [
+              { name: 'Painel Geral', path: '/app/contatos/dashboard', icon: LayoutDashboard },
+              { name: 'Colaborador', path: '/app/contatos/colaboradores', icon: Users },
+              { name: 'Clientes', path: '/app/contatos/clientes', icon: Users },
+              { name: 'Fornecedor', path: '/app/contatos/fornecedores', icon: Truck },
+              { name: 'Auditoria', path: '/app/contatos/auditoria', icon: History },
+            ],
+          }
+        }
+        return cat
+      })
 
   const visibleCategories = categoriesToRender
     .map((category) => {

@@ -45,8 +45,8 @@ const chartConfig = {
 }
 
 const admissionConfig = {
-  admissao: { label: 'Admissões', color: 'hsl(var(--chart-2))' },
-  demissao: { label: 'Demissões', color: 'hsl(var(--destructive))' },
+  admissao: { label: 'Entradas', color: 'hsl(var(--chart-2))' },
+  demissao: { label: 'Saídas', color: 'hsl(var(--destructive))' },
 }
 
 export default function ContactsDashboard() {
@@ -232,7 +232,7 @@ export default function ContactsDashboard() {
             Inteligência e Performance
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Métricas centralizadas de RH, clientes e fornecedores.
+            Métricas centralizadas de contatos, clientes e fornecedores.
           </p>
         </div>
       </div>
@@ -458,7 +458,7 @@ export default function ContactsDashboard() {
         <Card className="shadow-sm border-slate-200 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold text-slate-800">
-              Análise RH: Admissões vs Demissões
+              Análise de Contatos: Entradas vs Saídas
             </CardTitle>
             <Select defaultValue="Engenharia">
               <SelectTrigger className="w-[140px] h-8 text-xs bg-white">
@@ -519,12 +519,12 @@ export default function ContactsDashboard() {
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2 text-purple-900">
               <Users className="w-5 h-5 text-purple-600" />
-              Notificações de Onboarding (RH)
+              Notificações de Cadastro (Colaboradores)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-purple-800/80 mb-4 bg-white p-3 rounded-xl border border-purple-100 shadow-sm">
-              Candidatos que iniciaram o preenchimento via link de auto-cadastro mas abandonaram a
+              Contatos que iniciaram o preenchimento via link de auto-cadastro mas abandonaram a
               sessão ou possuem documentos faltantes.
             </p>
             <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-purple-300 transition-colors">
