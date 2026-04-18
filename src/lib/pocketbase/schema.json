@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-13T00:47:19.965Z",
+  "generatedAt": "2026-04-18T12:43:26.978Z",
   "collections": [
     {
       "name": "users",
@@ -627,12 +627,148 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "work_site_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "work_sites"
+        },
+        {
+          "name": "photo",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "latitude",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "longitude",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_time_entries_user_id ON time_entries (user_id)",
         "CREATE INDEX idx_time_entries_timestamp ON time_entries (timestamp)"
       ]
+    },
+    {
+      "name": "work_sites",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "latitude",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "longitude",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "radius_meters",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "qr_token",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_work_sites_qr_token ON work_sites (qr_token)"]
+    },
+    {
+      "name": "security_alerts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "type",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
     }
   ]
 }

@@ -36,6 +36,7 @@ import RegistrarPonto from '@/pages/app/ponto/RegistrarPonto'
 import EspelhoPonto from '@/pages/app/ponto/EspelhoPonto'
 import GestaoPonto from '@/pages/app/ponto/GestaoPonto'
 import PontoDashboard from '@/pages/app/ponto/PontoDashboard'
+import GestaoObras from '@/pages/app/ponto/GestaoObras'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isValid, loading } = useAuth()
@@ -91,6 +92,7 @@ const App = () => (
                     <Route path="/app/ponto/registrar" element={<RegistrarPonto />} />
                     <Route path="/app/ponto/espelho" element={<EspelhoPonto />} />
                     <Route path="/app/ponto/gestao" element={<GestaoPonto />} />
+                    <Route path="/app/ponto/obras" element={<GestaoObras />} />
 
                     <Route path="/app/manager" element={<ManagerDashboard />} />
                     <Route path="/app/manager/tickets" element={<ManagerTickets />} />

@@ -10,6 +10,9 @@ import {
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Link } from 'react-router-dom'
+import { MapPin } from 'lucide-react'
 import { getTimeEntries, TimeEntry } from '@/services/time_entries'
 import { useRealtime } from '@/hooks/use-realtime'
 import { format, parseISO } from 'date-fns'
@@ -26,7 +29,7 @@ export default function GestaoPonto() {
       end.setMonth(end.getMonth() + 1)
 
       const filter = `timestamp >= '${start.toISOString().replace('T', ' ')}' && timestamp < '${end.toISOString().replace('T', ' ')}'`
-      const data = await getTimeEntries(filter, 'user_id,relacionamento_id')
+      const data = await getTimeEntries(filter, 'user_id,relacionamento_id,work_site_id')
       setEntries(data)
     } catch (error) {
       console.error(error)
@@ -56,6 +59,11 @@ export default function GestaoPonto() {
           </p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
+          <Button asChild variant="outline" className="hidden md:flex">
+            <Link to="/app/ponto/obras">
+              <MapPin className="w-4 h-4 mr-2" /> Obras (Geofencing)
+            </Link>
+          </Button>
           <Input
             placeholder="Buscar colaborador..."
             value={searchTerm}
@@ -83,7 +91,8 @@ export default function GestaoPonto() {
                   <TableHead>Colaborador</TableHead>
                   <TableHead>Data e Hora</TableHead>
                   <TableHead>Ação</TableHead>
-                  <TableHead>IP / Localização</TableHead>
+                  <TableHead>Obra</TableHead>
+                  <TableHead>Localização / Foto</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -101,14 +110,38 @@ export default function GestaoPonto() {
                         {e.type.replace('_', ' ')}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {e.expand?.work_site_id ? (
+                        <span className="text-sm font-medium text-slate-700">
+                          {e.expand.work_site_id.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">Ponto Remoto</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-xs text-slate-500">
-                      <div className="flex flex-col">
-                        <span>{e.metadata?.ip || 'IP não registrado'}</span>
-                        {e.metadata?.location && (
-                          <span className="text-primary/70">
+                      <div className="flex flex-col gap-1">
+                        {e.latitude && e.longitude ? (
+                          <span className="text-primary/70 truncate w-32">
+                            Lat: {e.latitude.toFixed(4)}, Lng: {e.longitude.toFixed(4)}
+                          </span>
+                        ) : e.metadata?.location ? (
+                          <span className="text-primary/70 truncate w-32">
                             Lat: {e.metadata.location.lat.toFixed(4)}, Lng:{' '}
                             {e.metadata.location.lng.toFixed(4)}
                           </span>
+                        ) : (
+                          <span>Local não registrado</span>
+                        )}
+                        {e.photo && (
+                          <a
+                            href={`${import.meta.env.VITE_POCKETBASE_URL}/api/files/time_entries/${e.id}/${e.photo}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Ver Foto
+                          </a>
                         )}
                       </div>
                     </TableCell>
