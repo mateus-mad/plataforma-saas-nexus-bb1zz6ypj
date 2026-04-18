@@ -113,6 +113,7 @@ export default function GestaoObras() {
     latitude: '',
     longitude: '',
     radius_meters: '100',
+    cost_center: '',
   })
 
   useEffect(() => {
@@ -140,11 +141,12 @@ export default function GestaoObras() {
         longitude: parseFloat(formData.longitude),
         radius_meters: parseInt(formData.radius_meters, 10),
         qr_token,
+        cost_center: formData.cost_center,
       })
       toast({ title: 'Obra cadastrada com sucesso' })
       setOpen(false)
       loadSites()
-      setFormData({ name: '', latitude: '', longitude: '', radius_meters: '100' })
+      setFormData({ name: '', latitude: '', longitude: '', radius_meters: '100', cost_center: '' })
     } catch (error) {
       toast({ title: 'Erro ao cadastrar obra', variant: 'destructive' })
     }
@@ -190,14 +192,25 @@ export default function GestaoObras() {
               </DialogDesc>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-              <div className="space-y-2">
-                <Label>Nome da Obra</Label>
-                <Input
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Canteiro Central - Zona Sul"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome da Obra</Label>
+                  <Input
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ex: Canteiro Central"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Centro de Custo</Label>
+                  <Input
+                    required
+                    value={formData.cost_center}
+                    onChange={(e) => setFormData({ ...formData, cost_center: e.target.value })}
+                    placeholder="Ex: CC-2024-01"
+                  />
+                </div>
               </div>
 
               <InteractiveMap
@@ -265,6 +278,7 @@ export default function GestaoObras() {
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead>Nome da Obra</TableHead>
+                <TableHead>Centro de Custo</TableHead>
                 <TableHead>Coordenadas (Lat, Lng)</TableHead>
                 <TableHead>Raio Permitido</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -274,6 +288,7 @@ export default function GestaoObras() {
               {sites.map((site) => (
                 <TableRow key={site.id} className="hover:bg-slate-50/50">
                   <TableCell className="font-medium text-slate-800">{site.name}</TableCell>
+                  <TableCell className="text-slate-600">{site.cost_center || '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded w-fit">
                       <MapPin className="w-3 h-3 mr-1 text-slate-400" />

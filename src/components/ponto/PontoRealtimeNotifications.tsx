@@ -22,27 +22,28 @@ export default function PontoRealtimeNotifications() {
 
         toast.custom(
           (t) => (
-            <div className="flex items-start gap-3 w-full bg-white border border-slate-200 shadow-xl rounded-xl p-4 animate-in slide-in-from-bottom-5">
+            <div className="flex items-start gap-3 w-full bg-slate-900 text-white border border-slate-800 shadow-2xl rounded-xl p-4 animate-in slide-in-from-bottom-5">
               <div className="relative flex-shrink-0">
-                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                  <MapPin className="w-5 h-5" />
+                <div className="w-12 h-12 bg-rose-500/20 rounded-full flex items-center justify-center text-rose-500 relative">
+                  <MapPin className="w-6 h-6 z-10" />
+                  <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-30" />
                 </div>
-                <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-white animate-pulse" />
               </div>
               <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium text-slate-900 leading-tight">
-                  Novo Ponto: {userName}
+                <p className="text-sm font-bold leading-tight flex items-center gap-2">
+                  <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                  Alerta de Ponto: {userName}
                 </p>
-                <p className="text-xs text-slate-500 flex items-center gap-1">
+                <p className="text-xs text-slate-300 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {time} - {typeLabel}
                 </p>
-                <p className="text-xs text-primary font-medium bg-primary/5 w-fit px-2 py-0.5 rounded border border-primary/10 mt-1">
-                  {siteName}
+                <p className="text-xs text-slate-100 font-medium bg-white/10 w-fit px-2 py-1 rounded border border-white/5 mt-1">
+                  📍 {siteName}
                 </p>
               </div>
             </div>
           ),
-          { duration: 6000 },
+          { duration: 8000, position: 'bottom-right' },
         )
       } catch (err) {
         console.error('Error fetching time entry details for notification', err)

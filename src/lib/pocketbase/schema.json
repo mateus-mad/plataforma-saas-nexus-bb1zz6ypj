@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T12:56:01.241Z",
+  "generatedAt": "2026-04-18T13:16:36.805Z",
   "collections": [
     {
       "name": "users",
@@ -252,6 +252,13 @@
           "type": "json",
           "required": false,
           "system": false
+        },
+        {
+          "name": "login_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
         }
       ],
       "indexes": [
@@ -656,7 +663,9 @@
       ],
       "indexes": [
         "CREATE INDEX idx_time_entries_user_id ON time_entries (user_id)",
-        "CREATE INDEX idx_time_entries_timestamp ON time_entries (timestamp)"
+        "CREATE INDEX idx_time_entries_timestamp ON time_entries (timestamp)",
+        "CREATE INDEX `idx_time_entries_work_site` ON `time_entries` (work_site_id)",
+        "CREATE INDEX `idx_time_entries_relacionamento` ON `time_entries` (relacionamento_id)"
       ]
     },
     {
@@ -713,6 +722,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "cost_center",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_work_sites_qr_token ON work_sites (qr_token)"]
@@ -769,6 +784,70 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "allocations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "relacionamento_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "relacionamentos"
+        },
+        {
+          "name": "work_site_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "work_sites"
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ativo", "inativo"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_allocations_relacionamento ON allocations (relacionamento_id)",
+        "CREATE INDEX idx_allocations_work_site ON allocations (work_site_id)"
+      ]
     }
   ]
 }

@@ -7,6 +7,7 @@ export interface WorkSite {
   longitude: number
   radius_meters: number
   qr_token: string
+  cost_center?: string
   created: string
   updated: string
 }
