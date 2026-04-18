@@ -33,6 +33,7 @@ import ManagerPayments from '@/pages/manager/ManagerPayments'
 import ManagerPricing from '@/pages/manager/ManagerPricing'
 
 import RegistrarPonto from '@/pages/app/ponto/RegistrarPonto'
+import PontoRealtimeNotifications from '@/components/ponto/PontoRealtimeNotifications'
 import EspelhoPonto from '@/pages/app/ponto/EspelhoPonto'
 import GestaoPonto from '@/pages/app/ponto/GestaoPonto'
 import PontoDashboard from '@/pages/app/ponto/PontoDashboard'
@@ -55,6 +56,7 @@ const App = () => (
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
+                <PontoRealtimeNotifications />
                 <Routes>
                   <Route element={<PublicLayout />}>
                     <Route path="/" element={<LandingPage />} />

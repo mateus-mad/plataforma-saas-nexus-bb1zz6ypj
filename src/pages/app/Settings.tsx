@@ -18,6 +18,8 @@ import UsersTab from '@/components/settings/UsersTab'
 import SecurityTab from '@/components/settings/SecurityTab'
 import HRTab from '@/components/settings/HRTab'
 import WhatsAppTab from '@/components/settings/WhatsAppTab'
+import PontoTab from '@/components/settings/PontoTab'
+import { MapPin } from 'lucide-react'
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -83,6 +85,13 @@ export default function Settings() {
             Jornada de Trabalho
           </TabsTrigger>
           <TabsTrigger
+            value="ponto"
+            className="data-[state=active]:text-primary group py-2 shrink-0"
+          >
+            <MapPin className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+            Controle de Ponto
+          </TabsTrigger>
+          <TabsTrigger
             value="security"
             className="data-[state=active]:text-primary group py-2 shrink-0"
           >
@@ -111,6 +120,9 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="security" className="mt-0 outline-none">
           <SecurityTab />
+        </TabsContent>
+        <TabsContent value="ponto" className="mt-0 outline-none">
+          <PontoTab />
         </TabsContent>
       </Tabs>
     </div>
