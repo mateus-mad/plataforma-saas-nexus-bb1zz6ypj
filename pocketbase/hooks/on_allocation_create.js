@@ -1,5 +1,7 @@
 onRecordAfterCreateSuccess((e) => {
   const relId = e.record.getString('relacionamento_id')
+  if (!relId) return e.next()
+
   const rel = $app.findRecordById('relacionamentos', relId)
   let loginUserId = rel.getString('login_user_id')
 
@@ -17,7 +19,7 @@ onRecordAfterCreateSuccess((e) => {
         userRecord = new Record(usersCol)
         userRecord.setEmail(email)
         userRecord.setUsername(cpf)
-        userRecord.setPassword(cpf) // CPF is the default password
+        userRecord.setPassword(cpf)
         userRecord.setVerified(true)
         userRecord.set('name', rel.getString('name'))
         $app.save(userRecord)
