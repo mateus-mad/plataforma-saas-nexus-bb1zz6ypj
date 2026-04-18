@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
 import { createTimeEntry, getTimeEntries, TimeEntry } from '@/services/time_entries'
 import { getWorkSiteByToken, WorkSite } from '@/services/work_sites'
+import pb from '@/lib/pocketbase/client'
 import { createSecurityAlert } from '@/services/security_alerts'
 import { useToast } from '@/hooks/use-toast'
 import { Clock, MapPin, Camera, AlertTriangle, CheckCircle2 } from 'lucide-react'
@@ -229,10 +230,22 @@ export default function RegistrarPonto() {
         return
       }
 
+      // Fetch relacionamento_id for current user
+      let relId = ''
+      try {
+        const rels = await pb
+          .collection('relacionamentos')
+          .getFullList({ filter: `login_user_id = '${user.id}'` })
+        if (rels.length > 0) relId = rels[0].id
+      } catch (err) {
+        console.error('No relacionamento found for user', err)
+      }
+
       const action = getNextAction()
 
       const formData = new FormData()
       formData.append('user_id', user.id)
+      if (relId) formData.append('relacionamento_id', relId)
       formData.append('work_site_id', workSite.id)
       formData.append('timestamp', new Date().toISOString())
       formData.append('type', action.type)

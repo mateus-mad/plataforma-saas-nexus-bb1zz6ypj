@@ -1,9 +1,45 @@
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
-import { MapPin, Clock } from 'lucide-react'
+import { MapPin, Clock, AlertTriangle } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 
 export default function PontoRealtimeNotifications() {
+  useRealtime('security_alerts', async (e) => {
+    if (e.action === 'create') {
+      try {
+        const alert = await pb
+          .collection('security_alerts')
+          .getOne(e.record.id, { expand: 'user_id' })
+        const userName = alert.expand?.user_id?.name || alert.expand?.user_id?.email || 'Usuário'
+
+        toast.custom(
+          (t) => (
+            <div className="flex items-start gap-3 w-full bg-rose-950 text-white border border-rose-900 shadow-2xl rounded-xl p-4 animate-in slide-in-from-bottom-5">
+              <div className="relative flex-shrink-0">
+                <div className="w-12 h-12 bg-rose-500/20 rounded-full flex items-center justify-center text-rose-500 relative">
+                  <AlertTriangle className="w-6 h-6 z-10" />
+                  <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-30" />
+                </div>
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-bold leading-tight flex items-center gap-2 text-rose-400">
+                  <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                  Alerta de Segurança
+                </p>
+                <p className="text-xs text-rose-200">
+                  {userName}: {alert.message}
+                </p>
+              </div>
+            </div>
+          ),
+          { duration: 10000, position: 'bottom-right' },
+        )
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  })
+
   useRealtime('time_entries', async (e) => {
     if (e.action === 'create') {
       try {

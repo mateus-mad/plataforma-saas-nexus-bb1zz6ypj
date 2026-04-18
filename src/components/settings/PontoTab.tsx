@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { AlertTriangle, Save, Clock, Camera, Moon } from 'lucide-react'
+import { AlertTriangle, Save, Clock, Camera, Moon, MapPin, Users, Settings2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import {
   getConfigurations,
@@ -66,11 +67,54 @@ export default function PontoTab() {
 
   return (
     <div className="space-y-6 mt-6 animate-fade-in pb-10">
-      <div>
-        <h3 className="text-xl font-semibold text-slate-800">Controle de Ponto</h3>
+      <div className="flex flex-col gap-1 mb-4">
+        <h3 className="text-xl font-semibold text-slate-800">Controle de Ponto Centralizado</h3>
         <p className="text-sm text-slate-500">
-          Configure as regras gerais para registro de ponto, tolerâncias e validações de geofencing.
+          Gerencie obras, locação de colaboradores e as regras de compliance para o registro de
+          ponto.
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Link to="/app/ponto/obras" className="block h-full">
+          <Card className="hover:border-primary transition-all duration-200 cursor-pointer h-full hover:shadow-md">
+            <CardContent className="p-4 flex items-center gap-3 h-full">
+              <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-800">Gestão de Obras</h4>
+                <p className="text-xs text-slate-500 mt-0.5">Perímetros e QR Codes</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link to="/app/ponto/locacao" className="block h-full">
+          <Card className="hover:border-blue-500 transition-all duration-200 cursor-pointer h-full hover:shadow-md">
+            <CardContent className="p-4 flex items-center gap-3 h-full">
+              <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500 shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-800">Gestão de Locação</h4>
+                <p className="text-xs text-slate-500 mt-0.5">Alocação de Colaboradores</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <div className="block h-full cursor-default">
+          <Card className="border-emerald-500/30 bg-emerald-50/30 h-full">
+            <CardContent className="p-4 flex items-center gap-3 h-full">
+              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-600 shrink-0">
+                <Settings2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-800">Regras de Ponto</h4>
+                <p className="text-xs text-slate-500 mt-0.5">Configurações abaixo</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-start gap-3">
