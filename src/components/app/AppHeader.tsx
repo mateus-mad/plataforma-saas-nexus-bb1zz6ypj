@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import useTenantStore from '@/stores/useTenantStore'
 import useSecurityStore from '@/stores/useSecurityStore'
 import { useAuth } from '@/hooks/use-auth'
@@ -23,11 +24,12 @@ export function AppHeader() {
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] sticky top-0 z-50 transition-all">
-      <div className="flex items-center gap-3 sm:gap-4 flex-1">
-        <div className="flex items-center gap-3 sm:gap-4 h-8">
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+        <SidebarTrigger className="md:hidden h-10 w-10 flex items-center justify-center shrink-0 -ml-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md" />
+        <div className="flex items-center gap-3 sm:gap-4 h-8 min-w-0">
           <Link
             to={isAdminMode ? '/app/manager' : '/app'}
-            className="flex items-center gap-2 group cursor-pointer"
+            className="flex items-center gap-2 group cursor-pointer min-h-[44px]"
           >
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${isAdminMode ? 'bg-purple-100 border-purple-200 text-purple-600 group-hover:bg-purple-200 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]' : 'bg-blue-50 border-blue-200 text-blue-600 group-hover:bg-blue-100 group-hover:shadow-[0_0_12px_rgba(37,99,235,0.3)]'}`}
@@ -86,7 +88,7 @@ export function AppHeader() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-blue-500/30 hover:ring-offset-2 transition-all border-2 border-blue-100">
+            <Avatar className="h-10 w-10 sm:h-11 sm:w-11 cursor-pointer hover:ring-2 hover:ring-blue-500/30 hover:ring-offset-2 transition-all border-2 border-blue-100 shrink-0">
               <AvatarImage
                 src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=42"
                 alt="@user"

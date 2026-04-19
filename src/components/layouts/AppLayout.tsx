@@ -63,10 +63,10 @@ export default function AppLayout() {
       )}
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset className="bg-slate-50 min-h-screen relative overflow-hidden z-0">
+        <SidebarInset className="bg-slate-50 min-h-screen relative w-full overflow-x-hidden z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100/50 -z-10 pointer-events-none" />
           <AppHeader />
-          <main className="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-[1600px] mx-auto z-0 relative">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto z-0 relative min-w-0">
             <Outlet />
           </main>
         </SidebarInset>

@@ -172,7 +172,7 @@ export function AppSidebar() {
                     asChild
                     tooltip={!isItemHoverable ? category.name : undefined}
                     className={cn(
-                      'relative overflow-hidden transition-all duration-300 h-10 px-3 mx-2 rounded-lg border border-transparent group/cat w-auto group-data-[collapsible=icon]:mx-1',
+                      'relative overflow-hidden transition-all duration-300 h-11 px-3 mx-2 rounded-lg border border-transparent group/cat w-auto group-data-[collapsible=icon]:mx-1',
                       isActive
                         ? isAdminMode
                           ? 'bg-purple-500/20 border-purple-500/40 text-purple-300 shadow-[inset_0_0_20px_rgba(168,85,247,0.15)]'
@@ -300,7 +300,7 @@ export function AppSidebar() {
                                   to={item.path}
                                   onClick={handleLinkClick}
                                   className={cn(
-                                    'flex items-start gap-3 p-2 rounded-lg transition-all duration-200 group/subitem relative overflow-hidden',
+                                    'flex items-start gap-3 p-2 min-h-[44px] rounded-lg transition-all duration-200 group/subitem relative overflow-hidden',
                                     isSubActive
                                       ? isAdminMode
                                         ? 'bg-purple-500/20 border border-purple-500/30'

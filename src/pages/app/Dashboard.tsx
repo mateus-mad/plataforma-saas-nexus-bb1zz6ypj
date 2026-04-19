@@ -98,11 +98,11 @@ export default function Dashboard() {
             Bem-vindo de volta. Aqui está o resumo da sua empresa.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="flex-1 sm:flex-none min-h-[44px]" asChild>
             <Link to="/app/relacionamento/clientes">Adicionar Cliente</Link>
           </Button>
-          <Button asChild>
+          <Button className="flex-1 sm:flex-none min-h-[44px]" asChild>
             <Link to="/app/financeiro">Nova Transação</Link>
           </Button>
         </div>
@@ -160,12 +160,15 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-7 lg:grid-cols-7">
-        <Card className="md:col-span-4 lg:col-span-5">
+        <Card className="md:col-span-4 lg:col-span-5 min-w-0">
           <CardHeader>
             <CardTitle>Fluxo de Caixa (Últimos 30 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="pl-0">
-            <ChartContainer config={chartConfig} className="h-[300px] w-full pr-6">
+          <CardContent className="pl-0 min-w-0 overflow-hidden">
+            <ChartContainer
+              config={chartConfig}
+              className="h-[300px] w-[calc(100vw-3rem)] md:w-full pr-6"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
@@ -240,7 +243,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <Button variant="ghost" className="w-full mt-6 text-primary">
+            <Button variant="ghost" className="w-full mt-6 text-primary min-h-[44px]">
               Ver todas
             </Button>
           </CardContent>

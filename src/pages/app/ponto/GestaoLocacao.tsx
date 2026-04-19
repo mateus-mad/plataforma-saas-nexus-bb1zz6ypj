@@ -111,7 +111,6 @@ export default function GestaoLocacao() {
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <SidebarTrigger className="md:hidden" />
           <div>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
               Gestão de Locação
@@ -123,7 +122,7 @@ export default function GestaoLocacao() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
+            <Button className="bg-primary hover:bg-primary/90 min-h-[44px] w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" /> Nova Alocação
             </Button>
           </DialogTrigger>
@@ -208,8 +207,8 @@ export default function GestaoLocacao() {
         </Dialog>
       </div>
 
-      <Card className="shadow-sm border-slate-200">
-        <CardContent className="p-0">
+      <Card className="shadow-sm border-slate-200 w-full min-w-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
@@ -279,7 +278,7 @@ export default function GestaoLocacao() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(alloc.id)}
-                        className="text-rose-500 hover:bg-rose-50"
+                        className="text-rose-500 hover:bg-rose-50 min-h-[44px] min-w-[44px]"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

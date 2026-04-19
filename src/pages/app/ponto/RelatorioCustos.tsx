@@ -142,7 +142,6 @@ export default function RelatorioCustos() {
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <SidebarTrigger className="md:hidden" />
           <div>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
               Fechamento e Custos
@@ -152,9 +151,9 @@ export default function RelatorioCustos() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
           <Select value={selectedSite} onValueChange={setSelectedSite}>
-            <SelectTrigger className="w-[180px] bg-white">
+            <SelectTrigger className="w-full sm:w-[180px] bg-white min-h-[44px]">
               <SelectValue placeholder="Obra / Centro de Custo" />
             </SelectTrigger>
             <SelectContent>
@@ -169,7 +168,7 @@ export default function RelatorioCustos() {
           </Select>
 
           <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger className="w-[180px] bg-white">
+            <SelectTrigger className="w-full sm:w-[180px] bg-white min-h-[44px]">
               <SelectValue placeholder="Mês" />
             </SelectTrigger>
             <SelectContent>
@@ -184,7 +183,7 @@ export default function RelatorioCustos() {
               })}
             </SelectContent>
           </Select>
-          <Button variant="outline" className="bg-white">
+          <Button variant="outline" className="bg-white w-full sm:w-auto min-h-[44px]">
             <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-600" />
             Exportar XLS
           </Button>
@@ -229,8 +228,8 @@ export default function RelatorioCustos() {
         </Card>
       </div>
 
-      <Card className="shadow-sm border-slate-200">
-        <CardContent className="p-0">
+      <Card className="shadow-sm border-slate-200 w-full min-w-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
