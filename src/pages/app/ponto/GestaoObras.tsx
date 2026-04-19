@@ -19,9 +19,16 @@ import {
   DialogDescription as DialogDesc,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { MapPin, Plus, QrCode, Trash2, Crosshair, Navigation } from 'lucide-react'
+import { MapPin, Plus, QrCode, Trash2, Crosshair, Navigation, Edit } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { getWorkSites, createWorkSite, deleteWorkSite, WorkSite } from '@/services/work_sites'
+import {
+  getWorkSites,
+  createWorkSite,
+  updateWorkSite,
+  deleteWorkSite,
+  WorkSite,
+} from '@/services/work_sites'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 
 function InteractiveMap({ lat, lng, radius, onChange }: any) {
   const [pinPos, setPinPos] = useState({ x: 50, y: 50 })
@@ -108,6 +115,7 @@ export default function GestaoObras() {
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     latitude: '',
@@ -131,24 +139,51 @@ export default function GestaoObras() {
     }
   }
 
+  const handleEdit = (site: WorkSite) => {
+    setEditingId(site.id)
+    setFormData({
+      name: site.name,
+      latitude: site.latitude.toString(),
+      longitude: site.longitude.toString(),
+      radius_meters: site.radius_meters.toString(),
+      cost_center: site.cost_center || '',
+    })
+    setOpen(true)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const qr_token = crypto.randomUUID()
-      await createWorkSite({
-        name: formData.name,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
-        radius_meters: parseInt(formData.radius_meters, 10),
-        qr_token,
-        cost_center: formData.cost_center,
-      })
-      toast({ title: 'Obra cadastrada com sucesso' })
+      if (editingId) {
+        await updateWorkSite(editingId, {
+          name: formData.name,
+          latitude: parseFloat(formData.latitude),
+          longitude: parseFloat(formData.longitude),
+          radius_meters: parseInt(formData.radius_meters, 10),
+          cost_center: formData.cost_center,
+        })
+        toast({ title: 'Obra atualizada com sucesso' })
+      } else {
+        const qr_token = crypto.randomUUID()
+        await createWorkSite({
+          name: formData.name,
+          latitude: parseFloat(formData.latitude),
+          longitude: parseFloat(formData.longitude),
+          radius_meters: parseInt(formData.radius_meters, 10),
+          qr_token,
+          cost_center: formData.cost_center,
+        })
+        toast({ title: 'Obra cadastrada com sucesso' })
+      }
       setOpen(false)
       loadSites()
+      setEditingId(null)
       setFormData({ name: '', latitude: '', longitude: '', radius_meters: '100', cost_center: '' })
     } catch (error) {
-      toast({ title: 'Erro ao cadastrar obra', variant: 'destructive' })
+      toast({
+        title: editingId ? 'Erro ao atualizar obra' : 'Erro ao cadastrar obra',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -169,16 +204,36 @@ export default function GestaoObras() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Gestão de Obras</h2>
-          <p className="text-muted-foreground mt-1">
-            Cadastre os locais de trabalho, defina o perímetro (Geofencing) e gere os QR Codes de
-            ponto.
-          </p>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+              Gestão de Obras
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              Cadastre os locais de trabalho, defina o perímetro (Geofencing) e gere os QR Codes de
+              ponto.
+            </p>
+          </div>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(isOpen) => {
+            setOpen(isOpen)
+            if (!isOpen) {
+              setEditingId(null)
+              setFormData({
+                name: '',
+                latitude: '',
+                longitude: '',
+                radius_meters: '100',
+                cost_center: '',
+              })
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" /> Nova Obra
@@ -186,9 +241,11 @@ export default function GestaoObras() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Cadastrar Nova Obra</DialogTitle>
+              <DialogTitle>{editingId ? 'Editar Obra' : 'Cadastrar Nova Obra'}</DialogTitle>
               <DialogDesc>
-                Defina o nome, a localização e o raio de tolerância para o registro de ponto.
+                {editingId
+                  ? 'Altere as informações da obra.'
+                  : 'Defina o nome, a localização e o raio de tolerância para o registro de ponto.'}
               </DialogDesc>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
@@ -265,7 +322,7 @@ export default function GestaoObras() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">Salvar Obra</Button>
+                <Button type="submit">{editingId ? 'Atualizar Obra' : 'Salvar Obra'}</Button>
               </div>
             </form>
           </DialogContent>
@@ -343,6 +400,14 @@ export default function GestaoObras() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => handleEdit(site)}
+                      className="hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleDelete(site.id)}
                       className="hover:bg-rose-50 hover:text-rose-500"
                     >
@@ -353,7 +418,7 @@ export default function GestaoObras() {
               ))}
               {!loading && sites.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-slate-500">
+                  <TableCell colSpan={5} className="h-32 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <MapPin className="w-8 h-8 text-slate-300 mb-2" />
                       <p>Nenhuma obra cadastrada.</p>

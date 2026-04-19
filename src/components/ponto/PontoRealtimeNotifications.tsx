@@ -60,15 +60,15 @@ export default function PontoRealtimeNotifications() {
           (t) => (
             <div className="flex items-start gap-3 w-full bg-slate-900 text-white border border-slate-800 shadow-2xl rounded-xl p-4 animate-in slide-in-from-bottom-5">
               <div className="relative flex-shrink-0">
-                <div className="w-12 h-12 bg-rose-500/20 rounded-full flex items-center justify-center text-rose-500 relative">
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 relative">
                   <MapPin className="w-6 h-6 z-10" />
-                  <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-30" />
+                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-30 duration-1000" />
                 </div>
               </div>
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-bold leading-tight flex items-center gap-2">
-                  <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-                  Alerta de Ponto: {userName}
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  Registro Confirmado: {userName}
                 </p>
                 <p className="text-xs text-slate-300 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {time} - {typeLabel}

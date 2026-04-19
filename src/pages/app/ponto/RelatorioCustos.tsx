@@ -20,11 +20,21 @@ import { DollarSign, FileSpreadsheet, Building2, User, Clock } from 'lucide-reac
 import pb from '@/lib/pocketbase/client'
 import { format, differenceInMinutes, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 
 export default function RelatorioCustos() {
   const [data, setData] = useState<any[]>([])
+  const [workSites, setWorkSites] = useState<any[]>([])
+  const [selectedSite, setSelectedSite] = useState<string>('all')
   const [loading, setLoading] = useState(true)
   const [month, setMonth] = useState(new Date().getMonth().toString())
+
+  useEffect(() => {
+    pb.collection('work_sites')
+      .getFullList({ sort: 'name' })
+      .then(setWorkSites)
+      .catch(console.error)
+  }, [])
 
   useEffect(() => {
     loadReport()
@@ -103,6 +113,7 @@ export default function RelatorioCustos() {
           employee: group.rel?.name || 'Desconhecido',
           employeeId: group.rel?.id,
           workSite: group.site?.name || 'Não Assinalado',
+          siteId: group.site?.id || 'unassigned',
           costCenter: group.site?.cost_center || '-',
           hours: hours.toFixed(1),
           hourlyRate,
@@ -122,19 +133,41 @@ export default function RelatorioCustos() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
   }
 
-  const grandTotal = data.reduce((acc, row) => acc + row.totalCost, 0)
-  const totalHours = data.reduce((acc, row) => acc + parseFloat(row.hours), 0)
+  const filteredData = data.filter((row) => selectedSite === 'all' || row.siteId === selectedSite)
+
+  const grandTotal = filteredData.reduce((acc, row) => acc + row.totalCost, 0)
+  const totalHours = filteredData.reduce((acc, row) => acc + parseFloat(row.hours), 0)
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Fechamento e Custos</h2>
-          <p className="text-muted-foreground mt-1">
-            Acompanhe o custo de mão de obra por colaborador e centro de custo.
-          </p>
-        </div>
         <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+              Fechamento e Custos
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              Acompanhe o custo de mão de obra por colaborador e centro de custo.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={selectedSite} onValueChange={setSelectedSite}>
+            <SelectTrigger className="w-[180px] bg-white">
+              <SelectValue placeholder="Obra / Centro de Custo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as Obras</SelectItem>
+              {workSites.map((site) => (
+                <SelectItem key={site.id} value={site.id}>
+                  {site.name} {site.cost_center ? `(${site.cost_center})` : ''}
+                </SelectItem>
+              ))}
+              <SelectItem value="unassigned">Não Assinalado</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger className="w-[180px] bg-white">
               <SelectValue placeholder="Mês" />
@@ -189,7 +222,7 @@ export default function RelatorioCustos() {
             <div>
               <p className="text-sm font-medium text-slate-500">Obras Ativas</p>
               <p className="text-2xl font-bold text-slate-800">
-                {new Set(data.map((d) => d.costCenter)).size}
+                {new Set(filteredData.map((d) => d.costCenter)).size}
               </p>
             </div>
           </CardContent>
@@ -210,7 +243,7 @@ export default function RelatorioCustos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((row, idx) => (
+              {filteredData.map((row, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="font-medium text-slate-800 flex items-center gap-2">
                     <User className="w-4 h-4 text-slate-400" />
@@ -233,7 +266,7 @@ export default function RelatorioCustos() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!loading && data.length === 0 && (
+              {!loading && filteredData.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center text-slate-500">
                     Nenhum registro de ponto encontrado para o período.

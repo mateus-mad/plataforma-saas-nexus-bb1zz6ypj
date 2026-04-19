@@ -30,6 +30,7 @@ import { Plus, Users, MapPin, Trash2, CalendarDays, KeyRound } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { format } from 'date-fns'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 
 export default function GestaoLocacao() {
   const [allocations, setAllocations] = useState<any[]>([])
@@ -107,13 +108,18 @@ export default function GestaoLocacao() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">Gestão de Locação</h2>
-          <p className="text-muted-foreground mt-1">
-            Aloque colaboradores às obras e gere automaticamente o login de acesso ao app.
-          </p>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+              Gestão de Locação
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              Aloque colaboradores às obras e gere automaticamente o login de acesso ao app.
+            </p>
+          </div>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

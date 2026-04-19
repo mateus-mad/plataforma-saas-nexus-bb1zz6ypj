@@ -20,6 +20,7 @@ import HRTab from '@/components/settings/HRTab'
 import WhatsAppTab from '@/components/settings/WhatsAppTab'
 import PontoTab from '@/components/settings/PontoTab'
 import { MapPin } from 'lucide-react'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -30,16 +31,19 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto px-4 md:px-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <SettingsIcon className="w-8 h-8 text-primary" />
-            Configurações e Gestão
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Painel administrativo para controle multi-tenant, faturamento, integrações e RH.
-          </p>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+              <SettingsIcon className="w-6 h-6 md:w-8 md:h-8 text-primary" />
+              Configurações e Gestão
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              Painel administrativo para controle multi-tenant, faturamento, integrações e RH.
+            </p>
+          </div>
         </div>
       </div>
 
