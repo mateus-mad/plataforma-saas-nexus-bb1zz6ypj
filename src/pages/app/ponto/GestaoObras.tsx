@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,40 +28,96 @@ import {
   deleteWorkSite,
   WorkSite,
 } from '@/services/work_sites'
-import { SidebarTrigger } from '@/components/ui/sidebar'
 
-function InteractiveMap({ lat, lng, radius, onChange }: any) {
+function InteractiveMap({ lat, lng, radius, onChange, onAddressFound }: any) {
   const [pinPos, setPinPos] = useState({ x: 50, y: 50 })
+  const [isDragging, setIsDragging] = useState(false)
+  const mapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (lat && lng) {
-      // Visually keep the pin close to center when modified manually
+    if (lat && lng && !isDragging) {
+      setPinPos({ x: 50, y: 50 })
     }
-  }, [lat, lng])
+  }, [lat, lng, isDragging])
 
-  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+  const updatePosition = (clientX: number, clientY: number) => {
+    if (!mapRef.current) return
+    const rect = mapRef.current.getBoundingClientRect()
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
     setPinPos({ x, y })
 
-    const newLat = -23.5505 + (50 - y) * 0.1
-    const newLng = -46.6333 + (x - 50) * 0.1
+    const refLat = -23.5505
+    const refLng = -46.6333
+    const newLat = refLat + (50 - y) * 0.0005
+    const newLng = refLng + (x - 50) * 0.0005
 
     onChange(newLat.toFixed(6), newLng.toFixed(6))
+  }
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(true)
+    e.currentTarget.setPointerCapture(e.pointerId)
+    updatePosition(e.clientX, e.clientY)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    updatePosition(e.clientX, e.clientY)
+  }
+
+  const handlePointerUp = async (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    setIsDragging(false)
+    e.currentTarget.releasePointerCapture(e.pointerId)
+
+    if (lat && lng && onAddressFound) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        )
+        const data = await res.json()
+        if (data && data.display_name) {
+          onAddressFound(data.display_name)
+        }
+      } catch (err) {
+        console.error('Geocoding error', err)
+      }
+    }
   }
 
   const handleCurrentLocation = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        onChange(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6))
-        setPinPos({ x: 50, y: 50 })
-      })
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const newLat = pos.coords.latitude.toFixed(6)
+          const newLng = pos.coords.longitude.toFixed(6)
+          onChange(newLat, newLng)
+          setPinPos({ x: 50, y: 50 })
+
+          if (onAddressFound) {
+            try {
+              const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newLat}&lon=${newLng}`,
+              )
+              const data = await res.json()
+              if (data && data.display_name) {
+                onAddressFound(data.display_name)
+              }
+            } catch (err) {}
+          }
+        },
+        () =>
+          alert('Não foi possível obter sua localização. Verifique as permissões do navegador.'),
+        { enableHighAccuracy: true },
+      )
+    } else {
+      alert('Geolocalização não suportada pelo navegador.')
     }
   }
 
-  const visualRadius = Math.min(Math.max((radius / 100) * 20, 10), 100)
+  const visualRadius = Math.min(Math.max((radius / 1000) * 200, 20), 400)
 
   return (
     <div className="space-y-2">
@@ -78,32 +134,35 @@ function InteractiveMap({ lat, lng, radius, onChange }: any) {
         </Button>
       </div>
       <div
-        className="relative w-full h-[200px] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-crosshair group"
-        onClick={handleMapClick}
+        ref={mapRef}
+        className="relative w-full h-[250px] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-crosshair group touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
       >
-        <div className="absolute inset-0 bg-[url('https://img.usecurling.com/p/800/400?q=street%20map&color=gray')] bg-cover bg-center opacity-40 mix-blend-multiply transition-transform duration-1000" />
+        <div className="absolute inset-0 bg-[url('https://img.usecurling.com/p/800/400?q=street%20map&color=gray')] bg-cover bg-center opacity-50 mix-blend-multiply transition-transform duration-1000 pointer-events-none" />
 
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 pointer-events-none">
-          <span className="bg-white/90 text-slate-800 text-xs px-2 py-1 rounded shadow-sm flex items-center">
-            <Crosshair className="w-3 h-3 mr-1" /> Clique para definir
+          <span className="bg-white/90 text-slate-800 text-xs px-2 py-1 rounded shadow-sm flex items-center absolute top-2">
+            <Crosshair className="w-3 h-3 mr-1" /> Clique ou arraste para definir
           </span>
         </div>
 
         {lat && lng && (
           <div
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 pointer-events-none"
+            className="absolute pointer-events-none transition-all duration-75"
             style={{ left: `${pinPos.x}%`, top: `${pinPos.y}%` }}
           >
             <div
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-primary/20 animate-pulse"
+              className="absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-primary/20 animate-pulse"
               style={{ width: `${visualRadius * 2}px`, height: `${visualRadius * 2}px` }}
             />
-            <MapPin className="w-6 h-6 text-primary absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-0 drop-shadow-md" />
+            <MapPin className="w-8 h-8 text-primary absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-0 drop-shadow-md" />
           </div>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Clique no mapa interativo para ajustar as coordenadas do perímetro.
+        A área circulada representa o perímetro (geofence) para registro de ponto.
       </p>
     </div>
   )
@@ -181,7 +240,7 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
       setFormData({ name: '', latitude: '', longitude: '', radius_meters: '100', cost_center: '' })
     } catch (error) {
       toast({
-        title: editingId ? 'Erro ao atualizar obra' : 'Erro ao cadastrar obra',
+        title: editingId ? 'Erro ao atualizar' : 'Erro ao cadastrar',
         variant: 'destructive',
       })
     }
@@ -219,14 +278,14 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
                 Gestão de Obras
               </h2>
               <p className="text-muted-foreground mt-1 text-sm md:text-base">
-                Cadastre os locais de trabalho, defina o perímetro (Geofencing) e gere os QR Codes
-                de ponto.
+                Cadastre os locais de trabalho, defina o perímetro (Geofencing) e gere os QR Codes.
               </p>
             </div>
           </div>
         ) : (
           <div className="flex-1" />
         )}
+
         <Dialog
           open={open}
           onOpenChange={(isOpen) => {
@@ -254,7 +313,7 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
               <DialogDesc>
                 {editingId
                   ? 'Altere as informações da obra.'
-                  : 'Defina o nome, a localização e o raio de tolerância para o registro de ponto.'}
+                  : 'Defina o nome, a localização e o raio de tolerância.'}
               </DialogDesc>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
@@ -286,6 +345,10 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
                 onChange={(lat: string, lng: string) =>
                   setFormData({ ...formData, latitude: lat, longitude: lng })
                 }
+                onAddressFound={(address: string) => {
+                  if (!formData.name)
+                    setFormData((prev) => ({ ...prev, name: address.split(',')[0] }))
+                }}
               />
 
               <div className="grid grid-cols-2 gap-4">
