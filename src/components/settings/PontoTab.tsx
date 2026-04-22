@@ -32,7 +32,7 @@ export default function PontoTab() {
 
   const loadConfig = async () => {
     try {
-      const records = await getConfigurations('ponto')
+      const records = await getConfigurations('jornada')
       if (records.length > 0) {
         setConfigId(records[0].id)
         if (records[0].data) {
@@ -52,7 +52,7 @@ export default function PontoTab() {
       if (configId) {
         await updateConfiguration(configId, { data })
       } else {
-        const res = await createConfiguration({ name: 'Regras de Ponto', type: 'ponto', data })
+        const res = await createConfiguration({ name: 'Regras de Ponto', type: 'jornada', data })
         setConfigId(res.id)
       }
       toast({ title: 'Configurações de ponto salvas com sucesso!' })
@@ -76,7 +76,7 @@ export default function PontoTab() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Link to="/app/ponto/obras" className="block h-full">
+        <Link to="/app/controle-de-ponto/obras" className="block h-full">
           <Card className="hover:border-primary transition-all duration-200 cursor-pointer h-full hover:shadow-md">
             <CardContent className="p-4 flex items-center gap-3 h-full">
               <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
@@ -89,7 +89,7 @@ export default function PontoTab() {
             </CardContent>
           </Card>
         </Link>
-        <Link to="/app/ponto/locacao" className="block h-full">
+        <Link to="/app/controle-de-ponto/locacao" className="block h-full">
           <Card className="hover:border-blue-500 transition-all duration-200 cursor-pointer h-full hover:shadow-md">
             <CardContent className="p-4 flex items-center gap-3 h-full">
               <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500 shrink-0">

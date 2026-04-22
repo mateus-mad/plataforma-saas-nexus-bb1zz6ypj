@@ -87,7 +87,7 @@ export default function PontoDashboard() {
           </p>
         </div>
         <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-all">
-          <Link to="/app/ponto/registrar">
+          <Link to="/app/controle-de-ponto/registrar">
             <Clock className="mr-2 w-5 h-5" />
             Bater Ponto Agora
           </Link>
@@ -184,7 +184,7 @@ export default function PontoDashboard() {
             </div>
             <div className="p-4 border-t border-slate-100 bg-slate-50/50">
               <Button variant="ghost" asChild className="w-full text-primary hover:text-primary/80">
-                <Link to="/app/ponto/espelho">
+                <Link to="/app/controle-de-ponto/espelho">
                   Ver Espelho Completo <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
@@ -196,7 +196,7 @@ export default function PontoDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card
           className="hover:border-primary/30 transition-colors group cursor-pointer"
-          onClick={() => (window.location.href = '/app/ponto/espelho')}
+          onClick={() => (window.location.href = '/app/controle-de-ponto/espelho')}
         >
           <CardContent className="p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -214,7 +214,7 @@ export default function PontoDashboard() {
 
         <Card
           className="hover:border-primary/30 transition-colors group cursor-pointer"
-          onClick={() => (window.location.href = '/app/ponto/gestao')}
+          onClick={() => (window.location.href = '/app/controle-de-ponto/gestao')}
         >
           <CardContent className="p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">

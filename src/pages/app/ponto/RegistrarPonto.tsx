@@ -9,11 +9,10 @@ import { getWorkSiteByToken, WorkSite } from '@/services/work_sites'
 import pb from '@/lib/pocketbase/client'
 import { createSecurityAlert } from '@/services/security_alerts'
 import { useToast } from '@/hooks/use-toast'
-import { Clock, MapPin, Camera, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Clock, MapPin, Camera, AlertTriangle, CheckCircle2, Search } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-// Haversine distance in meters
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3
   const φ1 = (lat1 * Math.PI) / 180
@@ -35,6 +34,7 @@ export default function RegistrarPonto() {
 
   const [tokenInput, setTokenInput] = useState('')
   const [workSite, setWorkSite] = useState<WorkSite | null>(null)
+  const [relacionamentoId, setRelacionamentoId] = useState<string>('')
 
   const [currentTime, setCurrentTime] = useState(new Date())
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null)
@@ -56,14 +56,31 @@ export default function RegistrarPonto() {
   }, [])
 
   useEffect(() => {
-    if (user) loadLastEntry()
+    if (user) {
+      loadLastEntry()
+      fetchRelacionamento()
+    }
   }, [user])
 
   useEffect(() => {
     if (urlToken) {
       validateToken(urlToken)
+    } else if (user) {
+      requestInitialLocationForAutoDetect()
     }
-  }, [urlToken])
+  }, [urlToken, user])
+
+  const fetchRelacionamento = async () => {
+    if (!user) return
+    try {
+      const rels = await pb
+        .collection('relacionamentos')
+        .getFullList({ filter: `login_user_id = '${user.id}'` })
+      if (rels.length > 0) setRelacionamentoId(rels[0].id)
+    } catch (err) {
+      console.error('No relacionamento found for user', err)
+    }
+  }
 
   const loadLastEntry = async () => {
     try {
@@ -76,6 +93,61 @@ export default function RegistrarPonto() {
       }
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  const requestInitialLocationForAutoDetect = () => {
+    if (!navigator.geolocation) {
+      setLocError('Geolocalização não suportada.')
+      return
+    }
+    setLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        setLocation({ lat, lng })
+        await autoDetectWorkSite(lat, lng)
+        setLoading(false)
+      },
+      (err) => {
+        setLocError('Acesso à localização negado.')
+        setLoading(false)
+      },
+      { enableHighAccuracy: true },
+    )
+  }
+
+  const autoDetectWorkSite = async (lat: number, lng: number) => {
+    try {
+      const rels = await pb
+        .collection('relacionamentos')
+        .getFullList({ filter: `login_user_id = '${user?.id}'` })
+      if (rels.length === 0) return
+
+      const relId = rels[0].id
+      setRelacionamentoId(relId)
+
+      const allocations = await pb.collection('allocations').getFullList({
+        filter: `relacionamento_id = '${relId}' && status = 'ativo'`,
+        expand: 'work_site_id',
+      })
+
+      for (const alloc of allocations) {
+        const site = alloc.expand?.work_site_id as WorkSite
+        if (site) {
+          const dist = getDistance(lat, lng, site.latitude, site.longitude)
+          if (dist <= site.radius_meters) {
+            setWorkSite(site)
+            setDistance(dist)
+            startCamera()
+            toast({ title: `Obra ${site.name} detectada automaticamente.` })
+            return
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -230,22 +302,11 @@ export default function RegistrarPonto() {
         return
       }
 
-      // Fetch relacionamento_id for current user
-      let relId = ''
-      try {
-        const rels = await pb
-          .collection('relacionamentos')
-          .getFullList({ filter: `login_user_id = '${user.id}'` })
-        if (rels.length > 0) relId = rels[0].id
-      } catch (err) {
-        console.error('No relacionamento found for user', err)
-      }
-
       const action = getNextAction()
 
       const formData = new FormData()
       formData.append('user_id', user.id)
-      if (relId) formData.append('relacionamento_id', relId)
+      if (relacionamentoId) formData.append('relacionamento_id', relacionamentoId)
       formData.append('work_site_id', workSite.id)
       formData.append('timestamp', new Date().toISOString())
       formData.append('type', action.type)
@@ -259,20 +320,6 @@ export default function RegistrarPonto() {
         title: 'Ponto registrado com sucesso!',
         description: `Ponto registrado na obra ${workSite.name} às ${format(currentTime, 'HH:mm')}.`,
       })
-
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Ponto Registrado', {
-          body: `Ponto registrado com sucesso na obra ${workSite.name} às ${format(currentTime, 'HH:mm')}.`,
-        })
-      } else if ('Notification' in window && Notification.permission !== 'denied') {
-        Notification.requestPermission().then((perm) => {
-          if (perm === 'granted') {
-            new Notification('Ponto Registrado', {
-              body: `Ponto registrado com sucesso na obra ${workSite.name} às ${format(currentTime, 'HH:mm')}.`,
-            })
-          }
-        })
-      }
 
       localStorage.removeItem('geofence_attempts')
       await loadLastEntry()
@@ -288,6 +335,17 @@ export default function RegistrarPonto() {
 
   const action = getNextAction()
 
+  if (loading && !workSite) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 animate-fade-in">
+        <div className="flex flex-col items-center text-slate-500 space-y-4">
+          <Search className="w-10 h-10 animate-bounce text-primary" />
+          <p>Detectando obra mais próxima através das suas alocações...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!workSite) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 animate-fade-in">
@@ -299,7 +357,8 @@ export default function RegistrarPonto() {
             <div className="space-y-2">
               <h2 className="text-xl font-bold text-slate-800">Scanner de Obra</h2>
               <p className="text-sm text-slate-500">
-                Acesse o link gerado pelo QR Code da obra ou insira o token manualmente abaixo.
+                Nenhuma obra alocada próxima detectada automaticamente. Acesse o link gerado pelo QR
+                Code da obra ou insira o token manualmente.
               </p>
             </div>
             <div className="w-full space-y-3">

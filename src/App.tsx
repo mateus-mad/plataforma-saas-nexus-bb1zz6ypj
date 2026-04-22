@@ -92,13 +92,42 @@ const App = () => (
                     <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
                     <Route path="/app/em-breve" element={<ComingSoon />} />
 
-                    <Route path="/app/ponto" element={<PontoDashboard />} />
-                    <Route path="/app/ponto/registrar" element={<RegistrarPonto />} />
-                    <Route path="/app/ponto/espelho" element={<EspelhoPonto />} />
-                    <Route path="/app/ponto/gestao" element={<GestaoPonto />} />
-                    <Route path="/app/ponto/obras" element={<GestaoObras />} />
-                    <Route path="/app/ponto/locacao" element={<GestaoLocacao />} />
-                    <Route path="/app/ponto/custos" element={<RelatorioCustos />} />
+                    <Route
+                      path="/app/ponto"
+                      element={<Navigate to="/app/controle-de-ponto" replace />}
+                    />
+                    <Route
+                      path="/app/ponto/registrar"
+                      element={<Navigate to="/app/controle-de-ponto/registrar" replace />}
+                    />
+                    <Route
+                      path="/app/ponto/espelho"
+                      element={<Navigate to="/app/controle-de-ponto/espelho" replace />}
+                    />
+                    <Route
+                      path="/app/ponto/gestao"
+                      element={<Navigate to="/app/controle-de-ponto/gestao" replace />}
+                    />
+                    <Route
+                      path="/app/ponto/obras"
+                      element={<Navigate to="/app/controle-de-ponto/obras" replace />}
+                    />
+                    <Route
+                      path="/app/ponto/locacao"
+                      element={<Navigate to="/app/controle-de-ponto/locacao" replace />}
+                    />
+                    <Route
+                      path="/app/ponto/custos"
+                      element={<Navigate to="/app/controle-de-ponto/custos" replace />}
+                    />
+
+                    <Route path="/app/controle-de-ponto" element={<PontoDashboard />} />
+                    <Route path="/app/controle-de-ponto/registrar" element={<RegistrarPonto />} />
+                    <Route path="/app/controle-de-ponto/espelho" element={<EspelhoPonto />} />
+                    <Route path="/app/controle-de-ponto/gestao" element={<GestaoPonto />} />
+                    <Route path="/app/controle-de-ponto/obras" element={<GestaoObras />} />
+                    <Route path="/app/controle-de-ponto/locacao" element={<GestaoLocacao />} />
+                    <Route path="/app/controle-de-ponto/custos" element={<RelatorioCustos />} />
 
                     <Route path="/app/manager" element={<ManagerDashboard />} />
                     <Route path="/app/manager/tickets" element={<ManagerTickets />} />

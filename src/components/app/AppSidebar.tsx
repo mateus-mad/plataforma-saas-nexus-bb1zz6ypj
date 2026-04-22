@@ -162,8 +162,21 @@ export function AppSidebar() {
               {visibleCategories.map((category) => {
                 const isActive = category.path
                   ? currentFullPath === decodeURIComponent(category.path) ||
-                    location.pathname === category.path
-                  : category.items?.some((i) => currentFullPath === decodeURIComponent(i.path))
+                    location.pathname === category.path ||
+                    (category.name === 'Ponto' &&
+                      location.pathname.startsWith('/app/controle-de-ponto'))
+                  : category.items?.some(
+                      (i) =>
+                        currentFullPath === decodeURIComponent(i.path) ||
+                        (i.path.includes('/ponto') &&
+                          currentFullPath ===
+                            decodeURIComponent(i.path).replace(
+                              '/app/ponto',
+                              '/app/controle-de-ponto',
+                            )),
+                    ) ||
+                    (category.name === 'Ponto' &&
+                      location.pathname.startsWith('/app/controle-de-ponto'))
 
                 const isItemHoverable = category.items && category.items.length > 0
 
@@ -184,7 +197,7 @@ export function AppSidebar() {
                   >
                     {category.path ? (
                       <Link
-                        to={category.path}
+                        to={category.path.replace('/app/ponto', '/app/controle-de-ponto')}
                         onClick={handleLinkClick}
                         className="flex items-center w-full gap-3"
                       >
@@ -293,11 +306,18 @@ export function AppSidebar() {
                           </div>
                           <div className="p-2 flex flex-col gap-1">
                             {category.items?.map((item) => {
-                              const isSubActive = currentFullPath === decodeURIComponent(item.path)
+                              const isSubActive =
+                                currentFullPath === decodeURIComponent(item.path) ||
+                                (item.path.includes('/ponto') &&
+                                  currentFullPath ===
+                                    decodeURIComponent(item.path).replace(
+                                      '/app/ponto',
+                                      '/app/controle-de-ponto',
+                                    ))
                               return (
                                 <Link
                                   key={item.name}
-                                  to={item.path}
+                                  to={item.path.replace('/app/ponto', '/app/controle-de-ponto')}
                                   onClick={handleLinkClick}
                                   className={cn(
                                     'flex items-start gap-3 p-2 min-h-[44px] rounded-lg transition-all duration-200 group/subitem relative overflow-hidden',
