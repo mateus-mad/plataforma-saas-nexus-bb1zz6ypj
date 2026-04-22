@@ -89,6 +89,7 @@ const App = () => (
                     }
                   >
                     <Route path="/app" element={<Dashboard />} />
+                    <Route path="/app/dashboard" element={<Navigate to="/app" replace />} />
 
                     <Route
                       path="/app/relacionamento"
@@ -147,6 +148,15 @@ const App = () => (
                     <Route
                       path="/app/ponto/custos"
                       element={<Navigate to="/app/controle-de-ponto/custos" replace />}
+                    />
+
+                    <Route
+                      path="/app/controle-ponto"
+                      element={<Navigate to="/app/controle-de-ponto" replace />}
+                    />
+                    <Route
+                      path="/app/controle-ponto/*"
+                      element={<Navigate to="/app/controle-de-ponto" replace />}
                     />
 
                     <Route

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { db } from '@/lib/database'
+import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 
 type ModuleStore = {
   isReady: boolean
@@ -17,39 +19,110 @@ export const ModuleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [contractedModules, setContractedModules] = useState<string[]>([])
   const [lastRoute, setLastRouteState] = useState('/app')
 
+  const loadModulesFromPb = async () => {
+    if (!pb.authStore.isValid) return null
+    try {
+      const record = await pb
+        .collection('configurations')
+        .getFirstListItem('name="contracted_modules"')
+      if (record.data && Array.isArray(record.data.modules)) {
+        return record.data.modules
+      }
+    } catch (e) {
+      try {
+        const defaultModules = ['Contatos', 'Financeiro', 'Controle de Ponto']
+        await pb.collection('configurations').create({
+          name: 'contracted_modules',
+          type: 'jornada', // Required by schema
+          data: { modules: defaultModules },
+        })
+        return defaultModules
+      } catch (createErr) {
+        console.error('Failed to create contracted_modules in PB', createErr)
+      }
+    }
+    return null
+  }
+
   useEffect(() => {
     const initDb = async () => {
-      const modules = await db.get('contracted_modules')
-      if (modules && modules.length > 0) {
-        const migrated = modules.map((m: string) => (m === 'Relacionamento' ? 'Contatos' : m))
-        setContractedModules(migrated)
-        if (modules.includes('Relacionamento')) {
-          await db.set('contracted_modules', migrated)
-        }
-      } else {
-        const defaultModules = ['Contatos', 'Financeiro', 'Controle de Ponto']
-        setContractedModules(defaultModules)
-        await db.set('contracted_modules', defaultModules)
-      }
-
       const route = await db.get('last_route')
       if (route) setLastRouteState(route)
+
+      let modules = await loadModulesFromPb()
+
+      if (!modules) {
+        // Fallback to local DB
+        const localModules = await db.get('contracted_modules')
+        if (localModules && Array.isArray(localModules) && localModules.length > 0) {
+          modules = localModules
+        } else {
+          modules = ['Contatos', 'Financeiro', 'Controle de Ponto']
+        }
+      }
+
+      const migrated = modules.map((m: string) => (m === 'Relacionamento' ? 'Contatos' : m))
+      setContractedModules(migrated)
+      await db.set('contracted_modules', migrated)
 
       setIsReady(true)
     }
     initDb()
   }, [])
 
+  // Real-time synchronization of module subscription status
+  useRealtime(
+    'configurations',
+    (e) => {
+      if (e.action === 'update' || e.action === 'create') {
+        if (e.record.name === 'contracted_modules' && e.record.data?.modules) {
+          const newModules = e.record.data.modules.map((m: string) =>
+            m === 'Relacionamento' ? 'Contatos' : m,
+          )
+          setContractedModules(newModules)
+          db.set('contracted_modules', newModules).catch(() => {})
+        }
+      }
+    },
+    isReady && pb.authStore.isValid,
+  )
+
   const contractModule = async (name: string) => {
     const newModules = [...new Set([...contractedModules, name])]
     setContractedModules(newModules)
     await db.set('contracted_modules', newModules)
+
+    if (pb.authStore.isValid) {
+      try {
+        const record = await pb
+          .collection('configurations')
+          .getFirstListItem('name="contracted_modules"')
+        await pb.collection('configurations').update(record.id, {
+          data: { modules: newModules },
+        })
+      } catch (e) {
+        console.error('Error updating module contract in PB', e)
+      }
+    }
   }
 
   const removeModule = async (name: string) => {
     const newModules = contractedModules.filter((m) => m !== name)
     setContractedModules(newModules)
     await db.set('contracted_modules', newModules)
+
+    if (pb.authStore.isValid) {
+      try {
+        const record = await pb
+          .collection('configurations')
+          .getFirstListItem('name="contracted_modules"')
+        await pb.collection('configurations').update(record.id, {
+          data: { modules: newModules },
+        })
+      } catch (e) {
+        console.error('Error removing module contract in PB', e)
+      }
+    }
   }
 
   const setLastRoute = async (route: string) => {
