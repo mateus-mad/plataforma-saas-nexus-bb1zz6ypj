@@ -41,7 +41,6 @@ import PontoDashboard from '@/pages/app/ponto/PontoDashboard'
 import GestaoObras from '@/pages/app/ponto/GestaoObras'
 import GestaoEquipe from '@/pages/app/ponto/GestaoEquipe'
 import RelatorioCustos from '@/pages/app/ponto/RelatorioCustos'
-import GestaoConfiguracaoPonto from '@/pages/app/ponto/GestaoConfiguracaoPonto'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isValid, loading } = useAuth()
@@ -140,11 +139,11 @@ const App = () => (
                     />
                     <Route
                       path="/app/ponto/obras"
-                      element={<Navigate to="/app/controle-de-ponto/configuracao" replace />}
+                      element={<Navigate to="/app/controle-de-ponto/obras" replace />}
                     />
                     <Route
                       path="/app/ponto/equipe"
-                      element={<Navigate to="/app/controle-de-ponto/configuracao" replace />}
+                      element={<Navigate to="/app/controle-de-ponto/equipe" replace />}
                     />
                     <Route
                       path="/app/ponto/custos"
@@ -194,17 +193,17 @@ const App = () => (
                     />
                     <Route
                       path="/app/controle-de-ponto/obras"
-                      element={<Navigate to="/app/controle-de-ponto/configuracao" replace />}
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <GestaoObras />
+                        </ModuleProtectedRoute>
+                      }
                     />
                     <Route
                       path="/app/controle-de-ponto/equipe"
-                      element={<Navigate to="/app/controle-de-ponto/configuracao" replace />}
-                    />
-                    <Route
-                      path="/app/controle-de-ponto/configuracao"
                       element={
                         <ModuleProtectedRoute moduleName="Controle de Ponto">
-                          <GestaoConfiguracaoPonto />
+                          <GestaoEquipe />
                         </ModuleProtectedRoute>
                       }
                     />

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -12,19 +14,9 @@ import {
   DialogDescription as DialogDesc,
   DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  AlertTriangle,
-  Save,
-  Clock,
-  Camera,
-  Moon,
-  MapPin,
-  Users,
-  Settings2,
-  Lock,
-} from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { AlertTriangle, Save, Camera, MapPin, Lock, BookOpen, Settings } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
 import {
   getConfigurations,
   createConfiguration,
@@ -33,22 +25,116 @@ import {
 import pb from '@/lib/pocketbase/client'
 
 export default function PontoTab() {
+  const [activeTab, setActiveTab] = useState('leis')
+
+  return (
+    <div className="space-y-6 mt-6 animate-fade-in pb-10">
+      <div className="flex flex-col gap-1 mb-4">
+        <h3 className="text-xl font-semibold text-slate-800">Regras de Ponto</h3>
+        <p className="text-sm text-slate-500">
+          Gerencie políticas legais e regras customizadas para o registro de ponto.
+        </p>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100/50 p-1 max-w-md">
+          <TabsTrigger value="leis" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />{' '}
+            <span className="hidden sm:inline">Leis Trabalhistas</span>
+          </TabsTrigger>
+          <TabsTrigger value="regras" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />{' '}
+            <span className="hidden sm:inline">Regras Customizadas</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="leis" className="space-y-4 animate-fade-in-up">
+          <LeisTrabalhistas />
+        </TabsContent>
+        <TabsContent value="regras" className="space-y-4 animate-fade-in-up">
+          <RegrasCustomizadas />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function LeisTrabalhistas() {
+  return (
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-xl">Leis Trabalhistas e Portaria 671</CardTitle>
+        <CardDescription>
+          Entenda as exigências legais para o controle de ponto eletrônico no Brasil.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6 text-sm text-slate-700 leading-relaxed">
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold text-slate-900">Portaria 671/2021 do MTP</h3>
+          <p>
+            A Portaria 671 regulamenta o registro eletrônico de ponto, unificando regras anteriores
+            (como as Portarias 1510 e 373). O sistema REP-P (Registrador Eletrônico de Ponto via
+            Programa) permite o registro de jornada por meio de aplicativos e softwares.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold text-slate-900">Requisitos Técnicos</h3>
+          <ul className="list-disc pl-5 space-y-1.5 marker:text-primary">
+            <li>
+              <strong>Emissão de Comprovante:</strong> O sistema deve emitir o Comprovante de
+              Registro de Ponto do Trabalhador.
+            </li>
+            <li>
+              <strong>Armazenamento Seguro:</strong> Os dados devem ser armazenados de forma segura,
+              garantindo a integridade (NTP - Núcleo do Tempo).
+            </li>
+            <li>
+              <strong>Relatório AFD:</strong> Capacidade de exportar o Arquivo Fonte de Dados (AFD)
+              para auditoria fiscal.
+            </li>
+            <li>
+              <strong>Sem restrições:</strong> É proibido restringir horários de marcação ou exigir
+              autorização prévia para horas extras.
+            </li>
+          </ul>
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold text-slate-900">
+            CLT - Consolidação das Leis do Trabalho
+          </h3>
+          <p>A CLT estabelece regras sobre a jornada de trabalho, como:</p>
+          <ul className="list-disc pl-5 space-y-1.5 marker:text-primary">
+            <li>A jornada padrão é de até 8 horas diárias e 44 horas semanais.</li>
+            <li>Intervalo intrajornada de no mínimo 1 hora para jornadas superiores a 6 horas.</li>
+            <li>Intervalo interjornada de no mínimo 11 horas consecutivas entre duas jornadas.</li>
+            <li>Tolerância de 5 a 10 minutos diários sem desconto ou cômputo como hora extra.</li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function RegrasCustomizadas() {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [configId, setConfigId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [authPassword, setAuthPassword] = useState('')
 
-  const [data, setData] = useState({
+  const [formData, setFormData] = useState({
     toleranceMinutes: 10,
-    mandatoryPhoto: true,
+    minRestMinutes: 60,
+    maxOvertime: 2,
     nightShiftStart: '22:00',
+    nightShiftEnd: '05:00',
+    mandatoryPhoto: true,
     geofenceEnabled: true,
-    customRules: false,
     customRulesText: '',
   })
+  const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
     loadConfig()
@@ -56,32 +142,59 @@ export default function PontoTab() {
 
   const loadConfig = async () => {
     try {
-      const records = await getConfigurations('jornada')
-      if (records.length > 0) {
-        setConfigId(records[0].id)
-        if (records[0].data) {
-          setData(records[0].data)
+      const configs = await getConfigurations('jornada')
+      if (configs.length > 0) {
+        setConfigId(configs[0].id)
+        if (configs[0].data) {
+          setFormData({
+            ...formData,
+            ...configs[0].data,
+          })
+          setAuthorized(!!configs[0].data.authorizedBy)
         }
       }
-    } catch (error) {
-      console.error(error)
+    } catch (err) {
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
   const handleSave = async () => {
+    if (!authorized) {
+      toast({
+        title: 'Atenção',
+        description: 'Você precisa autorizar as regras customizadas.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setSaving(true)
     try {
-      if (configId) {
-        await updateConfiguration(configId, { data })
-      } else {
-        const res = await createConfiguration({ name: 'Regras de Ponto', type: 'jornada', data })
-        setConfigId(res.id)
+      const dataToSave = {
+        ...formData,
+        authorizedBy: user?.id,
+        authorizedAt: new Date().toISOString(),
       }
-      toast({ title: 'Configurações de ponto salvas com sucesso!' })
-    } catch (error) {
-      toast({ title: 'Erro ao salvar configurações', variant: 'destructive' })
+
+      if (configId) {
+        await updateConfiguration(configId, { data: dataToSave })
+      } else {
+        const newConf = await createConfiguration({
+          name: 'Regras de Ponto',
+          type: 'jornada',
+          data: dataToSave,
+        })
+        setConfigId(newConf.id)
+      }
+      toast({ title: 'Sucesso', description: 'Regras customizadas salvas com sucesso.' })
+    } catch (err) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar as configurações.',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -91,7 +204,7 @@ export default function PontoTab() {
     try {
       if (!pb.authStore.record?.email) throw new Error('No email found')
       await pb.collection('users').authWithPassword(pb.authStore.record.email, authPassword)
-      setData({ ...data, customRules: true })
+      setAuthorized(true)
       setShowAuthDialog(false)
       setAuthPassword('')
       toast({ title: 'Regras customizadas autorizadas com sucesso.' })
@@ -100,120 +213,83 @@ export default function PontoTab() {
     }
   }
 
-  if (loading) return <div className="h-40 flex items-center justify-center">Carregando...</div>
+  if (loading)
+    return (
+      <div className="p-8 text-center text-slate-500 animate-pulse">
+        Carregando configurações...
+      </div>
+    )
 
   return (
-    <div className="space-y-6 mt-6 animate-fade-in pb-10">
-      <div className="flex flex-col gap-1 mb-4">
-        <h3 className="text-xl font-semibold text-slate-800">Controle de Ponto Centralizado</h3>
-        <p className="text-sm text-slate-500">
-          Gerencie obras, locação de colaboradores e as regras de compliance para o registro de
-          ponto.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Link to="/app/controle-de-ponto/obras" className="block h-full">
-          <Card className="hover:border-primary transition-all duration-200 cursor-pointer h-full hover:shadow-md">
-            <CardContent className="p-4 flex items-center gap-3 h-full">
-              <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-800">Gestão de Obras</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Perímetros e QR Codes</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link to="/app/controle-de-ponto/equipe" className="block h-full">
-          <Card className="hover:border-blue-500 transition-all duration-200 cursor-pointer h-full hover:shadow-md">
-            <CardContent className="p-4 flex items-center gap-3 h-full">
-              <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500 shrink-0">
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-800">Gestão de Equipe</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Alocação de Colaboradores</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <div className="block h-full cursor-default">
-          <Card className="border-emerald-500/30 bg-emerald-50/30 h-full">
-            <CardContent className="p-4 flex items-center gap-3 h-full">
-              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-600 shrink-0">
-                <Settings2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-800">Regras de Ponto</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Configurações abaixo</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <h4 className="font-semibold text-amber-800 text-sm">
-            Aviso Legal (Compliance Trabalhista)
-          </h4>
-          <p className="text-sm text-amber-700/90 leading-relaxed mt-1">
-            O usuário é inteiramente responsável por configurar estas regras de acordo com a
-            legislação trabalhista local (ex: CLT) e acordos sindicais aplicáveis. O sistema atua
-            apenas como ferramenta de registro e cálculo baseado nos parâmetros aqui definidos.
-          </p>
-        </div>
-      </div>
-
-      <Card className="shadow-sm border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg">Regras de Validação e Legislação</CardTitle>
-          <CardDescription>
-            Defina como o sistema deve validar as marcações de ponto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-base flex items-center gap-2">
-                Regras Trabalhistas Padrão (CLT)
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Utilizar as regras padrão estabelecidas pela CLT.
-              </p>
-            </div>
-            <Switch
-              checked={!data.customRules}
-              onCheckedChange={(c) => {
-                if (!c) {
-                  setShowAuthDialog(true)
-                } else {
-                  setData({ ...data, customRules: false })
-                }
-              }}
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-xl">Regras Customizadas de Ponto</CardTitle>
+        <CardDescription>
+          Defina as regras operacionais da sua empresa. Regras que divergem da CLT exigem acordo
+          coletivo ou convenção.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Tolerância Diária (minutos)</Label>
+            <Input
+              type="number"
+              value={formData.toleranceMinutes}
+              onChange={(e) =>
+                setFormData({ ...formData, toleranceMinutes: parseInt(e.target.value) || 0 })
+              }
             />
+            <p className="text-xs text-slate-500">
+              CLT padrão: 10 minutos diários (5 por marcação).
+            </p>
           </div>
-
-          {data.customRules && (
-            <div className="space-y-2 border-l-2 border-amber-500 pl-4 py-2 animate-in fade-in slide-in-from-left-2">
-              <Label className="text-amber-700">Regras Customizadas Ativas</Label>
-              <p className="text-xs text-amber-600 mb-2">
-                As regras abaixo sobrescrevem o padrão legal. Uma assinatura eletrônica foi
-                registrada.
-              </p>
-              <textarea
-                className="w-full min-h-[100px] text-sm p-3 rounded-md border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
-                placeholder="Descreva aqui os acordos sindicais ou regras específicas da empresa (CCT, tolerâncias específicas, etc)..."
-                value={data.customRulesText || ''}
-                onChange={(e) => setData({ ...data, customRulesText: e.target.value })}
+          <div className="space-y-2">
+            <Label>Intervalo Mínimo Refeição (minutos)</Label>
+            <Input
+              type="number"
+              value={formData.minRestMinutes}
+              onChange={(e) =>
+                setFormData({ ...formData, minRestMinutes: parseInt(e.target.value) || 0 })
+              }
+            />
+            <p className="text-xs text-slate-500">CLT padrão: 60 minutos para jornadas {'>'} 6h.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Máximo de Horas Extras Diárias</Label>
+            <Input
+              type="number"
+              value={formData.maxOvertime}
+              onChange={(e) =>
+                setFormData({ ...formData, maxOvertime: parseInt(e.target.value) || 0 })
+              }
+            />
+            <p className="text-xs text-slate-500">CLT padrão: 2 horas.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Início Adicional Noturno</Label>
+              <Input
+                type="time"
+                value={formData.nightShiftStart}
+                onChange={(e) => setFormData({ ...formData, nightShiftStart: e.target.value })}
               />
             </div>
-          )}
+            <div className="space-y-2">
+              <Label>Fim Adicional Noturno</Label>
+              <Input
+                type="time"
+                value={formData.nightShiftEnd}
+                onChange={(e) => setFormData({ ...formData, nightShiftEnd: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
 
-          <div className="flex items-center justify-between border-t pt-6">
+        <div className="space-y-4 pt-6 border-t">
+          <h4 className="font-semibold text-sm text-slate-800">Parâmetros de Aplicativo</h4>
+
+          <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base flex items-center gap-2">
                 <Camera className="w-4 h-4 text-slate-500" /> Foto Obrigatória
@@ -223,12 +299,12 @@ export default function PontoTab() {
               </p>
             </div>
             <Switch
-              checked={data.mandatoryPhoto}
-              onCheckedChange={(c) => setData({ ...data, mandatoryPhoto: c })}
+              checked={formData.mandatoryPhoto}
+              onCheckedChange={(c) => setFormData({ ...formData, mandatoryPhoto: c })}
             />
           </div>
 
-          <div className="flex items-center justify-between border-t pt-6">
+          <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-slate-500" /> Validação de Geofence
@@ -238,57 +314,73 @@ export default function PontoTab() {
               </p>
             </div>
             <Switch
-              checked={data.geofenceEnabled}
-              onCheckedChange={(c) => setData({ ...data, geofenceEnabled: c })}
+              checked={formData.geofenceEnabled}
+              onCheckedChange={(c) => setFormData({ ...formData, geofenceEnabled: c })}
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card className="shadow-sm border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg">Parâmetros de Cálculo</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-slate-500" /> Tolerância (minutos)
-              </Label>
-              <Input
-                type="number"
-                value={data.toleranceMinutes}
-                onChange={(e) =>
-                  setData({ ...data, toleranceMinutes: parseInt(e.target.value) || 0 })
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Minutos de tolerância antes de contabilizar atraso ou hora extra.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Moon className="w-4 h-4 text-slate-500" /> Início do Adicional Noturno
-              </Label>
-              <Input
-                type="time"
-                value={data.nightShiftStart}
-                onChange={(e) => setData({ ...data, nightShiftStart: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Horário a partir do qual as horas são consideradas noturnas.
-              </p>
-            </div>
+        <div className="space-y-2 pt-4">
+          <Label className="text-slate-700">Acordos ou Convenções Coletivas</Label>
+          <textarea
+            className="w-full min-h-[80px] text-sm p-3 rounded-md border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Descreva aqui os acordos sindicais ou regras específicas da empresa (CCT, tolerâncias específicas, etc)..."
+            value={formData.customRulesText}
+            onChange={(e) => setFormData({ ...formData, customRulesText: e.target.value })}
+          />
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 flex gap-3 mt-8">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-3 w-full">
+            <h4 className="font-semibold text-amber-800">Termo de Responsabilidade</h4>
+            <p className="text-sm text-amber-700">
+              Ao habilitar regras customizadas que divergem das normas padrões da CLT, a empresa
+              declara estar amparada por <strong>Acordo Coletivo de Trabalho (ACT)</strong> ou{' '}
+              <strong>Convenção Coletiva de Trabalho (CCT)</strong>. A plataforma não se
+              responsabiliza por passivos trabalhistas gerados por configurações indevidas.
+            </p>
+
+            {!authorized ? (
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="bg-white border-amber-300 text-amber-700 hover:bg-amber-100"
+                  onClick={() => setShowAuthDialog(true)}
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Autorizar Regras Customizadas
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="terms"
+                  checked={authorized}
+                  onCheckedChange={(c) => {
+                    if (!c) setAuthorized(false)
+                  }}
+                  className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
+                />
+                <label
+                  htmlFor="terms"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-amber-900 cursor-pointer"
+                >
+                  Autorizado por {user?.email}.
+                </label>
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="bg-primary">
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? 'Salvando...' : 'Salvar Configurações'}
-        </Button>
-      </div>
+        <div className="flex justify-end pt-4">
+          <Button onClick={handleSave} disabled={saving} className="min-w-[160px]">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Salvando...' : 'Salvar Configurações'}
+          </Button>
+        </div>
+      </CardContent>
 
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
         <DialogContent>
@@ -326,6 +418,6 @@ export default function PontoTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   )
 }

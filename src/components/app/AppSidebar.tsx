@@ -12,6 +12,7 @@ import {
   Truck,
   History,
   Clock,
+  MapPin,
 } from 'lucide-react'
 import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES } from '@/config/modules'
 import useModuleStore from '@/stores/useModuleStore'
@@ -80,25 +81,34 @@ export function AppSidebar() {
     .map((category) => {
       // Modify Controle de Ponto category
       if (category.name === 'Controle de Ponto' && category.items) {
-        const newItems = category.items
-          .filter(
-            (item: any) =>
-              ![
-                'Gestão de Locação',
-                'Gestão de Obras',
-                'Gestão de Equipe',
-                'Regras de Ponto',
-              ].includes(item.name),
-          )
-          .concat([
+        const baseItems = category.items.filter(
+          (item: any) =>
+            ![
+              'Gestão de Locação',
+              'Gestão de Obras',
+              'Gestão de Equipe',
+              'Regras de Ponto',
+              'Configurações',
+            ].includes(item.name),
+        )
+        return {
+          ...category,
+          items: [
+            ...baseItems,
             {
-              name: 'Configurações',
-              path: '/app/controle-de-ponto/configuracao',
-              icon: Settings,
-              description: 'Leis, regras, obras e equipe',
+              name: 'Gestão de Obras',
+              path: '/app/controle-de-ponto/obras',
+              icon: MapPin,
+              description: 'Locais e perímetros',
             },
-          ])
-        return { ...category, items: newItems }
+            {
+              name: 'Gestão de Equipe',
+              path: '/app/controle-de-ponto/equipe',
+              icon: Users,
+              description: 'Alocação de colaboradores',
+            },
+          ],
+        }
       }
 
       if (isAdminMode) return category
