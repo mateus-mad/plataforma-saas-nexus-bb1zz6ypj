@@ -85,7 +85,7 @@ export function AppSidebar() {
           if (item.requireAdmin && !isAdminMode) return false
           return (
             category.name === 'Contatos' ||
-            category.name === 'Ponto' ||
+            category.name === 'Controle de Ponto' ||
             contractedModules.includes(item.name) ||
             contractedModules.includes('Controle de Ponto')
           )
@@ -163,19 +163,10 @@ export function AppSidebar() {
                 const isActive = category.path
                   ? currentFullPath === decodeURIComponent(category.path) ||
                     location.pathname === category.path ||
-                    (category.name === 'Ponto' &&
+                    (category.name === 'Controle de Ponto' &&
                       location.pathname.startsWith('/app/controle-de-ponto'))
-                  : category.items?.some(
-                      (i) =>
-                        currentFullPath === decodeURIComponent(i.path) ||
-                        (i.path.includes('/ponto') &&
-                          currentFullPath ===
-                            decodeURIComponent(i.path).replace(
-                              '/app/ponto',
-                              '/app/controle-de-ponto',
-                            )),
-                    ) ||
-                    (category.name === 'Ponto' &&
+                  : category.items?.some((i) => currentFullPath === decodeURIComponent(i.path)) ||
+                    (category.name === 'Controle de Ponto' &&
                       location.pathname.startsWith('/app/controle-de-ponto'))
 
                 const isItemHoverable = category.items && category.items.length > 0
@@ -197,7 +188,7 @@ export function AppSidebar() {
                   >
                     {category.path ? (
                       <Link
-                        to={category.path.replace('/app/ponto', '/app/controle-de-ponto')}
+                        to={category.path}
                         onClick={handleLinkClick}
                         className="flex items-center w-full gap-3"
                       >
@@ -306,18 +297,11 @@ export function AppSidebar() {
                           </div>
                           <div className="p-2 flex flex-col gap-1">
                             {category.items?.map((item) => {
-                              const isSubActive =
-                                currentFullPath === decodeURIComponent(item.path) ||
-                                (item.path.includes('/ponto') &&
-                                  currentFullPath ===
-                                    decodeURIComponent(item.path).replace(
-                                      '/app/ponto',
-                                      '/app/controle-de-ponto',
-                                    ))
+                              const isSubActive = currentFullPath === decodeURIComponent(item.path)
                               return (
                                 <Link
                                   key={item.name}
-                                  to={item.path.replace('/app/ponto', '/app/controle-de-ponto')}
+                                  to={item.path}
                                   onClick={handleLinkClick}
                                   className={cn(
                                     'flex items-start gap-3 p-2 min-h-[44px] rounded-lg transition-all duration-200 group/subitem relative overflow-hidden',

@@ -54,7 +54,7 @@ export const ACTIVE_MODULES = [
   },
   {
     name: 'Controle de Ponto',
-    path: '/app/ponto',
+    path: '/app/controle-de-ponto',
     icon: Clock,
     description: 'Registro e gestão inteligente de jornada de trabalho.',
   },
@@ -276,30 +276,30 @@ export const MENU_CATEGORIES = [
     ],
   },
   {
-    name: 'Ponto',
+    name: 'Controle de Ponto',
     icon: Clock,
     items: [
       {
         name: 'Painel Geral',
-        path: '/app/ponto',
+        path: '/app/controle-de-ponto',
         icon: LayoutDashboard,
         description: 'Visão geral da jornada',
       },
       {
         name: 'Registrar Ponto',
-        path: '/app/ponto/registrar',
+        path: '/app/controle-de-ponto/registrar',
         icon: Clock,
         description: 'Bater ponto',
       },
       {
         name: 'Espelho de Ponto',
-        path: '/app/ponto/espelho',
+        path: '/app/controle-de-ponto/espelho',
         icon: History,
         description: 'Histórico de marcações',
       },
       {
         name: 'Gestão de Ponto',
-        path: '/app/ponto/gestao',
+        path: '/app/controle-de-ponto/gestao',
         icon: Users,
         requireAdmin: true,
         description: 'Administração da equipe',

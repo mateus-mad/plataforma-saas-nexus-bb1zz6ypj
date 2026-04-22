@@ -28,11 +28,11 @@ export default function ModulesTab() {
         },
       ]
     }
-    if (cat.name === 'Ponto') {
+    if (cat.name === 'Controle de Ponto') {
       return [
         {
           name: 'Controle de Ponto',
-          path: '/app/ponto',
+          path: '/app/controle-de-ponto',
           icon: cat.icon,
           description: 'Registro e gestão inteligente de jornada de trabalho.',
           category: 'Recursos Humanos',
