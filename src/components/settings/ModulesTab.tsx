@@ -41,7 +41,22 @@ export default function ModulesTab() {
         },
       ]
     }
-    return cat.items ? cat.items.map((item) => ({ ...item, category: cat.name })) : []
+    if (cat.name === 'Financeiro') {
+      return [
+        {
+          name: 'Financeiro',
+          path: '/app/financeiro',
+          icon: cat.icon,
+          description: 'Gestão financeira, controle de contas a pagar, receber e fluxo de caixa.',
+          category: 'Gestão Financeira',
+          isUpcoming: false,
+        },
+      ]
+    }
+    if (cat.items && cat.items.length > 0) {
+      return cat.items.map((item) => ({ ...item, category: cat.name }))
+    }
+    return []
   })
 
   return (
