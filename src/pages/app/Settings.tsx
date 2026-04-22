@@ -62,7 +62,7 @@ export default function Settings() {
     (location.pathname.includes('/app/configuracoes/jornada') ||
       location.pathname.includes('/app/configuracoes/painel'))
   ) {
-    return <Navigate to="/app/configuracoes/loja" replace />
+    return <Navigate to="/app" replace />
   }
 
   return (
