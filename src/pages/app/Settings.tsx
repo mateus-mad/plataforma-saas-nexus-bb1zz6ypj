@@ -45,7 +45,12 @@ export default function Settings() {
     ...(hasPonto
       ? [
           { value: 'jornada', label: 'Jornada', icon: Clock, path: '/app/configuracoes/jornada' },
-          { value: 'painel', label: 'Painel', icon: MapPin, path: '/app/configuracoes/painel' },
+          {
+            value: 'regras',
+            label: 'Regras de Ponto',
+            icon: Shield,
+            path: '/app/configuracoes/regras',
+          },
         ]
       : []),
     { value: 'seguranca', label: 'Segurança', icon: Shield, path: '/app/configuracoes/seguranca' },
@@ -60,7 +65,7 @@ export default function Settings() {
   if (
     !hasPonto &&
     (location.pathname.includes('/app/configuracoes/jornada') ||
-      location.pathname.includes('/app/configuracoes/painel'))
+      location.pathname.includes('/app/configuracoes/regras'))
   ) {
     return <Navigate to="/app" replace />
   }
@@ -122,7 +127,7 @@ export default function Settings() {
             {hasPonto && (
               <>
                 <Route path="jornada" element={<HRTab />} />
-                <Route path="painel" element={<PontoTab />} />
+                <Route path="regras" element={<PontoTab />} />
               </>
             )}
             <Route path="seguranca" element={<SecurityTab />} />

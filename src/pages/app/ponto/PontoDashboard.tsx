@@ -17,12 +17,19 @@ import { useAuth } from '@/hooks/use-auth'
 import { getTimeEntries, TimeEntry } from '@/services/time_entries'
 import { format, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import pb from '@/lib/pocketbase/client'
 
 export default function PontoDashboard() {
   const { user } = useAuth()
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null)
   const [todayEntries, setTodayEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [managerMetrics, setManagerMetrics] = useState<{
+    atrasados: number
+    ausentes: number
+    valorObraDia: number
+  } | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -33,12 +40,79 @@ export default function PontoDashboard() {
   const loadData = async () => {
     try {
       const today = startOfDay(new Date())
-      const filter = `user_id = '${user.id}' && timestamp >= '${today.toISOString().replace('T', ' ')}'`
+      const todayStr = today.toISOString().replace('T', ' ')
+      const filter = `user_id = '${user.id}' && timestamp >= '${todayStr}'`
       const entries = await getTimeEntries(filter)
 
       setTodayEntries(entries)
       if (entries.length > 0) {
         setLastEntry(entries[0])
+      }
+
+      // Manager Metrics
+      const myEmployees = await pb.collection('relacionamentos').getFullList({
+        filter: `type = 'colaborador'`,
+      })
+
+      if (myEmployees.length > 0) {
+        const allocations = await pb.collection('allocations').getFullList({
+          filter: `status = 'ativo'`,
+        })
+
+        const empIds = myEmployees.map((e) => e.id)
+        const allTimeEntries = await pb.collection('time_entries').getFullList({
+          filter: `timestamp >= '${todayStr}'`,
+        })
+
+        const myEmpEntries = allTimeEntries.filter(
+          (te) => te.relacionamento_id && empIds.includes(te.relacionamento_id),
+        )
+
+        let atrasados = 0
+        let ausentes = 0
+        let valorObraDia = 0
+
+        const allocatedEmpIds = [...new Set(allocations.map((a) => a.relacionamento_id))]
+
+        allocatedEmpIds.forEach((empId) => {
+          const emp = myEmployees.find((e) => e.id === empId)
+          if (!emp) return
+
+          const empEntries = myEmpEntries.filter((te) => te.relacionamento_id === empId)
+          const entradas = empEntries
+            .filter((te) => te.type === 'entrada')
+            .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+
+          if (entradas.length === 0) {
+            ausentes++
+          } else {
+            const firstEntrada = new Date(entradas[0].timestamp)
+            let expectedHour = 8
+            let expectedMin = 0
+            if (emp.work_details?.start_time) {
+              const parts = emp.work_details.start_time.split(':')
+              expectedHour = parseInt(parts[0], 10)
+              expectedMin = parseInt(parts[1], 10)
+            }
+            const expectedTime = new Date(firstEntrada)
+            expectedTime.setHours(expectedHour, expectedMin, 0, 0)
+            expectedTime.setMinutes(expectedTime.getMinutes() + 10) // 10 min tolerance
+
+            if (firstEntrada > expectedTime) {
+              atrasados++
+            }
+
+            let dailyRate = 0
+            if (emp.salary_details?.daily_rate) {
+              dailyRate = parseFloat(emp.salary_details.daily_rate)
+            } else if (emp.salary_details?.base_salary) {
+              dailyRate = parseFloat(emp.salary_details.base_salary) / 30
+            }
+            valorObraDia += dailyRate
+          }
+        })
+
+        setManagerMetrics({ atrasados, ausentes, valorObraDia })
       }
     } catch (error) {
       console.error(error)
@@ -113,6 +187,54 @@ export default function PontoDashboard() {
             Lembrete Automático: Você ainda não registrou sua entrada hoje. Por favor, registre seu
             ponto.
           </p>
+        </div>
+      )}
+
+      {managerMetrics && (
+        <div className="mb-2 animate-in fade-in slide-in-from-bottom-4">
+          <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            Visão Geral da Operação (Hoje)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Atrasados</p>
+                  <p className="text-2xl font-bold text-amber-600">{managerMetrics.atrasados}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-rose-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Ausentes</p>
+                  <p className="text-2xl font-bold text-rose-600">{managerMetrics.ausentes}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Custo Operacional / Dia</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      managerMetrics.valorObraDia,
+                    )}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                  <Activity className="w-5 h-5" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 

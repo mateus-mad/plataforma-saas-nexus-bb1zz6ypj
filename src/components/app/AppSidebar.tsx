@@ -78,6 +78,16 @@ export function AppSidebar() {
 
   const visibleCategories = categoriesToRender
     .map((category) => {
+      // Modify Controle de Ponto category
+      if (category.name === 'Controle de Ponto' && category.items) {
+        const newItems = category.items.map((item: any) => {
+          if (item.name === 'Gestão de Locação')
+            return { ...item, name: 'Gestão de Equipe', path: '/app/controle-de-ponto/equipe' }
+          return item
+        })
+        return { ...category, items: newItems }
+      }
+
       if (isAdminMode) return category
 
       if (category.path) {

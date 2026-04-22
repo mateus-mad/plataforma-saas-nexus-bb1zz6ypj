@@ -126,14 +126,14 @@ export default function PontoTab() {
             </CardContent>
           </Card>
         </Link>
-        <Link to="/app/controle-de-ponto/locacao" className="block h-full">
+        <Link to="/app/controle-de-ponto/equipe" className="block h-full">
           <Card className="hover:border-blue-500 transition-all duration-200 cursor-pointer h-full hover:shadow-md">
             <CardContent className="p-4 flex items-center gap-3 h-full">
               <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500 shrink-0">
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-semibold text-slate-800">Gestão de Locação</h4>
+                <h4 className="font-semibold text-slate-800">Gestão de Equipe</h4>
                 <p className="text-xs text-slate-500 mt-0.5">Alocação de Colaboradores</p>
               </div>
             </CardContent>
