@@ -4,7 +4,25 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { AlertTriangle, Save, Clock, Camera, Moon, MapPin, Users, Settings2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription as DialogDesc,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  AlertTriangle,
+  Save,
+  Clock,
+  Camera,
+  Moon,
+  MapPin,
+  Users,
+  Settings2,
+  Lock,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -12,6 +30,7 @@ import {
   createConfiguration,
   updateConfiguration,
 } from '@/services/configurations'
+import pb from '@/lib/pocketbase/client'
 
 export default function PontoTab() {
   const { toast } = useToast()
@@ -19,11 +38,16 @@ export default function PontoTab() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [authPassword, setAuthPassword] = useState('')
+
   const [data, setData] = useState({
     toleranceMinutes: 10,
     mandatoryPhoto: true,
     nightShiftStart: '22:00',
     geofenceEnabled: true,
+    customRules: false,
+    customRulesText: '',
   })
 
   useEffect(() => {
@@ -60,6 +84,19 @@ export default function PontoTab() {
       toast({ title: 'Erro ao salvar configurações', variant: 'destructive' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleAuthorizeCustomRules = async () => {
+    try {
+      if (!pb.authStore.record?.email) throw new Error('No email found')
+      await pb.collection('users').authWithPassword(pb.authStore.record.email, authPassword)
+      setData({ ...data, customRules: true })
+      setShowAuthDialog(false)
+      setAuthPassword('')
+      toast({ title: 'Regras customizadas autorizadas com sucesso.' })
+    } catch (err) {
+      toast({ title: 'Senha incorreta ou erro de autorização', variant: 'destructive' })
     }
   }
 
@@ -133,13 +170,50 @@ export default function PontoTab() {
 
       <Card className="shadow-sm border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg">Regras de Validação</CardTitle>
+          <CardTitle className="text-lg">Regras de Validação e Legislação</CardTitle>
           <CardDescription>
             Defina como o sistema deve validar as marcações de ponto.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base flex items-center gap-2">
+                Regras Trabalhistas Padrão (CLT)
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Utilizar as regras padrão estabelecidas pela CLT.
+              </p>
+            </div>
+            <Switch
+              checked={!data.customRules}
+              onCheckedChange={(c) => {
+                if (!c) {
+                  setShowAuthDialog(true)
+                } else {
+                  setData({ ...data, customRules: false })
+                }
+              }}
+            />
+          </div>
+
+          {data.customRules && (
+            <div className="space-y-2 border-l-2 border-amber-500 pl-4 py-2 animate-in fade-in slide-in-from-left-2">
+              <Label className="text-amber-700">Regras Customizadas Ativas</Label>
+              <p className="text-xs text-amber-600 mb-2">
+                As regras abaixo sobrescrevem o padrão legal. Uma assinatura eletrônica foi
+                registrada.
+              </p>
+              <textarea
+                className="w-full min-h-[100px] text-sm p-3 rounded-md border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                placeholder="Descreva aqui os acordos sindicais ou regras específicas da empresa (CCT, tolerâncias específicas, etc)..."
+                value={data.customRulesText || ''}
+                onChange={(e) => setData({ ...data, customRulesText: e.target.value })}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t pt-6">
             <div className="space-y-0.5">
               <Label className="text-base flex items-center gap-2">
                 <Camera className="w-4 h-4 text-slate-500" /> Foto Obrigatória
@@ -154,10 +228,10 @@ export default function PontoTab() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-t pt-6">
             <div className="space-y-0.5">
               <Label className="text-base flex items-center gap-2">
-                <Clock className="w-4 h-4 text-slate-500" /> Validação de Geofence
+                <MapPin className="w-4 h-4 text-slate-500" /> Validação de Geofence
               </Label>
               <p className="text-sm text-muted-foreground">
                 Bloquear registros fora do raio da obra.
@@ -215,6 +289,43 @@ export default function PontoTab() {
           {saving ? 'Salvando...' : 'Salvar Configurações'}
         </Button>
       </div>
+
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-500" />
+              Autorizar Regras Customizadas
+            </DialogTitle>
+            <DialogDesc>
+              Para habilitar regras customizadas que podem divergir da legislação padrão, é
+              necessária a assinatura eletrônica do administrador. Por favor, confirme sua senha.
+            </DialogDesc>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Senha do Administrador</Label>
+              <Input
+                type="password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                placeholder="Insira sua senha atual"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAuthDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAuthorizeCustomRules}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              Confirmar Autorização
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

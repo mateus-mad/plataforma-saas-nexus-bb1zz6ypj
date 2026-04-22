@@ -13,6 +13,7 @@ import {
   Loader2,
   FileText,
   X,
+  KeyRound,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import pb from '@/lib/pocketbase/client'
@@ -46,6 +47,8 @@ export default function Onboarding() {
     cidade: '',
     estado: '',
     expiryDate: '',
+    password: '',
+    confirmPassword: '',
   })
 
   useEffect(() => {
@@ -139,6 +142,24 @@ export default function Onboarding() {
       return
     }
 
+    if (formData.password && formData.password.length < 8) {
+      toast({
+        variant: 'destructive',
+        title: 'Senha muito curta',
+        description: 'A senha deve ter no mínimo 8 caracteres.',
+      })
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Senhas não coincidem',
+        description: 'As senhas informadas são diferentes.',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     toast({
       title: 'Enviando dados...',
@@ -173,6 +194,7 @@ export default function Onboarding() {
       birth_date: formData.dataNascimento ? formData.dataNascimento + ' 12:00:00.000Z' : undefined,
       expiry_date: formData.expiryDate || undefined,
       data: fullData,
+      password: formData.password || undefined,
     }
 
     payload.append('data', JSON.stringify(sendData))
@@ -217,8 +239,8 @@ export default function Onboarding() {
               </div>
               <h1 className="text-2xl font-bold text-slate-800">Tudo Certo!</h1>
               <p className="text-slate-500">
-                Seus dados foram enviados com sucesso para nossa equipe. Faremos a validação em
-                breve.
+                Seu cadastro foi realizado com sucesso. A senha que você criou já pode ser usada
+                para acessar o aplicativo.
               </p>
             </>
           ) : (
@@ -242,7 +264,7 @@ export default function Onboarding() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b border-slate-200 py-4 px-6 flex justify-center shadow-sm">
         <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
-          <Building className="w-6 h-6" /> Portal de Admissão Remota
+          <Building className="w-6 h-6" /> Portal do Colaborador
         </div>
       </header>
 
@@ -251,8 +273,8 @@ export default function Onboarding() {
           <div className="bg-blue-600 p-6 text-white text-center">
             <h1 className="text-2xl font-bold mb-2">Bem-vindo(a) à Equipe!</h1>
             <p className="text-blue-100 text-sm max-w-xl mx-auto">
-              Para prosseguir com seu cadastro, por favor, preencha os dados abaixo com atenção e
-              anexe os documentos necessários.
+              Para acessar o aplicativo e registrar seu ponto, preencha os dados abaixo com atenção
+              e crie sua senha de acesso.
             </p>
           </div>
 
@@ -328,7 +350,48 @@ export default function Onboarding() {
 
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">
-                1. Dados Pessoais
+                1. Acesso ao Aplicativo
+              </h3>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 flex items-start gap-3">
+                <KeyRound className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                <div className="text-sm text-slate-600">
+                  <p className="font-semibold text-slate-800">Crie sua senha de acesso</p>
+                  <p>
+                    O seu login no aplicativo será o seu <strong>CPF</strong> (somente números).
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>
+                    Senha <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    Confirme a Senha <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    placeholder="Repita a senha"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">
+                2. Dados Pessoais
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -337,6 +400,7 @@ export default function Onboarding() {
                     Nome Completo <span className="text-rose-500">*</span>
                   </Label>
                   <Input
+                    required
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     placeholder="Seu nome completo"
@@ -347,6 +411,7 @@ export default function Onboarding() {
                     CPF <span className="text-rose-500">*</span>
                   </Label>
                   <Input
+                    required
                     value={formData.cpf}
                     onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
                     placeholder="000.000.000-00"
@@ -377,7 +442,7 @@ export default function Onboarding() {
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label>E-mail</Label>
+                  <Label>E-mail (Opcional)</Label>
                   <Input
                     type="email"
                     value={formData.email}
@@ -390,7 +455,7 @@ export default function Onboarding() {
 
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">
-                2. Endereço
+                3. Endereço
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="space-y-2 md:col-span-1">
@@ -454,7 +519,7 @@ export default function Onboarding() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
                   </>
                 ) : (
-                  'Enviar Informações'
+                  'Concluir Cadastro'
                 )}
               </Button>
             </div>

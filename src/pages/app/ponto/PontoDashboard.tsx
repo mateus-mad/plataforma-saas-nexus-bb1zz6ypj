@@ -2,7 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Clock, History, Users, Activity, ArrowRight, Play, Pause, Square } from 'lucide-react'
+import {
+  Clock,
+  History,
+  Users,
+  Activity,
+  ArrowRight,
+  Play,
+  Pause,
+  Square,
+  AlertTriangle,
+} from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { getTimeEntries, TimeEntry } from '@/services/time_entries'
 import { format, startOfDay } from 'date-fns'
@@ -77,6 +87,8 @@ export default function PontoDashboard() {
   const status = getStatusInfo()
   const StatusIcon = status.icon
 
+  const isLateToStart = !loading && todayEntries.length === 0 && new Date().getHours() >= 8
+
   return (
     <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
@@ -93,6 +105,16 @@ export default function PontoDashboard() {
           </Link>
         </Button>
       </div>
+
+      {isLateToStart && (
+        <div className="bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-200 flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+          <AlertTriangle className="w-5 h-5" />
+          <p className="text-sm font-medium">
+            Lembrete Automático: Você ainda não registrou sua entrada hoje. Por favor, registre seu
+            ponto.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2 overflow-hidden border-slate-200/60 shadow-md">
@@ -193,7 +215,7 @@ export default function PontoDashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card
           className="hover:border-primary/30 transition-colors group cursor-pointer"
           onClick={() => (window.location.href = '/app/controle-de-ponto/espelho')}
@@ -204,11 +226,8 @@ export default function PontoDashboard() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-lg text-slate-800">Espelho de Ponto</h3>
-              <p className="text-sm text-slate-500">
-                Visualize seu histórico mensal completo e horas trabalhadas.
-              </p>
+              <p className="text-sm text-slate-500">Histórico mensal.</p>
             </div>
-            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-primary transition-colors" />
           </CardContent>
         </Card>
 
@@ -221,12 +240,24 @@ export default function PontoDashboard() {
               <Users className="w-6 h-6 text-purple-600" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-lg text-slate-800">Gestão da Equipe</h3>
-              <p className="text-sm text-slate-500">
-                Acompanhe as marcações e auditória de ponto dos colaboradores.
-              </p>
+              <h3 className="font-semibold text-lg text-slate-800">Monitoramento</h3>
+              <p className="text-sm text-slate-500">Eventos em tempo real.</p>
             </div>
-            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-primary transition-colors" />
+          </CardContent>
+        </Card>
+
+        <Card
+          className="hover:border-primary/30 transition-colors group cursor-pointer"
+          onClick={() => (window.location.href = '/app/controle-de-ponto/custos')}
+        >
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Activity className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg text-slate-800">Custos de Obras</h3>
+              <p className="text-sm text-slate-500">Gastos diários com equipe.</p>
+            </div>
           </CardContent>
         </Card>
       </div>
