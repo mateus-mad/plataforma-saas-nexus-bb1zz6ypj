@@ -109,7 +109,7 @@ function InteractiveMap({ lat, lng, radius, onChange }: any) {
   )
 }
 
-export default function GestaoObras() {
+export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
   const [sites, setSites] = useState<WorkSite[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
@@ -204,19 +204,29 @@ export default function GestaoObras() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
+    <div
+      className={
+        hideHeader
+          ? 'space-y-4 animate-fade-in'
+          : 'space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0'
+      }
+    >
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
-              Gestão de Obras
-            </h2>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              Cadastre os locais de trabalho, defina o perímetro (Geofencing) e gere os QR Codes de
-              ponto.
-            </p>
+        {!hideHeader ? (
+          <div className="flex items-center gap-3">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+                Gestão de Obras
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm md:text-base">
+                Cadastre os locais de trabalho, defina o perímetro (Geofencing) e gere os QR Codes
+                de ponto.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1" />
+        )}
         <Dialog
           open={open}
           onOpenChange={(isOpen) => {

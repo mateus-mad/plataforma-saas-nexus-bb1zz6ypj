@@ -32,7 +32,7 @@ import pb from '@/lib/pocketbase/client'
 import { format } from 'date-fns'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
-export default function GestaoEquipe() {
+export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
   const [allocations, setAllocations] = useState<any[]>([])
   const [employees, setEmployees] = useState<any[]>([])
   const [workSites, setWorkSites] = useState<any[]>([])
@@ -125,19 +125,29 @@ export default function GestaoEquipe() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0">
+    <div
+      className={
+        hideHeader
+          ? 'space-y-4 animate-fade-in'
+          : 'space-y-6 animate-fade-in max-w-7xl mx-auto pb-10 px-4 md:px-0'
+      }
+    >
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger className="md:hidden" />
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
-              Gestão de Equipe
-            </h2>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              Aloque colaboradores às obras e gerencie o acesso ao aplicativo de ponto.
-            </p>
+        {!hideHeader ? (
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="md:hidden" />
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+                Gestão de Equipe
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm md:text-base">
+                Aloque colaboradores às obras e gerencie o acesso ao aplicativo de ponto.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1" />
+        )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90 min-h-[44px] w-full sm:w-auto">

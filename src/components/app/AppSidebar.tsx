@@ -80,11 +80,24 @@ export function AppSidebar() {
     .map((category) => {
       // Modify Controle de Ponto category
       if (category.name === 'Controle de Ponto' && category.items) {
-        const newItems = category.items.map((item: any) => {
-          if (item.name === 'Gestão de Locação')
-            return { ...item, name: 'Gestão de Equipe', path: '/app/controle-de-ponto/equipe' }
-          return item
-        })
+        const newItems = category.items
+          .filter(
+            (item: any) =>
+              ![
+                'Gestão de Locação',
+                'Gestão de Obras',
+                'Gestão de Equipe',
+                'Regras de Ponto',
+              ].includes(item.name),
+          )
+          .concat([
+            {
+              name: 'Configurações',
+              path: '/app/controle-de-ponto/configuracao',
+              icon: Settings,
+              description: 'Leis, regras, obras e equipe',
+            },
+          ])
         return { ...category, items: newItems }
       }
 
