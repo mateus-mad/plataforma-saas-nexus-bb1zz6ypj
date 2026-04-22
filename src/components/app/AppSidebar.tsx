@@ -85,9 +85,8 @@ export function AppSidebar() {
           if (item.requireAdmin && !isAdminMode) return false
           return (
             category.name === 'Contatos' ||
-            category.name === 'Controle de Ponto' ||
             contractedModules.includes(item.name) ||
-            contractedModules.includes('Controle de Ponto')
+            contractedModules.includes(category.name)
           )
         })
         return { ...category, items: visibleItems }

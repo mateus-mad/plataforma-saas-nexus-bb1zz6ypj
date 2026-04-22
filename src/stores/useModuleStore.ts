@@ -21,9 +21,13 @@ export const ModuleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const initDb = async () => {
       const modules = await db.get('contracted_modules')
       if (modules && modules.length > 0) {
-        setContractedModules(modules)
+        const migrated = modules.map((m: string) => (m === 'Relacionamento' ? 'Contatos' : m))
+        setContractedModules(migrated)
+        if (modules.includes('Relacionamento')) {
+          await db.set('contracted_modules', migrated)
+        }
       } else {
-        const defaultModules = ['Relacionamento', 'Financeiro']
+        const defaultModules = ['Contatos', 'Financeiro', 'Controle de Ponto']
         setContractedModules(defaultModules)
         await db.set('contracted_modules', defaultModules)
       }
