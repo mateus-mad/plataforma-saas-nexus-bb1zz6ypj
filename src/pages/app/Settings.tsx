@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
+import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
 import {
   Settings as SettingsIcon,
   ShoppingBag,
@@ -8,10 +8,11 @@ import {
   Shield,
   Clock,
   MessageCircle,
+  MapPin,
 } from 'lucide-react'
-import { useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import useModuleStore from '@/stores/useModuleStore'
+import { cn } from '@/lib/utils'
 
 import ModulesTab from '@/components/settings/ModulesTab'
 import BillingTab from '@/components/settings/BillingTab'
@@ -21,23 +22,47 @@ import SecurityTab from '@/components/settings/SecurityTab'
 import HRTab from '@/components/settings/HRTab'
 import WhatsAppTab from '@/components/settings/WhatsAppTab'
 import PontoTab from '@/components/settings/PontoTab'
-import { MapPin } from 'lucide-react'
-import { SidebarTrigger } from '@/components/ui/sidebar'
 
 export default function Settings() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const currentTab = searchParams.get('tab') || 'modules'
-  const { contractedModules } = useModuleStore()
+  const { contractedModules, isReady } = useModuleStore()
   const hasPonto = contractedModules.includes('Controle de Ponto')
+  const location = useLocation()
 
-  useEffect(() => {
-    if (!hasPonto && (currentTab === 'ponto' || currentTab === 'hr')) {
-      setSearchParams({ tab: 'modules' }, { replace: true })
-    }
-  }, [hasPonto, currentTab, setSearchParams])
+  if (!isReady) return null
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value })
+  const tabs = [
+    { value: 'loja', label: 'Loja', icon: ShoppingBag, path: '/app/configuracoes/loja' },
+    { value: 'fatura', label: 'Fatura', icon: CreditCard, path: '/app/configuracoes/fatura' },
+    {
+      value: 'whatsapp',
+      label: 'WhatsApp API',
+      icon: MessageCircle,
+      path: '/app/configuracoes/whatsapp',
+      iconColor: 'text-emerald-500',
+    },
+    { value: 'empresas', label: 'Empresas', icon: Building2, path: '/app/configuracoes/empresas' },
+    { value: 'usuarios', label: 'Usuários', icon: Users, path: '/app/configuracoes/usuarios' },
+    ...(hasPonto
+      ? [
+          { value: 'jornada', label: 'Jornada', icon: Clock, path: '/app/configuracoes/jornada' },
+          { value: 'painel', label: 'Painel', icon: MapPin, path: '/app/configuracoes/painel' },
+        ]
+      : []),
+    { value: 'seguranca', label: 'Segurança', icon: Shield, path: '/app/configuracoes/seguranca' },
+  ]
+
+  // Automatically redirect if accessing root route
+  if (location.pathname === '/app/configuracoes' || location.pathname === '/app/configuracoes/') {
+    return <Navigate to="/app/configuracoes/loja" replace />
+  }
+
+  // Redirect to safe fallback if module is inactive and trying to access its sub-routes
+  if (
+    !hasPonto &&
+    (location.pathname.includes('/app/configuracoes/jornada') ||
+      location.pathname.includes('/app/configuracoes/painel'))
+  ) {
+    return <Navigate to="/app/configuracoes/loja" replace />
   }
 
   return (
@@ -57,99 +82,54 @@ export default function Settings() {
         </div>
       </div>
 
-      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="flex w-full overflow-x-auto justify-start mb-8 h-auto p-1 custom-scrollbar">
-          <TabsTrigger
-            value="modules"
-            className="data-[state=active]:text-primary group py-2 shrink-0"
-          >
-            <ShoppingBag className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Loja
-          </TabsTrigger>
-          <TabsTrigger
-            value="billing"
-            className="data-[state=active]:text-primary group py-2 shrink-0"
-          >
-            <CreditCard className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Fatura
-          </TabsTrigger>
-          <TabsTrigger
-            value="whatsapp"
-            className="data-[state=active]:text-emerald-600 group py-2 shrink-0"
-          >
-            <MessageCircle className="w-4 h-4 mr-2 group-data-[state=active]:text-emerald-600 shrink-0" />
-            WhatsApp API
-          </TabsTrigger>
-          <TabsTrigger
-            value="tenants"
-            className="data-[state=active]:text-primary group py-2 shrink-0"
-          >
-            <Building2 className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Empresas
-          </TabsTrigger>
-          <TabsTrigger
-            value="users"
-            className="data-[state=active]:text-primary group py-2 shrink-0"
-          >
-            <Users className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Usuários
-          </TabsTrigger>
-          {hasPonto && (
-            <>
-              <TabsTrigger
-                value="hr"
-                className="data-[state=active]:text-primary group py-2 shrink-0"
-              >
-                <Clock className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-                Jornada
-              </TabsTrigger>
-              <TabsTrigger
-                value="ponto"
-                className="data-[state=active]:text-primary group py-2 shrink-0"
-              >
-                <MapPin className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-                Painel
-              </TabsTrigger>
-            </>
-          )}
-          <TabsTrigger
-            value="security"
-            className="data-[state=active]:text-primary group py-2 shrink-0"
-          >
-            <Shield className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Segurança
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+        <aside className="md:w-56 shrink-0 overflow-x-auto md:overflow-visible">
+          <nav className="flex md:flex-col gap-2 min-w-max md:min-w-0 pb-2 md:pb-0 custom-scrollbar">
+            {tabs.map((tab) => {
+              const isActive = location.pathname.startsWith(tab.path)
+              return (
+                <Link
+                  key={tab.value}
+                  to={tab.path}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors font-medium text-sm whitespace-nowrap',
+                    isActive
+                      ? 'bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(59,130,246,0.1)] border border-primary/20'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 border border-transparent',
+                  )}
+                >
+                  <tab.icon
+                    className={cn(
+                      'w-4 h-4 shrink-0 transition-transform',
+                      isActive ? 'scale-110' : '',
+                      tab.iconColor,
+                    )}
+                  />
+                  {tab.label}
+                </Link>
+              )
+            })}
+          </nav>
+        </aside>
 
-        <TabsContent value="modules" className="mt-0 outline-none">
-          <ModulesTab />
-        </TabsContent>
-        <TabsContent value="billing" className="mt-0 outline-none">
-          <BillingTab />
-        </TabsContent>
-        <TabsContent value="whatsapp" className="mt-0 outline-none">
-          <WhatsAppTab />
-        </TabsContent>
-        <TabsContent value="tenants" className="mt-0 outline-none">
-          <TenantsTab />
-        </TabsContent>
-        <TabsContent value="users" className="mt-0 outline-none">
-          <UsersTab />
-        </TabsContent>
-        {hasPonto && (
-          <>
-            <TabsContent value="hr" className="mt-0 outline-none">
-              <HRTab />
-            </TabsContent>
-            <TabsContent value="ponto" className="mt-0 outline-none">
-              <PontoTab />
-            </TabsContent>
-          </>
-        )}
-        <TabsContent value="security" className="mt-0 outline-none">
-          <SecurityTab />
-        </TabsContent>
-      </Tabs>
+        <div className="flex-1 min-w-0">
+          <Routes>
+            <Route path="loja" element={<ModulesTab />} />
+            <Route path="fatura" element={<BillingTab />} />
+            <Route path="whatsapp" element={<WhatsAppTab />} />
+            <Route path="empresas" element={<TenantsTab />} />
+            <Route path="usuarios" element={<UsersTab />} />
+            {hasPonto && (
+              <>
+                <Route path="jornada" element={<HRTab />} />
+                <Route path="painel" element={<PontoTab />} />
+              </>
+            )}
+            <Route path="seguranca" element={<SecurityTab />} />
+            <Route path="*" element={<Navigate to="loja" replace />} />
+          </Routes>
+        </div>
+      </div>
     </div>
   )
 }

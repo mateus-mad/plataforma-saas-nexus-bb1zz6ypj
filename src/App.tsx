@@ -109,7 +109,7 @@ const App = () => (
                         </ModuleProtectedRoute>
                       }
                     />
-                    <Route path="/app/configuracoes" element={<Settings />} />
+                    <Route path="/app/configuracoes/*" element={<Settings />} />
                     <Route
                       path="/app/configuracoes/rh/jornada"
                       element={
