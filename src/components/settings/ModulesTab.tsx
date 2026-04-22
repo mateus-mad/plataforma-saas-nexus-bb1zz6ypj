@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Check, Layers, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export default function ModulesTab() {
   const { contractedModules, contractModule, removeModule } = useModuleStore()
@@ -119,7 +120,12 @@ export default function ModulesTab() {
                     <Button
                       variant="outline"
                       className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 px-3"
-                      onClick={() => removeModule(mod.name)}
+                      onClick={async () => {
+                        await removeModule(mod.name)
+                        toast.success(`Módulo ${mod.name} cancelado com sucesso.`, {
+                          description: 'Todos os recursos e menus relacionados foram desativados.',
+                        })
+                      }}
                       title="Cancelar Assinatura"
                     >
                       <X className="w-4 h-4" />
@@ -128,7 +134,12 @@ export default function ModulesTab() {
                 ) : (
                   <Button
                     className="w-full shadow-sm hover:shadow-md transition-all group"
-                    onClick={() => contractModule(mod.name)}
+                    onClick={async () => {
+                      await contractModule(mod.name)
+                      toast.success(`Módulo ${mod.name} ativado com sucesso.`, {
+                        description: 'Os recursos agora estão disponíveis no seu menu.',
+                      })
+                    }}
                     disabled={mod.isUpcoming}
                   >
                     {mod.isUpcoming ? 'Aguardar Lançamento' : 'Assinar Módulo'}
