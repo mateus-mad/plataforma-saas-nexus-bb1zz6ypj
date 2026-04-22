@@ -94,17 +94,24 @@ export default function Settings() {
             <Users className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
             Usuários
           </TabsTrigger>
-          <TabsTrigger value="hr" className="data-[state=active]:text-primary group py-2 shrink-0">
-            <Clock className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Jornada de Trabalho
-          </TabsTrigger>
-          <TabsTrigger
-            value="ponto"
-            className="data-[state=active]:text-primary group py-2 shrink-0"
-          >
-            <MapPin className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
-            Controle de Ponto
-          </TabsTrigger>
+          {hasPonto && (
+            <>
+              <TabsTrigger
+                value="hr"
+                className="data-[state=active]:text-primary group py-2 shrink-0"
+              >
+                <Clock className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+                Jornada de Trabalho
+              </TabsTrigger>
+              <TabsTrigger
+                value="ponto"
+                className="data-[state=active]:text-primary group py-2 shrink-0"
+              >
+                <MapPin className="w-4 h-4 mr-2 group-data-[state=active]:text-primary shrink-0" />
+                Controle de Ponto
+              </TabsTrigger>
+            </>
+          )}
           <TabsTrigger
             value="security"
             className="data-[state=active]:text-primary group py-2 shrink-0"

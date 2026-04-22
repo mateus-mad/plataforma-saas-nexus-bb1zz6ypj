@@ -81,7 +81,7 @@ export function AppSidebar() {
       if (isAdminMode) return category
 
       if (category.path) {
-        const alwaysVisible = ['Dashboard', 'Início', 'Contatos']
+        const alwaysVisible = ['Dashboard', 'Início', 'Contatos', 'Visão Geral']
         if (alwaysVisible.includes(category.name) || contractedModules.includes(category.name)) {
           return category
         }
