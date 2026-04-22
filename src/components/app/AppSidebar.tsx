@@ -78,7 +78,15 @@ export function AppSidebar() {
 
   const visibleCategories = categoriesToRender
     .map((category) => {
-      if (category.path || isAdminMode) return category
+      if (isAdminMode) return category
+
+      if (category.path) {
+        const alwaysVisible = ['Dashboard', 'Início', 'Contatos']
+        if (alwaysVisible.includes(category.name) || contractedModules.includes(category.name)) {
+          return category
+        }
+        return null
+      }
 
       if (category.items) {
         const visibleItems = category.items.filter((item: any) => {
@@ -93,7 +101,9 @@ export function AppSidebar() {
       }
       return category
     })
-    .filter((category) => category.path || (category.items && category.items.length > 0))
+    .filter(
+      (category) => category && (category.path || (category.items && category.items.length > 0)),
+    )
 
   return (
     <Sidebar

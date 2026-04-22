@@ -9,7 +9,9 @@ import {
   Clock,
   MessageCircle,
 } from 'lucide-react'
+import { useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import useModuleStore from '@/stores/useModuleStore'
 
 import ModulesTab from '@/components/settings/ModulesTab'
 import BillingTab from '@/components/settings/BillingTab'
@@ -25,6 +27,14 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
   const currentTab = searchParams.get('tab') || 'modules'
+  const { contractedModules } = useModuleStore()
+  const hasPonto = contractedModules.includes('Controle de Ponto')
+
+  useEffect(() => {
+    if (!hasPonto && (currentTab === 'ponto' || currentTab === 'hr')) {
+      setSearchParams({ tab: 'modules' }, { replace: true })
+    }
+  }, [hasPonto, currentTab, setSearchParams])
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value })
@@ -119,14 +129,18 @@ export default function Settings() {
         <TabsContent value="users" className="mt-0 outline-none">
           <UsersTab />
         </TabsContent>
-        <TabsContent value="hr" className="mt-0 outline-none">
-          <HRTab />
-        </TabsContent>
+        {hasPonto && (
+          <>
+            <TabsContent value="hr" className="mt-0 outline-none">
+              <HRTab />
+            </TabsContent>
+            <TabsContent value="ponto" className="mt-0 outline-none">
+              <PontoTab />
+            </TabsContent>
+          </>
+        )}
         <TabsContent value="security" className="mt-0 outline-none">
           <SecurityTab />
-        </TabsContent>
-        <TabsContent value="ponto" className="mt-0 outline-none">
-          <PontoTab />
         </TabsContent>
       </Tabs>
     </div>

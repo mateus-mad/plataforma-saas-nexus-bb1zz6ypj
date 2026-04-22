@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ModuleProvider } from '@/stores/useModuleStore'
+import useModuleStore from '@/stores/useModuleStore'
 import { TenantProvider } from '@/stores/useTenantStore'
 import { SecurityProvider } from '@/stores/useSecurityStore'
 import { ManagerProvider } from '@/stores/useManagerStore'
@@ -48,6 +49,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>
 }
 
+const ModuleProtectedRoute = ({
+  moduleName,
+  children,
+}: {
+  moduleName: string
+  children: React.ReactNode
+}) => {
+  const { contractedModules, isReady } = useModuleStore()
+  if (!isReady) return null
+  if (!contractedModules.includes(moduleName)) return <Navigate to="/app" replace />
+  return <>{children}</>
+}
+
 const App = () => (
   <AuthProvider>
     <TenantProvider>
@@ -87,9 +101,23 @@ const App = () => (
 
                     <Route path="/app/contatos" element={<Contatos />} />
                     <Route path="/app/contatos/:view" element={<Contatos />} />
-                    <Route path="/app/financeiro" element={<Financial />} />
+                    <Route
+                      path="/app/financeiro"
+                      element={
+                        <ModuleProtectedRoute moduleName="Financeiro">
+                          <Financial />
+                        </ModuleProtectedRoute>
+                      }
+                    />
                     <Route path="/app/configuracoes" element={<Settings />} />
-                    <Route path="/app/configuracoes/rh/jornada" element={<WorkShifts />} />
+                    <Route
+                      path="/app/configuracoes/rh/jornada"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <WorkShifts />
+                        </ModuleProtectedRoute>
+                      }
+                    />
                     <Route path="/app/em-breve" element={<ComingSoon />} />
 
                     <Route
@@ -121,13 +149,62 @@ const App = () => (
                       element={<Navigate to="/app/controle-de-ponto/custos" replace />}
                     />
 
-                    <Route path="/app/controle-de-ponto" element={<PontoDashboard />} />
-                    <Route path="/app/controle-de-ponto/registrar" element={<RegistrarPonto />} />
-                    <Route path="/app/controle-de-ponto/espelho" element={<EspelhoPonto />} />
-                    <Route path="/app/controle-de-ponto/gestao" element={<GestaoPonto />} />
-                    <Route path="/app/controle-de-ponto/obras" element={<GestaoObras />} />
-                    <Route path="/app/controle-de-ponto/locacao" element={<GestaoLocacao />} />
-                    <Route path="/app/controle-de-ponto/custos" element={<RelatorioCustos />} />
+                    <Route
+                      path="/app/controle-de-ponto"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <PontoDashboard />
+                        </ModuleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/app/controle-de-ponto/registrar"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <RegistrarPonto />
+                        </ModuleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/app/controle-de-ponto/espelho"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <EspelhoPonto />
+                        </ModuleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/app/controle-de-ponto/gestao"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <GestaoPonto />
+                        </ModuleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/app/controle-de-ponto/obras"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <GestaoObras />
+                        </ModuleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/app/controle-de-ponto/locacao"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <GestaoLocacao />
+                        </ModuleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/app/controle-de-ponto/custos"
+                      element={
+                        <ModuleProtectedRoute moduleName="Controle de Ponto">
+                          <RelatorioCustos />
+                        </ModuleProtectedRoute>
+                      }
+                    />
 
                     <Route path="/app/manager" element={<ManagerDashboard />} />
                     <Route path="/app/manager/tickets" element={<ManagerTickets />} />
