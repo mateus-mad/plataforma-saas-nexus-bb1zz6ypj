@@ -11,6 +11,7 @@ import {
   Users,
   LayoutDashboard,
   Settings2,
+  BarChart3,
 } from 'lucide-react'
 
 export function HeroSection() {
