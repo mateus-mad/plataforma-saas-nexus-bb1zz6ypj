@@ -1,63 +1,71 @@
 import { MapPin, Smartphone, FileSignature, CheckCircle2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 
 export function SystemOverviewSection() {
   return (
-    <section id="visao-geral" className="py-24 bg-white relative overflow-hidden">
+    <section
+      id="visao-geral"
+      className="py-24 bg-slate-50 relative overflow-hidden border-t border-slate-200"
+    >
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
-            Pilares do Sistema Integrado
+        <div className="text-center max-w-3xl mx-auto mb-24">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-6 border border-blue-200">
+            Ecossistema Unificado
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight leading-tight">
+            Os Pilares da Operação Integrada
           </h2>
           <p className="text-lg text-slate-600 leading-relaxed">
-            Nossos módulos foram desenhados especificamente para o setor de engenharia, conectando a
-            operação de campo com a inteligência e conformidade do escritório.
+            Desenvolvido especificamente para a realidade da construção civil e engenharias,
+            conectando perfeitamente a execução no campo com a inteligência do escritório.
           </p>
         </div>
 
-        <div className="space-y-24">
+        <div className="space-y-32">
           {/* Pillar 1: Gestão de Obras & Equipes */}
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1 relative group">
-              <div className="absolute inset-0 bg-blue-500/10 rounded-2xl transform -rotate-3 scale-105 -z-10 transition-transform group-hover:rotate-0"></div>
-              <img
-                src="https://img.usecurling.com/p/800/600?q=map%20geofence%20dashboard&color=blue"
-                alt="Gestão de Obras e Geofencing"
-                className="rounded-2xl shadow-xl border border-slate-200 w-full object-cover aspect-video"
-              />
-              <Card className="absolute -bottom-6 -right-6 p-4 shadow-xl border-slate-100 hidden sm:block bg-white/95 backdrop-blur">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Dentro do Raio</p>
-                    <p className="text-xs text-slate-500">Obra Central - 50m</p>
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="order-2 md:order-1 relative group perspective-[1000px]">
+              <div className="absolute inset-0 bg-blue-500/20 rounded-3xl transform rotate-2 scale-105 -z-10 transition-transform group-hover:rotate-0 blur-xl"></div>
+              <div className="relative rounded-2xl border border-slate-200/50 bg-white p-2 shadow-2xl transition-transform group-hover:scale-[1.02] duration-500">
+                <img
+                  src="https://img.usecurling.com/p/800/600?q=map%20geofence%20dashboard&color=blue"
+                  alt="Gestão de Obras e Geofencing"
+                  className="rounded-xl w-full object-cover aspect-[4/3]"
+                />
+                {/* Floating Info Card */}
+                <div className="absolute -bottom-6 -right-6 p-4 rounded-xl shadow-2xl border border-slate-100 hidden sm:block bg-white/95 backdrop-blur-md">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Dentro do Raio (50m)</p>
+                      <p className="text-xs text-slate-500 font-medium">Obra Central SP</p>
+                    </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
             <div className="order-1 md:order-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-semibold mb-6 border border-blue-100">
-                Operacional
-              </div>
-              <h3 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
-                Gestão de Obras & Equipes
+              <h3 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6 leading-tight">
+                Gestão Espacial de Obras & Equipes
               </h3>
               <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                Tenha controle absoluto sobre quem está em cada canteiro. Com a tecnologia de{' '}
-                <strong>Geofencing</strong>, você delimita o raio de atuação exato no mapa,
-                garantindo que alocações e marcações de ponto ocorram apenas em locais autorizados.
+                Tenha controle absoluto sobre a localização da sua força de trabalho. Com nossa
+                tecnologia proprietária de <strong>Geofencing</strong>, você delimita o raio de
+                atuação exato no mapa, garantindo que alocações e marcações de ponto ocorram{' '}
+                <em>exclusivamente</em> em locais previamente autorizados.
               </p>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {[
-                  'Cerca Virtual (Geofencing) com precisão configurável',
-                  'Alocação de profissionais por centro de custo',
-                  'Monitoramento de mobilização e desmobilização',
+                  'Cerca Virtual (Geofencing) com precisão via satélite',
+                  'Alocação dinâmica de profissionais por centro de custo',
+                  'Dashboard de monitoramento de mobilização ao vivo',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-700 font-medium">
-                    <CheckCircle2 className="w-6 h-6 text-blue-600 shrink-0" />
-                    <span className="mt-0.5">{item}</span>
+                  <li key={i} className="flex items-start gap-4 text-slate-700 font-medium text-lg">
+                    <div className="mt-1 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
@@ -65,99 +73,53 @@ export function SystemOverviewSection() {
           </div>
 
           {/* Pillar 2: Controle de Ponto */}
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-6 border border-primary/20">
-                Tecnologia
-              </div>
-              <h3 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
-                Controle de Ponto Inteligente
+              <h3 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6 leading-tight">
+                Controle de Ponto Mobile Inteligente
               </h3>
               <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                Facilite a vida do colaborador e blinde o RH. O registro pode ser feito diretamente
-                via <strong>Aplicativo Mobile</strong> ou totens com <strong>QR Code</strong>,
-                associados a camadas de verificação de identidade como reconhecimento facial.
+                Facilite a rotina do peão de obra e blinde o departamento de RH. O registro é
+                executado em segundos via <strong>Aplicativo Mobile</strong> nativo ou através de
+                totens com <strong>QR Code do Encarregado</strong>, sempre associados a camadas
+                severas de verificação antifraude.
               </p>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {[
-                  'Registro rápido via App Mobile (Android/iOS)',
-                  'Marcação centralizada por QR Code do encarregado',
-                  'Captura de foto para auditoria de identidade',
+                  'App Mobile intuitivo e veloz (Android e iOS)',
+                  'Marcação centralizada pelo QR Code do líder da frente',
+                  'Captura biométrica facial para auditoria visual',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-700 font-medium">
-                    <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
-                    <span className="mt-0.5">{item}</span>
+                  <li key={i} className="flex items-start gap-4 text-slate-700 font-medium text-lg">
+                    <div className="mt-1 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    </div>
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-primary/10 rounded-2xl transform rotate-3 scale-105 -z-10 transition-transform group-hover:rotate-0"></div>
-              <img
-                src="https://img.usecurling.com/p/800/600?q=smartphone%20app%20qr%20code&color=blue"
-                alt="Aplicativo de Ponto Mobile"
-                className="rounded-2xl shadow-xl border border-slate-200 w-full object-cover aspect-video"
-              />
-              <Card className="absolute top-6 -left-6 p-4 shadow-xl border-slate-100 hidden sm:block bg-white/95 backdrop-blur">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Smartphone className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Ponto Registrado</p>
-                    <p className="text-xs text-slate-500">08:00 - Sincronizado</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
-
-          {/* Pillar 3: Conformidade Legal */}
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1 relative group">
-              <div className="absolute inset-0 bg-emerald-500/10 rounded-2xl transform -rotate-3 scale-105 -z-10 transition-transform group-hover:rotate-0"></div>
-              <img
-                src="https://img.usecurling.com/p/800/600?q=legal%20document%20signature&color=green"
-                alt="Assinatura de Documentos"
-                className="rounded-2xl shadow-xl border border-slate-200 w-full object-cover aspect-video"
-              />
-              <Card className="absolute -bottom-6 right-8 p-4 shadow-xl border-slate-100 hidden sm:block bg-white/95 backdrop-blur">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <FileSignature className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Acordo Assinado</p>
-                    <p className="text-xs text-slate-500">Validade Jurídica</p>
+            <div className="relative group perspective-[1000px]">
+              <div className="absolute inset-0 bg-primary/20 rounded-3xl transform -rotate-2 scale-105 -z-10 transition-transform group-hover:rotate-0 blur-xl"></div>
+              <div className="relative rounded-2xl border border-slate-200/50 bg-white p-2 shadow-2xl transition-transform group-hover:scale-[1.02] duration-500">
+                <img
+                  src="https://img.usecurling.com/p/800/600?q=smartphone%20app%20dashboard&color=blue"
+                  alt="Aplicativo de Ponto Mobile"
+                  className="rounded-xl w-full object-cover aspect-[4/3]"
+                />
+                {/* Floating Info Card */}
+                <div className="absolute top-8 -left-8 p-4 rounded-xl shadow-2xl border border-slate-100 hidden sm:block bg-white/95 backdrop-blur-md">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Smartphone className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Ponto Sincronizado</p>
+                      <p className="text-xs text-slate-500 font-medium">08:00 - Criptografado</p>
+                    </div>
                   </div>
                 </div>
-              </Card>
-            </div>
-            <div className="order-1 md:order-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold mb-6 border border-emerald-100">
-                Jurídico
               </div>
-              <h3 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
-                Conformidade Legal & Regras
-              </h3>
-              <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                Elimine passivos trabalhistas com um sistema desenhado para a{' '}
-                <strong>Portaria 671 do MTP</strong>. Configure regras customizadas de jornada,
-                banco de horas e colha o aceite dos colaboradores através de{' '}
-                <strong>assinatura digital</strong>.
-              </p>
-              <ul className="space-y-4">
-                {[
-                  'Software REP-P 100% alinhado à Portaria 671',
-                  'Assinatura digital para termos e regras customizadas',
-                  'Geração automática de arquivos fiscais (AFD/AEJ)',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-700 font-medium">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-                    <span className="mt-0.5">{item}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>
