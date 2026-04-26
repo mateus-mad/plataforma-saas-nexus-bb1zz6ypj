@@ -43,12 +43,21 @@ export default function PublicLayout() {
               Compliance
             </a>
           </nav>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            <Button
+              variant="ghost"
+              className="text-slate-300 hover:text-white hidden sm:inline-flex"
+              asChild
+            >
+              <Link to="/login">Entrar</Link>
+            </Button>
             <Button
               asChild
-              className="hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(59,130,246,0.3)] border border-primary/50 text-white font-medium"
+              className="hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(59,130,246,0.3)] bg-primary hover:bg-primary/90 text-white font-medium"
             >
-              <Link to={user ? lastRoute : '/login'}>{user ? 'Acessar Plataforma' : 'Entrar'}</Link>
+              <Link to={user ? lastRoute : '/login'}>
+                {user ? 'Acessar Plataforma' : 'Começar'}
+              </Link>
             </Button>
           </div>
         </div>
