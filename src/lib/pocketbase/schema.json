@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T05:49:04.146Z",
+  "generatedAt": "2026-04-26T21:07:08.255Z",
   "collections": [
     {
       "name": "users",
@@ -848,6 +848,66 @@
         "CREATE INDEX idx_allocations_relacionamento ON allocations (relacionamento_id)",
         "CREATE INDEX idx_allocations_work_site ON allocations (work_site_id)"
       ]
+    },
+    {
+      "name": "point_agreements",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "relacionamento_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "relacionamentos"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pending", "signed", "cancelled"]
+        },
+        {
+          "name": "agreement_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "signed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "signature_hash",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
     }
   ]
 }

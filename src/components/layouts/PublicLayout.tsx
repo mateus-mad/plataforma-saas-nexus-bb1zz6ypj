@@ -33,11 +33,14 @@ export default function PublicLayout() {
             <a href="#inicio" className="hover:text-primary transition-colors">
               Início
             </a>
-            <a href="#modulos" className="hover:text-primary transition-colors">
-              Módulos
+            <a href="#visao-geral" className="hover:text-primary transition-colors">
+              Visão do Sistema
             </a>
-            <a href="#sobre" className="hover:text-primary transition-colors">
-              Sobre Nós
+            <a href="#recursos" className="hover:text-primary transition-colors">
+              Recursos
+            </a>
+            <a href="#compliance" className="hover:text-primary transition-colors">
+              Compliance
             </a>
           </nav>
           <div className="flex gap-3">
