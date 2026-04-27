@@ -11,7 +11,8 @@ routerAdd(
     const isPdf =
       base64.includes('application/pdf') ||
       base64.includes('data:application/pdf') ||
-      body.docType === 'PDF'
+      body.docType === 'PDF' ||
+      base64.startsWith('JVBERi0') // magic number PDF
 
     if (!base64.startsWith('data:')) {
       if (isPdf) {
@@ -21,16 +22,22 @@ routerAdd(
       }
     }
 
-    let formData =
-      'base64Image=' +
-      encodeURIComponent(base64) +
-      '&language=por&isOverlayRequired=true&scale=true&OCREngine=2'
-    if (isPdf) {
-      formData += '&filetype=PDF'
+    const apiKey = $secrets.get('OPENAI_API_KEY')
+    if (!apiKey) {
+      throw new InternalServerError(
+        'A chave de API da OpenAI (OPENAI_API_KEY) não está configurada no servidor.',
+      )
     }
 
-    try {
-      const res = $http.send({
+    let extractedText = ''
+
+    if (isPdf) {
+      let formData =
+        'base64Image=' +
+        encodeURIComponent(base64) +
+        '&language=por&isOverlayRequired=false&scale=true&OCREngine=2&filetype=PDF'
+
+      const ocrRes = $http.send({
         url: 'https://api.ocr.space/parse/image',
         method: 'POST',
         headers: {
@@ -41,322 +48,130 @@ routerAdd(
         timeout: 120,
       })
 
-      const data = res.json || {}
-
-      let text = ''
-      let confidence = 0
-      if (
-        res.statusCode === 200 &&
-        data &&
-        !data.IsErroredOnProcessing &&
-        data.ParsedResults &&
-        data.ParsedResults.length > 0
-      ) {
-        text = data.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
-        confidence = 85 + Math.floor(Math.random() * 10) // Mocking confidence
+      const ocrData = ocrRes.json || {}
+      if (ocrRes.statusCode === 200 && ocrData.ParsedResults && ocrData.ParsedResults.length > 0) {
+        extractedText = ocrData.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
       }
 
-      // Fallback para teste/protótipo se a API falhar
-      if (!text || text.length < 5) {
-        if (res.statusCode !== 200 || data.IsErroredOnProcessing || !data.ParsedResults) {
-          const nextYear = new Date()
-          nextYear.setFullYear(nextYear.getFullYear() + 1)
-          const dateStr = nextYear.toLocaleDateString('pt-BR')
-          text = `NOME\nColaborador Extraído Via OCR\nCPF 123.456.789-00\nRG 12.345.678-9\nVALIDADE ${dateStr}\nDATA DE NASCIMENTO\n01/01/1990\nFILIAÇÃO\nMARIA DA SILVA\nJOSE DA SILVA\nNATURALIDADE\nSAO PAULO - SP\nNACIONALIDADE\nBRASILEIRA\nCEP 01001-000\nRUA PRINCIPAL 1000 SAO PAULO SP`
-          confidence = 99
-        }
-      }
-
-      if (!text || text.length < 10) {
-        throw new BadRequestError(
-          'Documento ilegível, borrado ou cortado. Por favor, envie uma nova foto mais nítida.',
-          { code: 'validation_unreadable' },
-        )
-      }
-
-      const field_confidences = {}
-      const field_coordinates = {}
-
-      const linesWithBox = []
-      if (
-        data &&
-        data.ParsedResults &&
-        data.ParsedResults[0] &&
-        data.ParsedResults[0].TextOverlay
-      ) {
-        const overlayLines = data.ParsedResults[0].TextOverlay.Lines || []
-        overlayLines.forEach((line) => {
-          let minL = 99999,
-            minT = 99999,
-            maxR = 0,
-            maxB = 0
-          if (line.Words) {
-            line.Words.forEach((w) => {
-              if (w.Left < minL) minL = w.Left
-              if (w.Top < minT) minT = w.Top
-              if (w.Left + w.Width > maxR) maxR = w.Left + w.Width
-              if (w.Top + w.Height > maxB) maxB = w.Top + w.Height
-            })
-            linesWithBox.push({
-              text: line.LineText.toUpperCase(),
-              box: [minL, minT, maxR - minL, maxB - minT],
-            })
-          }
+      if (!extractedText || extractedText.length < 10) {
+        throw new BadRequestError('Documento PDF ilegível ou sem texto extraível.', {
+          code: 'validation_unreadable',
         })
       }
+    }
 
-      const findBox = (searchText) => {
-        if (!searchText) return null
-        const upper = searchText.toUpperCase()
-        const match = linesWithBox.find((l) => l.text.includes(upper) || upper.includes(l.text))
-        return match ? match.box : null
+    const promptText = `
+Você é um assistente especializado em extração de dados de documentos de identificação brasileiros (RG, CNH, CPF).
+${isPdf ? 'Analise o texto extraído do documento abaixo e estruture os dados:' : 'Analise a imagem fornecida e extraia os seguintes campos:'}
+Retorne ESTRITAMENTE no formato JSON abaixo.
+Se um campo não for encontrado, retorne uma string vazia "".
+Para o campo "confidence", retorne um número inteiro de 0 a 100 indicando a sua confiança geral na extração.
+Para "field_confidences", retorne um número inteiro de 0 a 100 para cada campo extraído.
+
+Formato esperado:
+{
+  "name": "Nome Completo",
+  "cpf": "000.000.000-00",
+  "rg": "00.000.000-0",
+  "docType": "RG ou CNH ou CPF",
+  "pis": "000.00000.00-0",
+  "nascimento": "DD/MM/YYYY",
+  "docIssueDate": "DD/MM/YYYY",
+  "expiryDate": "YYYY-MM-DD 12:00:00.000Z",
+  "mae": "Nome da Mãe",
+  "pai": "Nome do Pai",
+  "nacionalidade": "Brasileira",
+  "cidade_nasc": "Cidade",
+  "uf_nasc": "UF",
+  "genero": "Masculino ou Feminino",
+  "address": {
+    "cep": "",
+    "logradouro": "",
+    "numero": "",
+    "bairro": "",
+    "cidade": "",
+    "estado": ""
+  },
+  "confidence": 95,
+  "field_confidences": {
+    "name": 95,
+    "cpf": 90
+  }
+}
+
+${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
+
+    const messages = [
+      {
+        role: 'user',
+        content: isPdf
+          ? [{ type: 'text', text: promptText }]
+          : [
+              { type: 'text', text: promptText },
+              { type: 'image_url', image_url: { url: base64 } },
+            ],
+      },
+    ]
+
+    try {
+      const res = $http.send({
+        url: 'https://api.openai.com/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          response_format: { type: 'json_object' },
+          messages: messages,
+        }),
+        timeout: 120,
+      })
+
+      if (res.statusCode !== 200) {
+        console.log('OpenAI Error:', res.raw || JSON.stringify(res.json))
+        throw new BadRequestError('Erro na comunicação com o motor de IA da OpenAI.')
       }
 
-      const cpfMatch = text.match(/\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}/)
-      const cpf = cpfMatch
-        ? cpfMatch[0]
-            .replace(/[^\d-]/g, '')
-            .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
-        : ''
-      field_confidences.cpf = cpf ? (text.includes('CPF') ? 95 : 75) : 0
-      if (cpfMatch) field_coordinates.cpf = findBox(cpfMatch[0])
-
-      const cnpjMatch = text.match(/\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}/)
-      const cnpj = cnpjMatch
-        ? cnpjMatch[0]
-            .replace(/[^\d-]/g, '')
-            .replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
-        : ''
-
-      const rgMatch =
-        text.match(/(?:RG|R\.G\.|Registro Geral|IDENTIDADE)[\s:]*([\d\.-]+[a-zA-Z]?)/i) ||
-        text.match(/\b(\d{2}\.\d{3}\.\d{3}-\d{1,2}|[a-zA-Z]{0,2}\d{7,9})\b/)
-      const rg = rgMatch ? rgMatch[1].replace(/[^\da-zA-Z\.-]/g, '') : ''
-      field_confidences.rg = rg ? 90 : 0
-      if (rgMatch) field_coordinates.rg = findBox(rgMatch[1])
-
-      const cnhMatch = text.match(/(?:CNH|Habilita[çc][ãa]o|Registro)[^\d]*(\d{11})/i)
-      const cnh = cnhMatch ? cnhMatch[1] : ''
-
-      const pisMatch = text.match(
-        /(?:PIS|PASEP|NIT)[^\d]*(\d{3}[\.\s]?\d{5}[\.\s]?\d{2}[\.\s]?\d{1})/i,
-      )
-      const pis = pisMatch ? pisMatch[1].replace(/\D/g, '') : ''
-
-      const dates = text.match(/\d{2}\/\d{2}\/\d{4}/g) || []
-
-      let nascimento = ''
-      let docIssueDate = ''
-      let expiryDate = ''
-
-      const nascMatch = text.match(/(?:DATA DE NASCIMENTO|NASCIMENTO)[^\d]*(\d{2}\/\d{2}\/\d{4})/i)
-      if (nascMatch) {
-        nascimento = nascMatch[1]
-        field_confidences.nascimento = 95
-        field_coordinates.nascimento = findBox(nascMatch[1])
-      } else if (dates.length > 0) {
-        nascimento = dates[0]
-        field_confidences.nascimento = 70
-        field_coordinates.nascimento = findBox(dates[0])
-      } else {
-        field_confidences.nascimento = 0
-      }
-
-      const expedicaoMatch = text.match(
-        /(?:DATA DE EXPEDI[ÇC][ÃA]O|EXPEDI[ÇC][ÃA]O)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
-      )
-      if (expedicaoMatch) {
-        docIssueDate = expedicaoMatch[1]
-        field_confidences.docIssueDate = 95
-        field_coordinates.docIssueDate = findBox(expedicaoMatch[1])
-      } else if (dates.length > 1) {
-        docIssueDate = dates[1]
-        field_confidences.docIssueDate = 70
-        field_coordinates.docIssueDate = findBox(dates[1])
-      } else {
-        field_confidences.docIssueDate = 0
-      }
-
-      const validadeMatch = text.match(
-        /(?:VALIDADE|VENCIMENTO|VÁLIDO ATÉ)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
-      )
-      if (validadeMatch) {
-        const parts = validadeMatch[1].split('/')
-        if (parts.length === 3) expiryDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
-      } else if (dates.length > 2) {
-        const parts = dates[2].split('/')
-        expiryDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
-      } else {
-        const d = new Date()
-        d.setFullYear(d.getFullYear() + 1)
-        expiryDate = d.toISOString()
-      }
-
-      let name = ''
-      let mae = ''
-      let pai = ''
-      let naturalidade = ''
-      let nacionalidade = ''
-
-      const lines = text
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0)
-
-      for (let i = 0; i < lines.length; i++) {
-        if (/(?:NOME|NOME DO TITULAR|IDENTIFICAÇÃO)/i.test(lines[i]) && !name) {
-          if (lines[i + 1] && !/(?:FILIAÇÃO|DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
-            name = lines[i + 1]
-            field_confidences.name = 95
-            field_coordinates.name = findBox(name)
-          }
-        }
-        if (/(?:FILIAÇÃO|DOC ORIGEM|PAIS)/i.test(lines[i])) {
-          if (lines[i + 1] && !/(?:NATURALIDADE|DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
-            mae = lines[i + 1]
-            field_confidences.mae = 90
-            field_coordinates.mae = findBox(mae)
-          }
-          if (
-            lines[i + 2] &&
-            !/(?:NATURALIDADE|DATA|DOC|CPF|RG)/i.test(lines[i + 2]) &&
-            lines[i + 2].length > 5
-          ) {
-            pai = lines[i + 2]
-            field_confidences.pai = 90
-            field_coordinates.pai = findBox(pai)
-          }
-        }
-        if (/(?:NATURALIDADE|LOCAL DE NASCIMENTO|ESTADO)/i.test(lines[i])) {
-          if (lines[i + 1] && !/(?:DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
-            naturalidade = lines[i + 1]
-            field_confidences.cidade_nasc = 90
-            field_coordinates.cidade_nasc = findBox(naturalidade)
-            field_coordinates.uf_nasc = findBox(naturalidade)
-          }
-        }
-        if (/(?:NACIONALIDADE)/i.test(lines[i])) {
-          if (lines[i + 1]) {
-            nacionalidade = lines[i + 1]
-            field_confidences.nacionalidade = 95
-            field_coordinates.nacionalidade = findBox(nacionalidade)
-          }
-        }
-      }
-
-      if (!name && lines.length > 1) {
-        const possibleNames = lines.filter(
-          (l) => l === l.toUpperCase() && l.length > 5 && l.length < 40 && !/\d/.test(l),
-        )
-        if (possibleNames.length > 0) {
-          name = possibleNames[0]
-          field_confidences.name = 60
-          field_coordinates.name = findBox(name)
-        }
-      }
-      name = name.replace(/[^a-zA-ZÀ-ÿ\s]/g, '').trim()
-
-      if (!field_confidences.name) field_confidences.name = 0
-      if (!field_confidences.mae) field_confidences.mae = 0
-      if (!field_confidences.pai) field_confidences.pai = 0
-      if (!field_confidences.nacionalidade) field_confidences.nacionalidade = 0
-
-      let cidade_nasc = ''
-      let uf_nasc = ''
-      if (naturalidade) {
-        const parts = naturalidade.split(/[-/]/)
-        if (parts.length > 1) {
-          cidade_nasc = parts[0].trim()
-          uf_nasc = parts[1].trim()
-        } else {
-          cidade_nasc = naturalidade
-        }
-      }
-
-      let genero = ''
-      if (/(?:FEMININO|FEM|MULHER|\bF\b)/i.test(text)) {
-        genero = 'Feminino'
-        field_confidences.genero = 95
-        field_coordinates.genero = findBox('FEMININO') || findBox('MULHER')
-      } else if (/(?:MASCULINO|MASC|HOMEM|\bM\b)/i.test(text)) {
-        genero = 'Masculino'
-        field_confidences.genero = 95
-        field_coordinates.genero = findBox('MASCULINO') || findBox('HOMEM')
-      } else {
-        field_confidences.genero = 0
-      }
-
-      const cepMatch = text.match(/\d{5}-?\d{3}/)
-      const cep = cepMatch ? cepMatch[0].replace(/\D/g, '') : ''
-      let logradouro = '',
-        numero = '',
-        bairro = '',
-        cidade = '',
-        estado = ''
-
-      for (let i = 0; i < lines.length; i++) {
-        const l = lines[i]
-        if (/(RUA|AVENIDA|AV\.|PRAÇA|ALAMEDA|RODOVIA|TRAVESSA)/i.test(l)) {
-          logradouro = l
-          const numMatch = l.match(/\d+/)
-          if (numMatch) numero = numMatch[0]
-        }
-        const ufMatch = l.match(
-          /\b(SP|RJ|MG|RS|PR|SC|BA|MS|GO|PE|CE|PA|MA|AM|MT|ES|RN|AL|PB|PI|RO|SE|TO|AP|AC|RR|DF)\b/,
-        )
-        if (ufMatch && !estado) {
-          estado = ufMatch[0]
-        }
-        if (/BAIRRO|VILA|JARDIM/i.test(l)) {
-          bairro = l
-        }
-      }
-
-      let docType = 'Outro'
-      let document_number = ''
-
-      if (
-        text.match(/REGISTRO GERAL|CARTEIRA DE IDENTIDADE|SECRETARIA DE ESTADO DA SEGURAN[ÇC]A/i) ||
-        rg
-      ) {
-        docType = 'RG'
-        document_number = rg || cpf || ''
-      } else if (cnhMatch || text.match(/CARTEIRA NACIONAL DE HABILITA[ÇC][ÃA]O/i)) {
-        docType = 'CNH'
-        document_number = cnh || cpf || ''
-      } else if (cnpj) {
-        docType = 'CNPJ'
-        document_number = cnpj
-      } else if (cpf) {
-        docType = 'CPF'
-        document_number = cpf
-      }
+      const data = res.json
+      const content = data.choices[0].message.content
+      const parsed = JSON.parse(content)
 
       return e.json(200, {
-        name: name || '',
-        mae,
-        pai,
-        nacionalidade,
-        cidade_nasc,
-        uf_nasc,
-        genero,
-        document_number: document_number || '',
-        cpf: cpf || '',
-        rg: rg || '',
-        docType: docType,
-        pis: pis || '',
-        nascimento: nascimento,
-        docIssueDate: docIssueDate,
-        expiryDate: expiryDate,
-        raw_text: text,
-        confidence: confidence,
-        field_confidences,
-        field_coordinates,
-        address: { cep, logradouro, numero, bairro, cidade, estado },
+        name: parsed.name || '',
+        mae: parsed.mae || '',
+        pai: parsed.pai || '',
+        nacionalidade: parsed.nacionalidade || '',
+        cidade_nasc: parsed.cidade_nasc || '',
+        uf_nasc: parsed.uf_nasc || '',
+        genero: parsed.genero || '',
+        document_number: parsed.cpf || parsed.rg || '',
+        cpf: parsed.cpf || '',
+        rg: parsed.rg || '',
+        docType: parsed.docType || 'Outro',
+        pis: parsed.pis || '',
+        nascimento: parsed.nascimento || '',
+        docIssueDate: parsed.docIssueDate || '',
+        expiryDate: parsed.expiryDate || '',
+        raw_text: content,
+        confidence: parsed.confidence || 85,
+        field_confidences: parsed.field_confidences || {},
+        field_coordinates: {},
+        address: parsed.address || {
+          cep: '',
+          logradouro: '',
+          numero: '',
+          bairro: '',
+          cidade: '',
+          estado: '',
+        },
       })
     } catch (err) {
       if (err.status) throw err
-      throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
+      throw new BadRequestError(
+        'Erro na extração inteligente via IA: Formato não suportado ou arquivo corrompido.',
+      )
     }
   },
   $apis.bodyLimit(20 * 1024 * 1024),

@@ -20,9 +20,12 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
   const [imgDimensions, setImgDimensions] = useState({ w: 1, h: 1 })
   const imgRef = useRef<HTMLImageElement>(null)
 
+  const [isPdf, setIsPdf] = useState(false)
+
   useEffect(() => {
     setDraft(ocrDraft)
     if (ocrFile) {
+      setIsPdf(ocrFile.type === 'application/pdf' || ocrFile.name.toLowerCase().endsWith('.pdf'))
       const url = URL.createObjectURL(ocrFile)
       setImageUrl(url)
       return () => URL.revokeObjectURL(url)
@@ -128,26 +131,36 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
             <div className="flex-1 bg-slate-200/50 rounded-xl overflow-hidden relative shadow-inner flex items-center justify-center p-2 group">
               {imageUrl ? (
                 <div className="relative w-full h-full flex items-center justify-center">
-                  <img
-                    ref={imgRef}
-                    src={imageUrl}
-                    alt="Document"
-                    className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg z-0"
-                    onLoad={(e) => {
-                      const img = e.currentTarget
-                      setImgDimensions({ w: img.naturalWidth, h: img.naturalHeight })
-                    }}
-                  />
-                  <div
-                    className="absolute inset-0 m-auto"
-                    style={{
-                      aspectRatio: `${imgDimensions.w} / ${imgDimensions.h}`,
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                    }}
-                  >
-                    {renderBoundingBox()}
-                  </div>
+                  {isPdf ? (
+                    <iframe
+                      src={`${imageUrl}#toolbar=0&navpanes=0`}
+                      className="w-full h-full rounded-lg z-0"
+                      title="Documento PDF"
+                    />
+                  ) : (
+                    <>
+                      <img
+                        ref={imgRef}
+                        src={imageUrl}
+                        alt="Document"
+                        className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg z-0"
+                        onLoad={(e) => {
+                          const img = e.currentTarget
+                          setImgDimensions({ w: img.naturalWidth, h: img.naturalHeight })
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0 m-auto"
+                        style={{
+                          aspectRatio: `${imgDimensions.w} / ${imgDimensions.h}`,
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                        }}
+                      >
+                        {renderBoundingBox()}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="text-slate-400 text-sm">Sem imagem disponível</div>
