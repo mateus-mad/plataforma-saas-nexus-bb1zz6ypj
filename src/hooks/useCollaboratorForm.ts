@@ -388,7 +388,12 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('document_number', newData.docs.cpf || '')
 
       if (newData.docs?.expiryDate) fd.append('expiry_date', newData.docs.expiryDate)
-      fd.append('compliance_status', calculateComplianceStatus(newData.docs?.expiryDate))
+
+      const updCompStatus =
+        newData.docs.compliance?.status && newData.docs.compliance.status !== 'pendente'
+          ? newData.docs.compliance.status
+          : calculateComplianceStatus(newData.docs?.expiryDate)
+      fd.append('compliance_status', updCompStatus)
 
       if (newData.pessoal.nacionalidade) fd.append('nationality', newData.pessoal.nacionalidade)
       if (newData.pessoal.genero)
@@ -418,6 +423,7 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('benefits_config', JSON.stringify(newData.beneficios))
       fd.append('financial_metrics', JSON.stringify(newData.encargos))
       fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata || {}))
+      fd.append('validation_metadata', JSON.stringify(newData.validation_metadata || {}))
 
       const record = await getEntity(entityId)
       if (record.status === 'rascunho') fd.append('status', 'ativo')
@@ -463,7 +469,12 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('phone', data.contato.telPrinc || '')
 
       if (data.docs?.expiryDate) fd.append('expiry_date', data.docs.expiryDate)
-      fd.append('compliance_status', calculateComplianceStatus(data.docs?.expiryDate))
+
+      const compStatus =
+        data.docs.compliance?.status && data.docs.compliance.status !== 'pendente'
+          ? data.docs.compliance.status
+          : calculateComplianceStatus(data.docs?.expiryDate)
+      fd.append('compliance_status', compStatus)
 
       if (data.pessoal.nacionalidade) fd.append('nationality', data.pessoal.nacionalidade)
       if (data.pessoal.genero)
@@ -493,6 +504,7 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('benefits_config', JSON.stringify(data.beneficios))
       fd.append('financial_metrics', JSON.stringify(data.encargos))
       fd.append('extraction_metadata', JSON.stringify(data.extraction_metadata || {}))
+      fd.append('validation_metadata', JSON.stringify(data.validation_metadata || {}))
 
       let recordId = entityId
       if (entityId) {
@@ -621,10 +633,18 @@ export function useCollaboratorForm(entityId: string | null) {
           autoFilled.add('birth_uf')
         }
 
-        if (ocrResult.document_number) {
+        if (ocrResult.cpf) {
+          newData.docs.cpf = ocrResult.cpf
+          autoFilled.add('document_number')
+        } else if (ocrResult.document_number) {
           newData.docs.cpf = ocrResult.document_number
           autoFilled.add('document_number')
         }
+
+        if (ocrResult.rg && ocrResult.docType === 'RG') {
+          // RG extracted
+        }
+
         if (ocrResult.pis) {
           newData.docs.pis = ocrResult.pis
           autoFilled.add('pis_pasep')
@@ -639,9 +659,27 @@ export function useCollaboratorForm(entityId: string | null) {
           newData.docs.expiryDate = ocrResult.expiryDate
         }
 
-        newData.docs.compliance.status = calculateComplianceStatus(newData.docs.expiryDate)
+        // Compliance and Validation
+        const missingErrors: string[] = []
+        if (!newData.docs.cpf && !ocrResult.rg)
+          missingErrors.push('CPF ou RG não encontrado no documento.')
+        if (!newData.pessoal.mae && !newData.pessoal.pai)
+          missingErrors.push('Filiação não encontrada no documento.')
+        if (!newData.pessoal.nascimento) missingErrors.push('Data de nascimento não encontrada.')
+
+        if (!newData.validation_metadata) newData.validation_metadata = { errors: [] }
+        newData.validation_metadata.errors = missingErrors
+
+        if (missingErrors.length === 0) {
+          newData.docs.compliance.status = 'em_dia'
+        } else {
+          newData.docs.compliance.status = 'pendente'
+        }
 
         newData.extraction_metadata.auto_filled = Array.from(autoFilled)
+        newData.extraction_metadata.raw_text = ocrResult.raw_text
+        newData.extraction_metadata.confidence = ocrResult.confidence
+        if (ocrResult.rg) newData.extraction_metadata.rg_extracted = ocrResult.rg
 
         if (ocrResult.address) {
           const addr = ocrResult.address
@@ -660,6 +698,7 @@ export function useCollaboratorForm(entityId: string | null) {
           if (faceFile) {
             newData.pessoal.photoFile = faceFile
             newData.pessoal.foto = URL.createObjectURL(faceFile)
+            newData.extraction_metadata.photo_extracted = true
           }
         } catch (cropErr) {
           console.error(cropErr)

@@ -114,6 +114,54 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
+const cropFaceFromImage = async (file: File): Promise<File | null> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = async () => {
+      try {
+        let rect = {
+          x: img.width * 0.1,
+          y: img.height * 0.2,
+          w: img.width * 0.3,
+          h: img.height * 0.5,
+        }
+        if ('FaceDetector' in window) {
+          const detector = new (window as any).FaceDetector()
+          const faces = await detector.detect(img)
+          if (faces && faces.length > 0) {
+            const box = faces[0].boundingBox
+            rect = {
+              x: Math.max(0, box.x - box.width * 0.2),
+              y: Math.max(0, box.y - box.height * 0.2),
+              w: Math.min(img.width - box.x, box.width * 1.4),
+              h: Math.min(img.height - box.y, box.height * 1.4),
+            }
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = rect.w
+        canvas.height = rect.h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return resolve(null)
+        ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h)
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(new File([blob], 'extracted_face.jpg', { type: 'image/jpeg' }))
+            else resolve(null)
+          },
+          'image/jpeg',
+          0.9,
+        )
+      } catch (e) {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
 export default function PersonalInfoTab({ data, onChange, errors, readOnly, globalData }: Props) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(data.foto || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -187,8 +235,8 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly, glob
         genero: !res.genero,
         civil: true,
         escolaridade: true,
-        mae: !res.mae,
-        pai: !res.pai,
+        mae: !res.mae && !res.pai,
+        pai: !res.pai && !res.mae,
         cidade: !res.cidade_nasc,
         uf: !res.uf_nasc,
         sangue: true,
@@ -234,16 +282,40 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly, glob
         capturedLocal.push('birth_uf')
       }
 
+      try {
+        const faceFile = await cropFaceFromImage(file)
+        if (faceFile) {
+          onChange('foto', URL.createObjectURL(faceFile), faceFile)
+          capturedLocal.push('photo')
+        }
+      } catch (err) {
+        console.error(err)
+      }
+
       setMissingFields(missing)
+
+      const validationErrors: string[] = []
+      if (!res.cpf && !res.rg) validationErrors.push('CPF ou RG não encontrado no documento.')
+      if (!res.mae && !res.pai) validationErrors.push('Filiação não encontrada no documento.')
+      if (!res.nascimento) validationErrors.push('Data de nascimento não encontrada.')
 
       if (globalData?.id) {
         const currentAutoFilled = extractionMeta.auto_filled || []
         const newAutoFilled = Array.from(new Set([...currentAutoFilled, ...capturedLocal]))
+        const compStatus = validationErrors.length === 0 ? 'em_dia' : 'pendente'
 
         await pb
           .collection('relacionamentos')
           .update(globalData.id, {
-            extraction_metadata: { ...extractionMeta, auto_filled: newAutoFilled },
+            extraction_metadata: {
+              ...extractionMeta,
+              auto_filled: newAutoFilled,
+              raw_text: res.raw_text,
+              confidence: res.confidence,
+              rg_extracted: res.rg,
+            },
+            validation_metadata: { errors: validationErrors },
+            compliance_status: compStatus,
           })
           .catch(() => {})
 

@@ -335,6 +335,12 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
                       ))}
                     </ul>
                   )}
+                  {data.extraction_metadata?.confidence && (
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                      <Activity className="w-3.5 h-3.5" />
+                      Confiança da Extração (OCR): {data.extraction_metadata.confidence}%
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
