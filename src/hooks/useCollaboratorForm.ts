@@ -26,6 +26,7 @@ const formSchema = z.object({
   docs: z
     .object({
       cpf: z.string().min(14, 'CPF Incompleto').or(z.literal('')),
+      rg: z.string().optional(),
       pis: z.string().min(1, 'Obrigatório').or(z.literal('')),
     })
     .passthrough(),
@@ -69,6 +70,7 @@ const DEFAULT_DATA = {
     docIssueDate: '',
     expiryDate: '',
     cpf: '',
+    rg: '',
     pis: '',
     compliance: { status: 'pendente' },
   },
@@ -385,7 +387,7 @@ export function useCollaboratorForm(entityId: string | null) {
       const fd = new FormData()
       fd.append('data', JSON.stringify(payloadData))
       fd.append('name', newData.pessoal.name || '')
-      fd.append('document_number', newData.docs.cpf || '')
+      fd.append('document_number', newData.docs.cpf || newData.docs.rg || '')
 
       if (newData.docs?.expiryDate) fd.append('expiry_date', newData.docs.expiryDate)
 
@@ -464,7 +466,7 @@ export function useCollaboratorForm(entityId: string | null) {
       const fd = new FormData()
       fd.append('name', data.pessoal.name || 'Sem Nome')
       fd.append('type', 'colaborador')
-      fd.append('document_number', data.docs.cpf || '')
+      fd.append('document_number', data.docs.cpf || data.docs.rg || '')
       fd.append('email', data.contato.email || '')
       fd.append('phone', data.contato.telPrinc || '')
 
@@ -576,10 +578,11 @@ export function useCollaboratorForm(entityId: string | null) {
       if (
         fieldErrors?.image ||
         err?.response?.data?.code === 'validation_unreadable' ||
-        err.message?.includes('ilegível')
+        err.message?.includes('ilegível') ||
+        err.message?.includes('qualidade')
       ) {
         description =
-          'Documento ilegível, borrado ou cortado. A imagem está com baixa qualidade, iluminação ruim ou não contém texto legível. Envie uma nova foto mais nítida.'
+          'Não foi possível ler o documento claramente, por favor tente uma foto de maior qualidade.'
       }
 
       toast({
@@ -658,8 +661,9 @@ export function useCollaboratorForm(entityId: string | null) {
       newData.docs.cpf = editedDraft.cpf
       autoFilled.add('document_number')
     }
-    if (editedDraft.rg && editedDraft.docType === 'RG') {
-      newData.docs.docType = 'RG'
+    if (editedDraft.rg) {
+      newData.docs.rg = editedDraft.rg
+      if (editedDraft.docType === 'RG') newData.docs.docType = 'RG'
       autoFilled.add('rg')
     }
     if (editedDraft.pis) {
@@ -690,7 +694,7 @@ export function useCollaboratorForm(entityId: string | null) {
     }
 
     const missingErrors: string[] = []
-    if (!newData.docs.cpf && !editedDraft.rg)
+    if (!newData.docs.cpf && !newData.docs.rg)
       missingErrors.push('CPF ou RG não encontrado no documento.')
     if (!newData.pessoal.mae && !newData.pessoal.pai)
       missingErrors.push('Filiação não encontrada no documento.')
@@ -710,6 +714,7 @@ export function useCollaboratorForm(entityId: string | null) {
     newData.extraction_metadata.auto_filled = Array.from(autoFilled)
     newData.extraction_metadata.raw_text = editedDraft.raw_text
     newData.extraction_metadata.confidence = editedDraft.confidence
+    newData.extraction_metadata.field_confidences = editedDraft.field_confidences
     if (editedDraft.rg) newData.extraction_metadata.rg_extracted = editedDraft.rg
 
     if (editedDraft.faceFile) {

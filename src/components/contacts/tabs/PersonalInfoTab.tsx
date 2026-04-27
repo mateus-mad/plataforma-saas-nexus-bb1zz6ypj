@@ -336,6 +336,7 @@ export default function PersonalInfoTab({
                 auto_filled: newAutoFilled,
                 raw_text: res.raw_text,
                 confidence: res.confidence,
+                field_confidences: res.field_confidences,
                 rg_extracted: res.rg,
               },
               validation_metadata: { errors: validationErrors },

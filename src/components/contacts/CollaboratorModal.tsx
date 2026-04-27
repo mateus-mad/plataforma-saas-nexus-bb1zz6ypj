@@ -527,9 +527,16 @@ export default function CollaboratorModal({
               {isEditing && (
                 <Button
                   onClick={handleSave}
+                  disabled={isProcessingOCR || saveStatus === 'saving'}
                   className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-8 font-semibold"
                 >
-                  Garantir Dados na Nuvem
+                  {saveStatus === 'saving' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
+                    </>
+                  ) : (
+                    'Garantir Dados na Nuvem'
+                  )}
                 </Button>
               )}
             </div>

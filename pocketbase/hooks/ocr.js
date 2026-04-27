@@ -54,9 +54,12 @@ routerAdd(
       }
 
       if (!extractedText || extractedText.length < 10) {
-        throw new BadRequestError('Documento PDF ilegível ou sem texto extraível.', {
-          code: 'validation_unreadable',
-        })
+        throw new BadRequestError(
+          'Não foi possível ler o documento claramente, por favor tente uma foto de maior qualidade.',
+          {
+            code: 'validation_unreadable',
+          },
+        )
       }
     }
 
@@ -122,7 +125,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           response_format: { type: 'json_object' },
           messages: messages,
         }),
@@ -131,7 +134,9 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
       if (res.statusCode !== 200) {
         console.log('OpenAI Error:', res.raw || JSON.stringify(res.json))
-        throw new BadRequestError('Erro na comunicação com o motor de IA da OpenAI.')
+        throw new InternalServerError(
+          'Erro na comunicação com o motor de IA da OpenAI. Tente novamente mais tarde.',
+        )
       }
 
       const data = res.json
@@ -170,7 +175,8 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
     } catch (err) {
       if (err.status) throw err
       throw new BadRequestError(
-        'Erro na extração inteligente via IA: Formato não suportado ou arquivo corrompido.',
+        'Não foi possível ler o documento claramente, por favor tente uma foto de maior qualidade.',
+        { code: 'validation_unreadable' },
       )
     }
   },
