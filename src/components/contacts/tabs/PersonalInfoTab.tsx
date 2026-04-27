@@ -418,6 +418,7 @@ export default function PersonalInfoTab({
               <input
                 type="file"
                 accept="image/*,.pdf"
+                capture="environment"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleOCRUpload}
                 disabled={isExtracting || readOnly}

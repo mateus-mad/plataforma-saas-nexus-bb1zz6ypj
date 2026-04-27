@@ -9,13 +9,16 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
-import { AlertTriangle, CheckCircle2, ScanFace, Image as ImageIcon } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { AlertTriangle, CheckCircle2, ScanFace, Image as ImageIcon, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfirm }: any) {
   const [draft, setDraft] = useState(ocrDraft)
   const [imageUrl, setImageUrl] = useState('')
+  const [activeField, setActiveField] = useState<string | null>(null)
+  const [imgDimensions, setImgDimensions] = useState({ w: 1, h: 1 })
+  const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     setDraft(ocrDraft)
@@ -54,13 +57,41 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
         <Input
           value={draft[field] || ''}
           onChange={(e) => handleChange(field, e.target.value)}
+          onFocus={() => setActiveField(field)}
+          onBlur={() => setActiveField(null)}
           placeholder={placeholder}
           className={cn(
-            'h-9 shadow-sm',
+            'h-9 shadow-sm transition-all',
             isLowConf && 'border-amber-400 focus-visible:ring-amber-400 bg-amber-50/30',
+            activeField === field && 'ring-2 ring-blue-500 border-blue-500',
           )}
         />
       </div>
+    )
+  }
+
+  const renderBoundingBox = () => {
+    if (!activeField || !draft.field_coordinates?.[activeField] || !imgRef.current) return null
+    const box = draft.field_coordinates[activeField]
+    const { naturalWidth, naturalHeight } = imgRef.current
+    if (!naturalWidth || !naturalHeight) return null
+
+    const [x, y, w, h] = box
+    const left = (x / naturalWidth) * 100
+    const top = (y / naturalHeight) * 100
+    const width = (w / naturalWidth) * 100
+    const height = (h / naturalHeight) * 100
+
+    return (
+      <div
+        className="absolute border-2 border-blue-500 bg-blue-500/20 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] transition-all duration-300 pointer-events-none z-10 rounded-sm"
+        style={{
+          left: `${left}%`,
+          top: `${top}%`,
+          width: `${width}%`,
+          height: `${height}%`,
+        }}
+      />
     )
   }
 
@@ -94,13 +125,30 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
                 Confiança Global: {draft.confidence || 90}%
               </div>
             </div>
-            <div className="flex-1 bg-slate-200/50 rounded-xl overflow-hidden relative shadow-inner flex items-center justify-center p-2">
+            <div className="flex-1 bg-slate-200/50 rounded-xl overflow-hidden relative shadow-inner flex items-center justify-center p-2 group">
               {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt="Document"
-                  className="w-full h-full object-contain drop-shadow-md rounded-lg"
-                />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img
+                    ref={imgRef}
+                    src={imageUrl}
+                    alt="Document"
+                    className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg z-0"
+                    onLoad={(e) => {
+                      const img = e.currentTarget
+                      setImgDimensions({ w: img.naturalWidth, h: img.naturalHeight })
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 m-auto"
+                    style={{
+                      aspectRatio: `${imgDimensions.w} / ${imgDimensions.h}`,
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                    }}
+                  >
+                    {renderBoundingBox()}
+                  </div>
+                </div>
               ) : (
                 <div className="text-slate-400 text-sm">Sem imagem disponível</div>
               )}

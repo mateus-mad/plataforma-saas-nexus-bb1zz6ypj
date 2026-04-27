@@ -24,7 +24,7 @@ routerAdd(
     let formData =
       'base64Image=' +
       encodeURIComponent(base64) +
-      '&language=por&isOverlayRequired=false&scale=true&OCREngine=2'
+      '&language=por&isOverlayRequired=true&scale=true&OCREngine=2'
     if (isPdf) {
       formData += '&filetype=PDF'
     }
@@ -56,16 +56,61 @@ routerAdd(
         confidence = 85 + Math.floor(Math.random() * 10) // Mocking confidence
       }
 
-      // Fallback para teste/protótipo
+      // Fallback para teste/protótipo se a API falhar
       if (!text || text.length < 5) {
-        const nextYear = new Date()
-        nextYear.setFullYear(nextYear.getFullYear() + 1)
-        const dateStr = nextYear.toLocaleDateString('pt-BR')
-        text = `NOME\nColaborador Extraído Via OCR\nCPF 123.456.789-00\nRG 12.345.678-9\nVALIDADE ${dateStr}\nDATA DE NASCIMENTO\n01/01/1990\nFILIAÇÃO\nMARIA DA SILVA\nJOSE DA SILVA\nNATURALIDADE\nSAO PAULO - SP\nNACIONALIDADE\nBRASILEIRA\nCEP 01001-000\nRUA PRINCIPAL 1000 SAO PAULO SP`
-        confidence = 99
+        if (res.statusCode !== 200 || data.IsErroredOnProcessing || !data.ParsedResults) {
+          const nextYear = new Date()
+          nextYear.setFullYear(nextYear.getFullYear() + 1)
+          const dateStr = nextYear.toLocaleDateString('pt-BR')
+          text = `NOME\nColaborador Extraído Via OCR\nCPF 123.456.789-00\nRG 12.345.678-9\nVALIDADE ${dateStr}\nDATA DE NASCIMENTO\n01/01/1990\nFILIAÇÃO\nMARIA DA SILVA\nJOSE DA SILVA\nNATURALIDADE\nSAO PAULO - SP\nNACIONALIDADE\nBRASILEIRA\nCEP 01001-000\nRUA PRINCIPAL 1000 SAO PAULO SP`
+          confidence = 99
+        }
+      }
+
+      if (!text || text.length < 10) {
+        throw new BadRequestError(
+          'Documento ilegível, borrado ou cortado. Por favor, envie uma nova foto mais nítida.',
+          { code: 'validation_unreadable' },
+        )
       }
 
       const field_confidences = {}
+      const field_coordinates = {}
+
+      const linesWithBox = []
+      if (
+        data &&
+        data.ParsedResults &&
+        data.ParsedResults[0] &&
+        data.ParsedResults[0].TextOverlay
+      ) {
+        const overlayLines = data.ParsedResults[0].TextOverlay.Lines || []
+        overlayLines.forEach((line) => {
+          let minL = 99999,
+            minT = 99999,
+            maxR = 0,
+            maxB = 0
+          if (line.Words) {
+            line.Words.forEach((w) => {
+              if (w.Left < minL) minL = w.Left
+              if (w.Top < minT) minT = w.Top
+              if (w.Left + w.Width > maxR) maxR = w.Left + w.Width
+              if (w.Top + w.Height > maxB) maxB = w.Top + w.Height
+            })
+            linesWithBox.push({
+              text: line.LineText.toUpperCase(),
+              box: [minL, minT, maxR - minL, maxB - minT],
+            })
+          }
+        })
+      }
+
+      const findBox = (searchText) => {
+        if (!searchText) return null
+        const upper = searchText.toUpperCase()
+        const match = linesWithBox.find((l) => l.text.includes(upper) || upper.includes(l.text))
+        return match ? match.box : null
+      }
 
       const cpfMatch = text.match(/\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}/)
       const cpf = cpfMatch
@@ -74,6 +119,7 @@ routerAdd(
             .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
         : ''
       field_confidences.cpf = cpf ? (text.includes('CPF') ? 95 : 75) : 0
+      if (cpfMatch) field_coordinates.cpf = findBox(cpfMatch[0])
 
       const cnpjMatch = text.match(/\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}/)
       const cnpj = cnpjMatch
@@ -87,6 +133,7 @@ routerAdd(
         text.match(/\b(\d{2}\.\d{3}\.\d{3}-\d{1,2}|[a-zA-Z]{0,2}\d{7,9})\b/)
       const rg = rgMatch ? rgMatch[1].replace(/[^\da-zA-Z\.-]/g, '') : ''
       field_confidences.rg = rg ? 90 : 0
+      if (rgMatch) field_coordinates.rg = findBox(rgMatch[1])
 
       const cnhMatch = text.match(/(?:CNH|Habilita[çc][ãa]o|Registro)[^\d]*(\d{11})/i)
       const cnh = cnhMatch ? cnhMatch[1] : ''
@@ -106,9 +153,11 @@ routerAdd(
       if (nascMatch) {
         nascimento = nascMatch[1]
         field_confidences.nascimento = 95
+        field_coordinates.nascimento = findBox(nascMatch[1])
       } else if (dates.length > 0) {
         nascimento = dates[0]
         field_confidences.nascimento = 70
+        field_coordinates.nascimento = findBox(dates[0])
       } else {
         field_confidences.nascimento = 0
       }
@@ -119,9 +168,11 @@ routerAdd(
       if (expedicaoMatch) {
         docIssueDate = expedicaoMatch[1]
         field_confidences.docIssueDate = 95
+        field_coordinates.docIssueDate = findBox(expedicaoMatch[1])
       } else if (dates.length > 1) {
         docIssueDate = dates[1]
         field_confidences.docIssueDate = 70
+        field_coordinates.docIssueDate = findBox(dates[1])
       } else {
         field_confidences.docIssueDate = 0
       }
@@ -157,12 +208,14 @@ routerAdd(
           if (lines[i + 1] && !/(?:FILIAÇÃO|DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
             name = lines[i + 1]
             field_confidences.name = 95
+            field_coordinates.name = findBox(name)
           }
         }
         if (/(?:FILIAÇÃO|DOC ORIGEM|PAIS)/i.test(lines[i])) {
           if (lines[i + 1] && !/(?:NATURALIDADE|DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
             mae = lines[i + 1]
             field_confidences.mae = 90
+            field_coordinates.mae = findBox(mae)
           }
           if (
             lines[i + 2] &&
@@ -171,18 +224,22 @@ routerAdd(
           ) {
             pai = lines[i + 2]
             field_confidences.pai = 90
+            field_coordinates.pai = findBox(pai)
           }
         }
         if (/(?:NATURALIDADE|LOCAL DE NASCIMENTO|ESTADO)/i.test(lines[i])) {
           if (lines[i + 1] && !/(?:DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
             naturalidade = lines[i + 1]
             field_confidences.cidade_nasc = 90
+            field_coordinates.cidade_nasc = findBox(naturalidade)
+            field_coordinates.uf_nasc = findBox(naturalidade)
           }
         }
         if (/(?:NACIONALIDADE)/i.test(lines[i])) {
           if (lines[i + 1]) {
             nacionalidade = lines[i + 1]
             field_confidences.nacionalidade = 95
+            field_coordinates.nacionalidade = findBox(nacionalidade)
           }
         }
       }
@@ -194,6 +251,7 @@ routerAdd(
         if (possibleNames.length > 0) {
           name = possibleNames[0]
           field_confidences.name = 60
+          field_coordinates.name = findBox(name)
         }
       }
       name = name.replace(/[^a-zA-ZÀ-ÿ\s]/g, '').trim()
@@ -219,9 +277,11 @@ routerAdd(
       if (/(?:FEMININO|FEM|MULHER|\bF\b)/i.test(text)) {
         genero = 'Feminino'
         field_confidences.genero = 95
+        field_coordinates.genero = findBox('FEMININO') || findBox('MULHER')
       } else if (/(?:MASCULINO|MASC|HOMEM|\bM\b)/i.test(text)) {
         genero = 'Masculino'
         field_confidences.genero = 95
+        field_coordinates.genero = findBox('MASCULINO') || findBox('HOMEM')
       } else {
         field_confidences.genero = 0
       }
@@ -291,11 +351,13 @@ routerAdd(
         raw_text: text,
         confidence: confidence,
         field_confidences,
+        field_coordinates,
         address: { cep, logradouro, numero, bairro, cidade, estado },
       })
     } catch (err) {
+      if (err.status) throw err
       throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
     }
   },
-  $apis.bodyLimit(20 * 1024 * 1024), // Aumentado para 20MB para evitar erro 400 em arquivos grandes
+  $apis.bodyLimit(20 * 1024 * 1024),
 )

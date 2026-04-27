@@ -570,11 +570,22 @@ export function useCollaboratorForm(entityId: string | null) {
       setIsReviewingOCR(true)
       return { success: true }
     } catch (err: any) {
+      let description =
+        'Não foi possível extrair dados legíveis deste documento. Por favor, preencha manualmente.'
+      const fieldErrors = extractFieldErrors(err)
+      if (
+        fieldErrors?.image ||
+        err?.response?.data?.code === 'validation_unreadable' ||
+        err.message?.includes('ilegível')
+      ) {
+        description =
+          'Documento ilegível, borrado ou cortado. A imagem está com baixa qualidade, iluminação ruim ou não contém texto legível. Envie uma nova foto mais nítida.'
+      }
+
       toast({
         variant: 'destructive',
-        title: 'Erro na extração OCR',
-        description:
-          'Não foi possível extrair dados legíveis deste documento. Por favor, verifique a qualidade da imagem ou preencha manualmente.',
+        title: 'Falha no Processamento (OCR)',
+        description,
       })
       return { success: false, reason: 'error' }
     } finally {

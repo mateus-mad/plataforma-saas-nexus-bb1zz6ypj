@@ -396,6 +396,7 @@ export default function CollaboratorModal({
                       ref={fileInputRef}
                       className="hidden"
                       accept=".pdf,.jpg,.jpeg,.png"
+                      capture="environment"
                       onChange={handleOCRUpload}
                     />
                   </div>
