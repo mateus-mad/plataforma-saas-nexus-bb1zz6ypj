@@ -162,17 +162,25 @@ export default function CollaboratorModal({
 
   const processFile = async (file: File) => {
     try {
-      await startOCRProcess(file, docType)
+      const res = await startOCRProcess(file, docType)
+      if (!res.success) {
+        toast({
+          variant: 'destructive',
+          title: 'Falha no Processamento',
+          description:
+            res.description ||
+            'Ocorreu uma falha no OCR. Por favor, prossiga com o preenchimento manual.',
+        })
+      }
     } catch (e: any) {
-      // Handled in the hook itself, ensuring the manual fallback is clear
       toast({
+        variant: 'destructive',
         title: 'Preenchimento Manual',
         description: 'Ocorreu uma falha no OCR. Por favor, prossiga com o preenchimento manual.',
       })
     }
     setLowQualityFile(null)
   }
-
   const handleFileDropOrSelect = async (file: File) => {
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
     if (!validTypes.includes(file.type)) {
@@ -548,7 +556,6 @@ export default function CollaboratorModal({
           </div>
         </DialogContent>
       </Dialog>
-
       <AlertDialog
         open={!!lowQualityFile}
         onOpenChange={(open) => !open && setLowQualityFile(null)}
@@ -577,7 +584,6 @@ export default function CollaboratorModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       <AlertDialog open={showDirtyWarning} onOpenChange={setShowDirtyWarning}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -606,14 +612,14 @@ export default function CollaboratorModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       <OCRReviewModal
         open={isReviewingOCR}
         onOpenChange={setIsReviewingOCR}
         ocrDraft={ocrDraft}
         ocrFile={ocrFile}
+        existingData={data}
         onConfirm={confirmOCRData}
-      />
+      />{' '}
     </>
   )
 }

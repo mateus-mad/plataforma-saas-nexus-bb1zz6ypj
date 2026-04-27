@@ -10,32 +10,76 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect, useRef } from 'react'
-import { AlertTriangle, CheckCircle2, ScanFace, Image as ImageIcon, HelpCircle } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ScanFace,
+  Image as ImageIcon,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfirm }: any) {
-  const [draft, setDraft] = useState(ocrDraft)
+export function OCRReviewModal({
+  open,
+  onOpenChange,
+  ocrDraft,
+  ocrFile,
+  onConfirm,
+  existingData,
+}: any) {
+  const [draft, setDraft] = useState<any>(null)
   const [imageUrl, setImageUrl] = useState('')
   const [activeField, setActiveField] = useState<string | null>(null)
   const [imgDimensions, setImgDimensions] = useState({ w: 1, h: 1 })
   const imgRef = useRef<HTMLImageElement>(null)
-
   const [isPdf, setIsPdf] = useState(false)
 
   useEffect(() => {
-    setDraft(ocrDraft)
+    if (ocrDraft) {
+      const initialDraft = { ...ocrDraft }
+
+      if (existingData) {
+        if (existingData.pessoal?.name) initialDraft._existing_name = existingData.pessoal.name
+        if (existingData.docs?.cpf) initialDraft._existing_document_number = existingData.docs.cpf
+        if (existingData.pessoal?.nascimento)
+          initialDraft._existing_birth_date = existingData.pessoal.nascimento
+        if (existingData.pessoal?.mae)
+          initialDraft._existing_parents_names = existingData.pessoal.mae
+        if (existingData.pessoal?.cidade)
+          initialDraft._existing_birth_city = existingData.pessoal.cidade
+        if (existingData.pessoal?.uf) initialDraft._existing_birth_uf = existingData.pessoal.uf
+        if (existingData.pessoal?.nacionalidade)
+          initialDraft._existing_nationality = existingData.pessoal.nacionalidade
+
+        if (initialDraft._existing_name) initialDraft.name = initialDraft._existing_name
+        if (initialDraft._existing_document_number)
+          initialDraft.document_number = initialDraft._existing_document_number
+        if (initialDraft._existing_birth_date)
+          initialDraft.birth_date = initialDraft._existing_birth_date
+      }
+
+      setDraft(initialDraft)
+    }
+
     if (ocrFile) {
       setIsPdf(ocrFile.type === 'application/pdf' || ocrFile.name.toLowerCase().endsWith('.pdf'))
       const url = URL.createObjectURL(ocrFile)
       setImageUrl(url)
       return () => URL.revokeObjectURL(url)
     }
-  }, [ocrDraft, ocrFile])
+  }, [ocrDraft, ocrFile, existingData])
 
   if (!draft) return null
 
   const handleChange = (field: string, value: string) => {
     setDraft((prev: any) => ({ ...prev, [field]: value }))
+  }
+
+  const applyOcrValue = (field: string) => {
+    if (ocrDraft[field]) {
+      setDraft((prev: any) => ({ ...prev, [field]: ocrDraft[field] }))
+    }
   }
 
   const getConfidenceColor = (conf: number) => {
@@ -47,28 +91,61 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
   const Field = ({ label, field, placeholder }: any) => {
     const conf = draft.field_confidences?.[field] ?? 100
     const isLowConf = conf < 80
+    const hasExisting = draft[`_existing_${field}`] !== undefined
+    const differsFromOcr =
+      hasExisting && draft[`_existing_${field}`] !== ocrDraft[field] && ocrDraft[field]
+
+    const isOcrValue =
+      draft[field] === ocrDraft[field] &&
+      draft[field] !== '' &&
+      draft[field] !== draft[`_existing_${field}`]
+
     return (
       <div className="space-y-1.5">
         <Label className="flex items-center justify-between text-xs font-semibold text-slate-600">
-          {label}
+          <span className="flex items-center gap-1.5">
+            {label}
+            {isOcrValue && <Sparkles className="w-3 h-3 text-blue-500" />}
+          </span>
           {isLowConf && (
             <span className="text-[10px] flex items-center text-amber-600">
               <AlertTriangle className="w-3 h-3 mr-1" /> Revisar
             </span>
           )}
         </Label>
-        <Input
-          value={draft[field] || ''}
-          onChange={(e) => handleChange(field, e.target.value)}
-          onFocus={() => setActiveField(field)}
-          onBlur={() => setActiveField(null)}
-          placeholder={placeholder}
-          className={cn(
-            'h-9 shadow-sm transition-all',
-            isLowConf && 'border-amber-400 focus-visible:ring-amber-400 bg-amber-50/30',
-            activeField === field && 'ring-2 ring-blue-500 border-blue-500',
+        <div className="relative">
+          <Input
+            value={draft[field] || ''}
+            onChange={(e) => handleChange(field, e.target.value)}
+            onFocus={() => setActiveField(field)}
+            onBlur={() => setActiveField(null)}
+            placeholder={placeholder}
+            className={cn(
+              'h-9 shadow-sm transition-all',
+              isLowConf && 'border-amber-400 focus-visible:ring-amber-400 bg-amber-50/30',
+              activeField === field && 'ring-2 ring-blue-500 border-blue-500',
+              isOcrValue &&
+                !isLowConf &&
+                'border-blue-300 bg-blue-50/50 focus-visible:ring-blue-400',
+            )}
+          />
+          {differsFromOcr && draft[field] !== ocrDraft[field] && (
+            <div className="absolute -top-6 right-0 flex items-center gap-1">
+              <span className="text-[10px] text-slate-400 line-clamp-1 max-w-[100px] truncate">
+                OCR: {ocrDraft[field]}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100"
+                onClick={() => applyOcrValue(field)}
+              >
+                Usar <ArrowRight className="w-3 h-3 ml-0.5" />
+              </Button>
+            </div>
           )}
-        />
+        </div>
       </div>
     )
   }
@@ -98,6 +175,8 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
     )
   }
 
+  const isCompany = draft.docType === 'CNPJ'
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 bg-slate-50 border-none shadow-2xl overflow-hidden [&>button]:hidden">
@@ -107,13 +186,12 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
             Revisão de Extração Inteligente (OCR)
           </DialogTitle>
           <DialogDescription className="text-slate-500 mt-2">
-            Compare os dados extraídos com a imagem do documento original. Edite os campos que
-            apresentarem baixa confiança ou erros antes de confirmar.
+            Os campos preenchidos pela IA estão destacados em azul. Dados que você já havia digitado
+            foram mantidos para evitar perda de informações. Revise antes de confirmar.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
-          {/* Left Side: Image Viewer */}
           <div className="w-full lg:w-1/2 p-6 flex flex-col gap-4 border-r border-slate-200 bg-slate-100/50">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-700 flex items-center gap-2">
@@ -185,27 +263,46 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
             )}
           </div>
 
-          {/* Right Side: Form */}
           <div className="w-full lg:w-1/2 p-6 overflow-y-auto custom-scrollbar bg-white">
             <h3 className="font-semibold text-slate-800 mb-5">Dados Mapeados</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="sm:col-span-2">
-                <Field label="Nome Completo" field="name" />
-              </div>
-              <Field
-                label="Documento (CPF/RG)"
-                field="document_number"
-                placeholder="000.000.000-00"
-              />
-              <Field label="Data de Nascimento" field="birth_date" placeholder="YYYY-MM-DD" />
-              <Field label="Data de Emissão (Doc)" field="docIssueDate" placeholder="YYYY-MM-DD" />
-              <div className="sm:col-span-2">
-                <Field label="Filiação (Mãe/Pai)" field="parents_names" />
-              </div>
-              <Field label="Naturalidade (Cidade)" field="birth_city" />
-              <Field label="UF (Estado)" field="birth_uf" placeholder="Ex: SP" />
-              <Field label="Nacionalidade" field="nationality" />
-              <Field label="Gênero" field="gender" />
+              {isCompany ? (
+                <>
+                  <div className="sm:col-span-2">
+                    <Field label="Razão Social" field="razao_social" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field label="Nome Fantasia" field="nome_fantasia" />
+                  </div>
+                  <Field label="CNPJ" field="document_number" placeholder="00.000.000/0000-00" />
+                  <Field label="CNAE Principal" field="cnae" />
+                  <Field label="Data de Abertura" field="docIssueDate" placeholder="YYYY-MM-DD" />
+                </>
+              ) : (
+                <>
+                  <div className="sm:col-span-2">
+                    <Field label="Nome Completo" field="name" />
+                  </div>
+                  <Field
+                    label="Documento (CPF/RG)"
+                    field="document_number"
+                    placeholder="000.000.000-00"
+                  />
+                  <Field label="Data de Nascimento" field="birth_date" placeholder="YYYY-MM-DD" />
+                  <Field
+                    label="Data de Emissão (Doc)"
+                    field="docIssueDate"
+                    placeholder="YYYY-MM-DD"
+                  />
+                  <div className="sm:col-span-2">
+                    <Field label="Filiação (Mãe/Pai)" field="parents_names" />
+                  </div>
+                  <Field label="Naturalidade (Cidade)" field="birth_city" />
+                  <Field label="UF (Estado)" field="birth_uf" placeholder="Ex: SP" />
+                  <Field label="Nacionalidade" field="nationality" />
+                  <Field label="Gênero" field="gender" />
+                </>
+              )}
             </div>
           </div>
         </div>

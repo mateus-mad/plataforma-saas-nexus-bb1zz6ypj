@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getEntity, createEntity, updateEntity } from '@/services/entities'
+import { processDocumentOCR } from '@/services/ocr'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import pb from '@/lib/pocketbase/client'
 
@@ -60,6 +61,11 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false)
+  const [isReviewingOCR, setIsReviewingOCR] = useState(false)
+  const [ocrDraft, setOcrDraft] = useState<any>(null)
+  const [ocrFile, setOcrFile] = useState<File | null>(null)
+
   const [data, setData] = useState<any>({
     ...DEFAULT_COMPANY_DATA,
     dados: { ...DEFAULT_COMPANY_DATA.dados, tipoPessoa: type === 'client' ? 'PJ' : 'PJ' },
@@ -202,6 +208,91 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
+  const startOCRProcess = async (file: File) => {
+    setIsProcessingOCR(true)
+    setHasUnsavedChanges(true)
+    try {
+      const result = await processDocumentOCR(file, 'CNPJ')
+      setOcrDraft(result)
+      setOcrFile(file)
+      setIsReviewingOCR(true)
+      return { success: true }
+    } catch (err: any) {
+      let description =
+        err.message ||
+        'Não foi possível extrair dados legíveis deste documento. Por favor, preencha manualmente.'
+      const errCode = err?.response?.data?.code || err?.data?.code || err?.response?.code
+
+      if (errCode === 'invalid_api_key') {
+        description = 'Configuração de API inválida (Chave de API).'
+      } else if (errCode === 'ai_service_unavailable') {
+        description = 'Serviço de Inteligência Artificial temporariamente indisponível.'
+      } else if (errCode === 'validation_low_resolution' || errCode === 'validation_unreadable') {
+        description =
+          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.'
+      }
+
+      let newData = { ...dataRef.current }
+      if (!newData.extraction_metadata)
+        newData.extraction_metadata = { auto_filled: [], manually_verified: [] }
+      newData.extraction_metadata.last_error = description
+      newData.extraction_metadata.last_error_time = new Date().toISOString()
+      setData(newData)
+      dataRef.current = newData
+
+      return { success: false, reason: 'error', description }
+    } finally {
+      setIsProcessingOCR(false)
+    }
+  }
+
+  const confirmOCRData = async (editedDraft: any) => {
+    let newData = { ...(dataRef.current || DEFAULT_COMPANY_DATA) }
+
+    if (!newData.extraction_metadata)
+      newData.extraction_metadata = { auto_filled: [], manually_verified: [] }
+    const autoFilled = new Set(newData.extraction_metadata.auto_filled || [])
+
+    if (editedDraft.razao_social || editedDraft.name) {
+      newData.dados.nomeRazao = editedDraft.razao_social || editedDraft.name
+      autoFilled.add('name')
+    }
+    if (editedDraft.nome_fantasia) {
+      newData.dados.fantasia = editedDraft.nome_fantasia
+      autoFilled.add('fantasia')
+    }
+    if (editedDraft.document_number) {
+      newData.dados.documento = editedDraft.document_number
+      autoFilled.add('document_number')
+    }
+    if (editedDraft.cnae) {
+      newData.dados.segmento = editedDraft.cnae
+    }
+
+    if (editedDraft.address) {
+      const addr = editedDraft.address
+      newData.endereco = {
+        ...newData.endereco,
+        cep: addr.cep || newData.endereco.cep,
+        logradouro: addr.logradouro || newData.endereco.logradouro,
+        numero: addr.numero || newData.endereco.numero,
+        bairro: addr.bairro || newData.endereco.bairro,
+        cidade: addr.cidade || newData.endereco.cidade,
+        estado: addr.estado || newData.endereco.estado,
+      }
+    }
+
+    newData.extraction_metadata.auto_filled = Array.from(autoFilled)
+    newData.extraction_metadata.confidence = editedDraft.confidence
+
+    setData(newData)
+    dataRef.current = newData
+    setIsReviewingOCR(false)
+    setOcrDraft(null)
+    setOcrFile(null)
+    setHasUnsavedChanges(true)
+  }
+
   const getProgress = (sec: string) => {
     if (!data[sec]) return 0
     const vals = Object.values(data[sec])
@@ -240,5 +331,12 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     saveEntity,
     hasUnsavedChanges,
     setHasUnsavedChanges,
+    startOCRProcess,
+    isProcessingOCR,
+    isReviewingOCR,
+    setIsReviewingOCR,
+    ocrDraft,
+    ocrFile,
+    confirmOCRData,
   }
 }

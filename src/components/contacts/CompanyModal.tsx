@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle2,
+  ScanLine,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +34,8 @@ import { CompanyDadosTab, CompanyContatoTab, CompanyAddressTab } from './tabs/Co
 import { CompanyFinanceiroTab } from './tabs/CompanyFinancialTabs'
 import { CompanyBankingTab } from './tabs/CompanyBankingTab'
 import { CompanyAgreementsTab } from './tabs/CompanyAgreementsTab'
+import { OCRReviewModal } from './OCRReviewModal'
+import { checkImageQuality } from '@/lib/image-quality'
 
 export default function CompanyModal({
   open,
@@ -47,6 +50,10 @@ export default function CompanyModal({
 }) {
   const [activeTab, setActiveTab] = useState('dados')
   const [showDirtyWarning, setShowDirtyWarning] = useState(false)
+  const [lowQualityFile, setLowQualityFile] = useState<File | null>(null)
+  const [isDraggingOCR, setIsDraggingOCR] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const {
     data,
     updateData,
@@ -58,6 +65,13 @@ export default function CompanyModal({
     saveStatus,
     hasUnsavedChanges,
     setHasUnsavedChanges,
+    startOCRProcess,
+    isProcessingOCR,
+    isReviewingOCR,
+    setIsReviewingOCR,
+    ocrDraft,
+    ocrFile,
+    confirmOCRData,
   } = useCompanyForm(type, entityId)
   const { toast } = useToast()
 
@@ -86,6 +100,69 @@ export default function CompanyModal({
       setShowDirtyWarning(true)
     } else {
       onOpenChange(false)
+    }
+  }
+
+  const processFile = async (file: File) => {
+    try {
+      const res = await startOCRProcess(file)
+      if (!res.success) {
+        toast({
+          variant: 'destructive',
+          title: 'Falha no Processamento',
+          description:
+            res.description || 'Ocorreu uma falha no OCR. Por favor, preencha manualmente.',
+        })
+      }
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Ocorreu um erro no processamento. Tente novamente.',
+      })
+    }
+    setLowQualityFile(null)
+  }
+
+  const handleFileDropOrSelect = async (file: File) => {
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
+    if (!validTypes.includes(file.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Formato inválido',
+        description: 'Envie um arquivo PDF, PNG ou JPG.',
+      })
+      return
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: 'Limite de 20MB.',
+      })
+      return
+    }
+
+    const { isLowQuality } = await checkImageQuality(file)
+    if (isLowQuality && file.type !== 'application/pdf') {
+      setLowQualityFile(file)
+    } else {
+      await processFile(file)
+    }
+  }
+
+  const handleOCRDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDraggingOCR(false)
+    if (e.dataTransfer.files?.length) {
+      handleFileDropOrSelect(e.dataTransfer.files[0])
+    }
+  }
+
+  const handleOCRUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      handleFileDropOrSelect(e.target.files[0])
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -155,6 +232,27 @@ export default function CompanyModal({
               </div>
 
               <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 border-blue-200 text-blue-700 hover:bg-blue-50 bg-blue-50/50 hidden sm:flex"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessingOCR}
+                >
+                  {isProcessingOCR ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ScanLine className="w-4 h-4 mr-2" />
+                  )}
+                  {isProcessingOCR ? 'Lendo CNPJ...' : 'Ler Cartão CNPJ'}
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleOCRUpload}
+                />
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 shadow-inner">
                   {saveStatus === 'saving' ? (
                     <span className="text-xs text-blue-600 font-semibold flex items-center">
@@ -308,6 +406,45 @@ export default function CompanyModal({
           </div>
         </DialogContent>
       </Dialog>
+
+      <OCRReviewModal
+        open={isReviewingOCR}
+        onOpenChange={setIsReviewingOCR}
+        ocrDraft={ocrDraft}
+        ocrFile={ocrFile}
+        existingData={{
+          docs: { cpf: data?.dados?.documento },
+          pessoal: { name: data?.dados?.nomeRazao },
+        }}
+        onConfirm={confirmOCRData}
+      />
+
+      <AlertDialog
+        open={!!lowQualityFile}
+        onOpenChange={(open) => !open && setLowQualityFile(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" /> Qualidade de Imagem
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              A imagem selecionada parece ter baixa qualidade. Deseja tentar a extração mesmo assim?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setLowQualityFile(null)}>
+              Preencher Manualmente
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => lowQualityFile && processFile(lowQualityFile)}
+            >
+              Tentar Extrair (OCR)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showDirtyWarning} onOpenChange={setShowDirtyWarning}>
         <AlertDialogContent>

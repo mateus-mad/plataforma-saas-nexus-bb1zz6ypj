@@ -573,17 +573,17 @@ export function useCollaboratorForm(entityId: string | null) {
       return { success: true }
     } catch (err: any) {
       let description =
+        err.message ||
         'Não foi possível extrair dados legíveis deste documento. Por favor, preencha manualmente.'
+      const errCode = err?.response?.data?.code || err?.data?.code || err?.response?.code
 
-      const errCode = err?.response?.data?.code || err?.data?.code
-      if (errCode === 'validation_low_resolution' || err.message?.includes('ilegível')) {
+      if (errCode === 'invalid_api_key') {
+        description = 'Configuração de API inválida (Chave de API).'
+      } else if (errCode === 'ai_service_unavailable') {
+        description = 'Serviço de Inteligência Artificial temporariamente indisponível.'
+      } else if (errCode === 'validation_low_resolution' || errCode === 'validation_unreadable') {
         description =
-          'A imagem possui baixa resolução, está borrada ou mal iluminada. Envie uma foto mais nítida do documento.'
-      } else if (err.status === 500) {
-        description =
-          'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.'
-      } else if (errCode === 'validation_unreadable' || err.message?.includes('qualidade')) {
-        description = 'Não foi possível ler o documento claramente ou o formato não é suportado.'
+          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.'
       }
 
       let newData = { ...data }

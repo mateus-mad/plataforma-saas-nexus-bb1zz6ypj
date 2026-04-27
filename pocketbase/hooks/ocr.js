@@ -24,7 +24,9 @@ routerAdd(
 
     const apiKey = $secrets.get('OPENAI_API_KEY')
     if (!apiKey) {
-      throw new InternalServerError('Configuração de API pendente ou inválida no servidor.')
+      throw new BadRequestError('Configuração de API inválida (Chave de API).', {
+        code: 'invalid_api_key',
+      })
     }
 
     let extractedText = ''
@@ -35,41 +37,50 @@ routerAdd(
         encodeURIComponent(base64) +
         '&language=por&isOverlayRequired=false&scale=true&OCREngine=2&filetype=PDF'
 
-      const ocrRes = $http.send({
-        url: 'https://api.ocr.space/parse/image',
-        method: 'POST',
-        headers: {
-          apikey: 'helloworld',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData,
-        timeout: 120,
-      })
+      try {
+        const ocrRes = $http.send({
+          url: 'https://api.ocr.space/parse/image',
+          method: 'POST',
+          headers: {
+            apikey: 'helloworld',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData,
+          timeout: 120,
+        })
 
-      const ocrData = ocrRes.json || {}
-      if (ocrRes.statusCode === 200 && ocrData.ParsedResults && ocrData.ParsedResults.length > 0) {
-        extractedText = ocrData.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
+        const ocrData = ocrRes.json || {}
+        if (
+          ocrRes.statusCode === 200 &&
+          ocrData.ParsedResults &&
+          ocrData.ParsedResults.length > 0
+        ) {
+          extractedText = ocrData.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
+        }
+      } catch (err) {
+        console.log('OCR.space fallback falhou:', err)
       }
 
       if (!extractedText || extractedText.length < 10) {
         throw new BadRequestError(
-          'Não foi possível extrair texto do PDF. O documento pode estar protegido ou ser uma imagem ilegível.',
+          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.',
           { code: 'validation_unreadable' },
         )
       }
     }
 
     const promptText = `
-Você é um assistente especializado em extração de dados de documentos de identificação brasileiros (RG, CNH, CPF).
-${isPdf ? 'Analise o texto extraído do documento abaixo e estruture os dados:' : 'Analise a imagem fornecida (corrija mentalmente a orientação se estiver rotacionada) e extraia os campos:'}
-Se o documento for ilegível ou não for um documento de identificação válido, retorne confidence baixo (ex: 10) e campos vazios.
+Você é um assistente especializado em extração de dados de documentos brasileiros (RG, CNH, CPF, Cartão CNPJ).
+${isPdf ? 'Analise o texto extraído do documento abaixo e estruture os dados:' : 'Analise a imagem fornecida. Corrija mentalmente a orientação, brilho e contraste se necessário, e extraia os campos:'}
 
 Regras Estritas:
-1. Mapeie 'gender' ESTRITAMENTE para "masc", "fem", ou "outros". Se não especificado, use "".
-2. Mapeie TODAS as datas ESTRITAMENTE para o formato ISO "YYYY-MM-DD". Se a data for 15/05/1990, retorne 1990-05-15.
-3. 'parents_names' deve conter os nomes da mãe e do pai separados por " / " (ex: "Maria da Silva / João da Silva"). Se houver apenas a mãe, retorne "Maria da Silva / ".
-4. Para o campo "confidence", retorne um número inteiro de 0 a 100 indicando a sua confiança geral na extração legível do documento.
-5. Se um campo não for encontrado, retorne uma string vazia "".
+1. Datas: Converta QUALQUER formato de data encontrado (ex: DD/MM/AAAA) ESTRITAMENTE para o formato ISO "YYYY-MM-DD". Ex: se ler 15/05/1990, retorne 1990-05-15.
+2. Números de Documento: Limpe os números (CPF, RG, CNPJ), removendo TODOS os pontos, traços e barras. Retorne apenas caracteres alfanuméricos.
+3. Gênero: Mapeie 'gender' ESTRITAMENTE para "masc", "fem", ou "outros". Se não especificado, use "".
+4. Filiação: 'parents_names' deve conter os nomes da mãe e do pai separados por " / " (ex: "Maria da Silva / João da Silva").
+5. CNPJ: Se for um Cartão CNPJ, preencha razao_social, nome_fantasia, cnpj e cnae.
+6. Confiança: Para 'confidence', retorne um número de 0 a 100. Se for ilegível, retorne baixo (ex: 10).
+7. Se um campo não for encontrado, retorne uma string vazia "".
 
 ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
@@ -112,7 +123,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                   birth_date: { type: 'string', description: 'YYYY-MM-DD' },
                   docType: {
                     type: 'string',
-                    enum: ['RG', 'CNH', 'CPF', 'Passaporte', 'Outro', ''],
+                    enum: ['RG', 'CNH', 'CPF', 'Passaporte', 'CNPJ', 'Outro', ''],
                   },
                   pis_pasep: { type: 'string' },
                   docIssueDate: { type: 'string', description: 'YYYY-MM-DD' },
@@ -122,6 +133,10 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                   birth_city: { type: 'string' },
                   birth_uf: { type: 'string' },
                   gender: { type: 'string', enum: ['masc', 'fem', 'outros', ''] },
+                  cnpj: { type: 'string' },
+                  razao_social: { type: 'string' },
+                  nome_fantasia: { type: 'string' },
+                  cnae: { type: 'string' },
                   address: {
                     type: 'object',
                     properties: {
@@ -143,8 +158,9 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                       document_number: { type: 'integer' },
                       birth_date: { type: 'integer' },
                       parents_names: { type: 'integer' },
+                      cnpj: { type: 'integer' },
                     },
-                    required: ['name', 'document_number', 'birth_date', 'parents_names'],
+                    required: ['name', 'document_number', 'birth_date', 'parents_names', 'cnpj'],
                     additionalProperties: false,
                   },
                   raw_fields: {
@@ -172,6 +188,10 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                   'birth_city',
                   'birth_uf',
                   'gender',
+                  'cnpj',
+                  'razao_social',
+                  'nome_fantasia',
+                  'cnae',
                   'address',
                   'confidence',
                   'field_confidences',
@@ -187,21 +207,19 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
       })
 
       if (res.statusCode !== 200) {
-        console.log('OpenAI Error:', res.statusCode, res.raw || JSON.stringify(res.json))
         if (res.statusCode === 401) {
-          throw new InternalServerError('Configuração de API pendente ou inválida no servidor.')
-        } else if (res.statusCode === 429) {
-          throw new TooManyRequestsError(
-            'Limite de requisições excedido na API de Inteligência Artificial.',
-          )
-        } else if (res.statusCode >= 500) {
-          throw new InternalServerError(
-            'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.',
+          throw new BadRequestError('Configuração de API inválida (Chave de API).', {
+            code: 'invalid_api_key',
+          })
+        } else if (res.statusCode === 429 || res.statusCode >= 500) {
+          throw new BadRequestError(
+            'Serviço de Inteligência Artificial temporariamente indisponível.',
+            { code: 'ai_service_unavailable' },
           )
         } else {
-          throw new InternalServerError(
-            'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.',
-          )
+          throw new BadRequestError('Falha na comunicação com o serviço de OCR.', {
+            code: 'ocr_failed',
+          })
         }
       }
 
@@ -211,29 +229,37 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
       if (parsed.confidence < 40) {
         throw new BadRequestError(
-          'A imagem está ilegível, borrada ou o documento não é suportado. Por favor, envie uma imagem com melhor qualidade.',
+          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.',
           { code: 'validation_low_resolution' },
         )
       }
 
       return e.json(200, {
-        name: parsed.name || '',
+        name: parsed.name || parsed.razao_social || '',
         document_number:
-          parsed.document_number || parsed.raw_fields?.cpf || parsed.raw_fields?.rg || '',
+          parsed.cnpj ||
+          parsed.document_number ||
+          parsed.raw_fields?.cpf ||
+          parsed.raw_fields?.rg ||
+          '',
         birth_date: parsed.birth_date || '',
         parents_names: parsed.parents_names || '',
         gender: parsed.gender || '',
         birth_city: parsed.birth_city || '',
         birth_uf: parsed.birth_uf || '',
         nationality: parsed.nationality || '',
-        docType: parsed.docType || 'Outro',
-        pis_pasep: parsed.pis_pasep || parsed.pis || '',
+        docType: parsed.docType || (parsed.cnpj ? 'CNPJ' : 'Outro'),
+        pis_pasep: parsed.pis_pasep || '',
         docIssueDate: parsed.docIssueDate || '',
         expiryDate: parsed.expiryDate || '',
         mae: parsed.raw_fields?.mae || '',
         pai: parsed.raw_fields?.pai || '',
         cpf: parsed.raw_fields?.cpf || '',
         rg: parsed.raw_fields?.rg || '',
+        cnpj: parsed.cnpj || '',
+        razao_social: parsed.razao_social || '',
+        nome_fantasia: parsed.nome_fantasia || '',
+        cnae: parsed.cnae || '',
         raw_text: content,
         confidence: parsed.confidence || 85,
         field_confidences: parsed.field_confidences || {},
@@ -249,6 +275,22 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
       })
     } catch (err) {
       if (err.status) throw err
+
+      if (extractedText) {
+        const cpfMatch = extractedText.match(/\d{3}\.\d{3}\.\d{3}\-\d{2}/)
+        const cnpjMatch = extractedText.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}/)
+        if (cpfMatch || cnpjMatch) {
+          return e.json(200, {
+            name: '',
+            document_number: (cnpjMatch ? cnpjMatch[0] : cpfMatch[0]).replace(/[^\d]/g, ''),
+            docType: cnpjMatch ? 'CNPJ' : 'CPF',
+            confidence: 50,
+            fallback_used: true,
+            raw_text: extractedText,
+          })
+        }
+      }
+
       throw new BadRequestError(
         'Falha inesperada no processamento do documento. Tente novamente mais tarde.',
         { code: 'validation_unreadable' },
