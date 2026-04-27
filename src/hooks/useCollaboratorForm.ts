@@ -114,6 +114,20 @@ const DEFAULT_DATA = {
   ferias: { inicio: '', fim: '', direito: '30 dias', proximoVencimento: '' },
   esocial: { matricula: '', categoria: '', cbo: '', natureza: '', admissao: '' },
   anexos: [],
+  extraction_metadata: { auto_filled: [] as string[], manually_verified: [] as string[] },
+}
+
+const FIELD_MAPPING: Record<string, string> = {
+  'pessoal.name': 'name',
+  'pessoal.nascimento': 'birth_date',
+  'docs.cpf': 'document_number',
+  'docs.pis': 'pis_pasep',
+  'pessoal.genero': 'gender',
+  'pessoal.nacionalidade': 'nationality',
+  'pessoal.mae': 'parents_names',
+  'pessoal.pai': 'parents_names',
+  'pessoal.cidade': 'birth_city',
+  'pessoal.uf': 'birth_uf',
 }
 
 function calculateEncargos(salary: number) {
@@ -231,6 +245,11 @@ export function useCollaboratorForm(entityId: string | null) {
         type: a.category,
       }))
 
+      parsedData.extraction_metadata = record.extraction_metadata || {
+        auto_filled: [],
+        manually_verified: [],
+      }
+
       setData(parsedData)
     } catch (e) {
       console.error(e)
@@ -240,6 +259,18 @@ export function useCollaboratorForm(entityId: string | null) {
   const updateData = async (section: string, field: string, value: any, file?: File) => {
     setHasUnsavedChanges(true)
     let newData = { ...data }
+
+    const globalField = FIELD_MAPPING[`${section}.${field}`]
+    if (globalField && newData.extraction_metadata?.auto_filled?.includes(globalField)) {
+      newData.extraction_metadata.auto_filled = newData.extraction_metadata.auto_filled.filter(
+        (f: string) => f !== globalField,
+      )
+      if (!newData.extraction_metadata.manually_verified)
+        newData.extraction_metadata.manually_verified = []
+      if (!newData.extraction_metadata.manually_verified.includes(globalField)) {
+        newData.extraction_metadata.manually_verified.push(globalField)
+      }
+    }
 
     if (section === 'anexos') {
       if (entityId) {
@@ -386,6 +417,7 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('salary_details', JSON.stringify(newData.salario))
       fd.append('benefits_config', JSON.stringify(newData.beneficios))
       fd.append('financial_metrics', JSON.stringify(newData.encargos))
+      fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata || {}))
 
       const record = await getEntity(entityId)
       if (record.status === 'rascunho') fd.append('status', 'ativo')
@@ -460,6 +492,7 @@ export function useCollaboratorForm(entityId: string | null) {
       fd.append('salary_details', JSON.stringify(data.salario))
       fd.append('benefits_config', JSON.stringify(data.beneficios))
       fd.append('financial_metrics', JSON.stringify(data.encargos))
+      fd.append('extraction_metadata', JSON.stringify(data.extraction_metadata || {}))
 
       let recordId = entityId
       if (entityId) {
@@ -549,27 +582,67 @@ export function useCollaboratorForm(entityId: string | null) {
       }
 
       if (ocrResult) {
+        if (!newData.extraction_metadata)
+          newData.extraction_metadata = { auto_filled: [], manually_verified: [] }
+        const autoFilled = new Set(newData.extraction_metadata.auto_filled || [])
+
         if (ocrResult.name) {
-          newData.pessoal = {
-            ...newData.pessoal,
-            name: ocrResult.name || newData.pessoal.name,
-            nascimento: ocrResult.nascimento || newData.pessoal.nascimento,
-          }
+          newData.pessoal.name = ocrResult.name
+          autoFilled.add('name')
         }
+        if (ocrResult.nascimento) {
+          newData.pessoal.nascimento = ocrResult.nascimento.includes('/')
+            ? ocrResult.nascimento.split('/').reverse().join('-')
+            : ocrResult.nascimento
+          autoFilled.add('birth_date')
+        }
+        if (ocrResult.genero) {
+          newData.pessoal.genero = ocrResult.genero
+          autoFilled.add('gender')
+        }
+        if (ocrResult.nacionalidade) {
+          newData.pessoal.nacionalidade = ocrResult.nacionalidade
+          autoFilled.add('nationality')
+        }
+        if (ocrResult.mae) {
+          newData.pessoal.mae = ocrResult.mae
+          autoFilled.add('parents_names')
+        }
+        if (ocrResult.pai) {
+          newData.pessoal.pai = ocrResult.pai
+          autoFilled.add('parents_names')
+        }
+        if (ocrResult.cidade_nasc) {
+          newData.pessoal.cidade = ocrResult.cidade_nasc
+          autoFilled.add('birth_city')
+        }
+        if (ocrResult.uf_nasc) {
+          newData.pessoal.uf = ocrResult.uf_nasc
+          autoFilled.add('birth_uf')
+        }
+
         if (ocrResult.document_number) {
-          const newExpiry = ocrResult.expiryDate || newData.docs.expiryDate
-          newData.docs = {
-            ...newData.docs,
-            cpf: ocrResult.document_number || newData.docs.cpf,
-            docType: ocrResult.docType || docType || newData.docs.docType,
-            docIssueDate: ocrResult.docIssueDate || newData.docs.docIssueDate,
-            expiryDate: newExpiry,
-            compliance: {
-              ...newData.docs.compliance,
-              status: calculateComplianceStatus(newExpiry),
-            },
-          }
+          newData.docs.cpf = ocrResult.document_number
+          autoFilled.add('document_number')
         }
+        if (ocrResult.pis) {
+          newData.docs.pis = ocrResult.pis
+          autoFilled.add('pis_pasep')
+        }
+        if (ocrResult.docType) newData.docs.docType = ocrResult.docType
+        if (ocrResult.docIssueDate) {
+          newData.docs.docIssueDate = ocrResult.docIssueDate.includes('/')
+            ? ocrResult.docIssueDate.split('/').reverse().join('-')
+            : ocrResult.docIssueDate
+        }
+        if (ocrResult.expiryDate) {
+          newData.docs.expiryDate = ocrResult.expiryDate
+        }
+
+        newData.docs.compliance.status = calculateComplianceStatus(newData.docs.expiryDate)
+
+        newData.extraction_metadata.auto_filled = Array.from(autoFilled)
+
         if (ocrResult.address) {
           const addr = ocrResult.address
           newData.endereco = {

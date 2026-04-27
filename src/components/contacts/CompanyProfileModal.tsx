@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Activity,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 type Props = {
   open: boolean
@@ -127,15 +128,44 @@ export default function CompanyProfileModal({
                     {d.documento || companyData.document_number || 'Sem Documento'}
                   </Badge>
                 </div>
-                <DialogDescription className="text-slate-600 font-medium flex gap-2 items-center">
+                <DialogDescription className="text-slate-600 font-medium flex flex-wrap gap-2 items-center">
                   <span>{d.segmento || 'Segmento não definido'}</span>
-                  {d.complianceStatus === 'valid' && (
-                    <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Compliance OK
-                    </span>
-                  )}
+                  <span
+                    className={cn(
+                      'px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1',
+                      companyData.compliance_status === 'em_dia'
+                        ? 'text-emerald-600 bg-emerald-50'
+                        : companyData.compliance_status === 'vencido'
+                          ? 'text-rose-600 bg-rose-50'
+                          : 'text-amber-600 bg-amber-50',
+                    )}
+                  >
+                    {companyData.compliance_status === 'em_dia' ? (
+                      <>
+                        <CheckCircle2 className="w-3 h-3" /> Compliance OK
+                      </>
+                    ) : companyData.compliance_status === 'vencido' ? (
+                      <>
+                        <AlertCircle className="w-3 h-3" /> Compliance Vencido
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-3 h-3" /> Compliance Pendente
+                      </>
+                    )}
+                  </span>
                 </DialogDescription>
               </div>
+              {companyData.validation_metadata?.errors?.length > 0 && (
+                <div className="mt-2 text-xs text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-100 space-y-1 inline-block max-w-lg">
+                  {companyData.validation_metadata.errors.map((err: string, i: number) => (
+                    <div key={i} className="flex items-start gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span>{err}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto mt-4 md:mt-0 justify-end md:absolute md:top-6 md:right-6">

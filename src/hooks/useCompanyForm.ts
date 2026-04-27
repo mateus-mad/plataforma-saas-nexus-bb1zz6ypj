@@ -46,6 +46,14 @@ const DEFAULT_COMPANY_DATA = {
   relacionamento: {
     observacoes: '',
   },
+  extraction_metadata: { auto_filled: [] as string[], manually_verified: [] as string[] },
+}
+
+const FIELD_MAPPING: Record<string, string> = {
+  'dados.nomeRazao': 'name',
+  'dados.fantasia': 'fantasia',
+  'dados.documento': 'document_number',
+  'dados.dataNascimento': 'birth_date',
 }
 
 export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | null) {
@@ -85,6 +93,10 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
         parsedData.dados = parsedData.dados || {}
         parsedData.dados.logo = pb.files.getURL(record, record.photo)
       }
+      parsedData.extraction_metadata = record.extraction_metadata || {
+        auto_filled: [],
+        manually_verified: [],
+      }
       dataRef.current = parsedData
       setData(parsedData)
     } catch (e) {
@@ -108,6 +120,18 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       }
     }
 
+    const globalField = FIELD_MAPPING[`${section}.${field}`]
+    if (globalField && newData.extraction_metadata?.auto_filled?.includes(globalField)) {
+      newData.extraction_metadata.auto_filled = newData.extraction_metadata.auto_filled.filter(
+        (f: string) => f !== globalField,
+      )
+      if (!newData.extraction_metadata.manually_verified)
+        newData.extraction_metadata.manually_verified = []
+      if (!newData.extraction_metadata.manually_verified.includes(globalField)) {
+        newData.extraction_metadata.manually_verified.push(globalField)
+      }
+    }
+
     dataRef.current = newData
     setData(newData)
 
@@ -124,6 +148,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       fd.append('name', newData.dados?.nomeRazao || 'Sem Nome')
       fd.append('address_json', JSON.stringify(newData.endereco || {}))
       fd.append('financial_metrics', JSON.stringify(newData.financeiro || {}))
+      fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata || {}))
 
       try {
         await updateEntity(entityId, fd)
@@ -150,6 +175,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
       fd.append('data', JSON.stringify(currentData))
       fd.append('address_json', JSON.stringify(currentData.endereco || {}))
       fd.append('financial_metrics', JSON.stringify(currentData.financeiro || {}))
+      fd.append('extraction_metadata', JSON.stringify(currentData.extraction_metadata || {}))
 
       if (entityId) {
         await updateEntity(entityId, fd)

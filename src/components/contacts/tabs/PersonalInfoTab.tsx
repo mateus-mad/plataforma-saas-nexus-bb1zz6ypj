@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { User, Info, Camera, AlertTriangle } from 'lucide-react'
+import { User, Info, Camera, AlertTriangle, CheckCircle2, Wand2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,8 @@ import { ExtractionLogDialog } from '../ExtractionLogDialog'
 export function FieldInput({
   isExtracting,
   isMissing,
+  isAutoFilled,
+  isManuallyVerified,
   onClearMissing,
   value,
   onChange,
@@ -25,7 +27,7 @@ export function FieldInput({
 }: any) {
   if (isExtracting) return <Skeleton className="h-10 w-full rounded-md" />
   return (
-    <div>
+    <div className="relative group">
       <Input
         type={type}
         value={value}
@@ -44,11 +46,37 @@ export function FieldInput({
             'border-yellow-400 bg-yellow-50/50 focus-visible:ring-yellow-400 transition-colors',
           validationError &&
             'border-rose-500 bg-rose-50/50 focus-visible:ring-rose-500 text-rose-900 transition-colors',
+          isAutoFilled && 'border-blue-300 bg-blue-50/30 pr-10',
+          isManuallyVerified && 'border-emerald-300 bg-emerald-50/30 pr-10',
         )}
       />
+      {isAutoFilled && !isManuallyVerified && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="absolute right-3 top-2.5 text-blue-500">
+                <Wand2 className="w-4 h-4" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Preenchido automaticamente via OCR</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {isManuallyVerified && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="absolute right-3 top-2.5 text-emerald-500">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Verificado manualmente</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
       {isMissing && !validationError && (
         <p className="text-[11px] leading-tight text-yellow-600 mt-1.5 font-medium animate-in fade-in">
-          Verify manually: Data not found in the document/API.
+          Verifique manualmente: Dado não encontrado.
         </p>
       )}
       {validationError && (
@@ -65,6 +93,7 @@ type Props = {
   onChange: (f: string, v: string, file?: File) => void
   errors?: Record<string, string>
   readOnly?: boolean
+  globalData?: any
 }
 
 const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
@@ -85,7 +114,7 @@ const LabelT = ({ l, t, req }: { l: string; t?: string; req?: boolean }) => (
   </Label>
 )
 
-export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Props) {
+export default function PersonalInfoTab({ data, onChange, errors, readOnly, globalData }: Props) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(data.foto || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -106,6 +135,16 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
   const [isExtracting, setIsExtracting] = useState(false)
   const [missingFields, setMissingFields] = useState<Record<string, boolean>>({})
 
+  const extractionMeta = globalData?.extraction_metadata ||
+    data?.extraction_metadata || { auto_filled: [], manually_verified: [] }
+  const validationMeta = globalData?.validation_metadata ||
+    data?.validation_metadata || { errors: [] }
+
+  const isAutoFilled = (fieldGlobalName: string) =>
+    extractionMeta.auto_filled?.includes(fieldGlobalName)
+  const isManuallyVerified = (fieldGlobalName: string) =>
+    extractionMeta.manually_verified?.includes(fieldGlobalName)
+
   const handleOCRUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -115,11 +154,11 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
     toast({ title: 'Extraindo dados...', description: 'Analisando documento via Inteligência...' })
 
     try {
-      if (data?.id) {
+      if (globalData?.id) {
         try {
           const fd = new FormData()
           fd.append('file', file)
-          fd.append('relacionamento_id', data.id)
+          fd.append('relacionamento_id', globalData.id)
           fd.append('category', 'Documento de Identificação (OCR)')
           if (pb.authStore.record?.id) {
             fd.append('user_id', pb.authStore.record.id)
@@ -156,79 +195,68 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
         nascimento: !res.nascimento,
       }
 
-      if (res.name) onChange('name', res.name)
-      if (res.nascimento)
+      const capturedLocal = []
+      if (res.name) {
+        onChange('name', res.name)
+        capturedLocal.push('name')
+      }
+      if (res.nascimento) {
         onChange(
           'nascimento',
           res.nascimento.includes('/')
             ? res.nascimento.split('/').reverse().join('-')
             : res.nascimento,
         )
-      if (res.nacionalidade) onChange('nacionalidade', res.nacionalidade)
-      if (res.genero) onChange('genero', res.genero)
-      if (res.mae) onChange('mae', res.mae)
-      if (res.pai) onChange('pai', res.pai)
-      if (res.cidade_nasc) onChange('cidade', res.cidade_nasc)
-      if (res.uf_nasc) onChange('uf', res.uf_nasc)
+        capturedLocal.push('birth_date')
+      }
+      if (res.nacionalidade) {
+        onChange('nacionalidade', res.nacionalidade)
+        capturedLocal.push('nationality')
+      }
+      if (res.genero) {
+        onChange('genero', res.genero)
+        capturedLocal.push('gender')
+      }
+      if (res.mae) {
+        onChange('mae', res.mae)
+        capturedLocal.push('parents_names')
+      }
+      if (res.pai) {
+        onChange('pai', res.pai)
+        capturedLocal.push('parents_names')
+      }
+      if (res.cidade_nasc) {
+        onChange('cidade', res.cidade_nasc)
+        capturedLocal.push('birth_city')
+      }
+      if (res.uf_nasc) {
+        onChange('uf', res.uf_nasc)
+        capturedLocal.push('birth_uf')
+      }
 
       setMissingFields(missing)
 
-      if (res.address?.cep) {
-        try {
-          toast({ title: 'CEP Identificado', description: 'Buscando endereço em segundo plano...' })
-          const cepRes = await pb.send(`/backend/v1/cep-lookup/${res.address.cep}`, {
-            method: 'GET',
-          })
-          if (cepRes.logradouro) {
-            toast({
-              title: 'Endereço Localizado (Via API)',
-              description: `${cepRes.logradouro}, ${cepRes.bairro} - ${cepRes.cidade}/${cepRes.estado}`,
-            })
-          }
-        } catch (e) {
-          console.error('Erro ao buscar CEP', e)
-        }
-      }
-
-      if (res.document_number) {
-        try {
-          const docNum = res.document_number.replace(/\D/g, '')
-          if (docNum.length === 14) {
-            toast({
-              title: 'CNPJ Identificado',
-              description: 'Consultando base da Receita Federal...',
-            })
-            const cnpjRes = await pb.send(`/backend/v1/cnpj/${docNum}`, { method: 'GET' })
-            if (cnpjRes.razao_social) {
-              toast({ title: 'Empresa Localizada (Via CNPJ)', description: cnpjRes.razao_social })
-            }
-          }
-        } catch (e) {
-          console.error('Erro ao buscar CNPJ', e)
-        }
-      }
-
-      if (data?.id) {
-        const captured = Object.keys(missing).filter((k) => !missing[k])
-        captured.push('name')
+      if (globalData?.id) {
+        const currentAutoFilled = extractionMeta.auto_filled || []
+        const newAutoFilled = Array.from(new Set([...currentAutoFilled, ...capturedLocal]))
 
         await pb
           .collection('relacionamentos')
-          .update(data.id, {
-            'extraction_metadata+': { auto_filled: captured },
+          .update(globalData.id, {
+            extraction_metadata: { ...extractionMeta, auto_filled: newAutoFilled },
           })
           .catch(() => {})
 
         await pb
           .collection('audit_logs')
           .create({
-            relacionamento_id: data.id,
+            relacionamento_id: globalData.id,
             user_id: pb.authStore.record?.id,
             action: 'OCR Extraction',
             module: 'extraction',
             old_value: { status: 'Success' },
             new_value: {
-              captured,
+              captured: capturedLocal,
               missing: Object.keys(missing).filter((k) => missing[k]),
             },
           })
@@ -236,8 +264,7 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
       }
       toast({
         title: 'Extração Concluída',
-        description:
-          'Dados populados com sucesso. Por favor, verifique os campos destacados em amarelo.',
+        description: 'Dados populados com sucesso. Verifique os campos destacados em amarelo.',
       })
     } catch (err: any) {
       toast({
@@ -245,19 +272,6 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
         title: 'Falha na Extração (OCR)',
         description: 'O documento fornecido está ilegível ou o formato não é suportado no momento.',
       })
-      if (data?.id) {
-        await pb
-          .collection('audit_logs')
-          .create({
-            relacionamento_id: data.id,
-            user_id: pb.authStore.record?.id,
-            action: 'OCR Identity Card',
-            module: 'extraction',
-            old_value: { status: 'Error', message: err.message || 'Error processing OCR' },
-            new_value: { captured: [], missing: [] },
-          })
-          .catch(console.error)
-      }
     } finally {
       setIsExtracting(false)
     }
@@ -267,17 +281,29 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
     errors?.[`pessoal.${f}`] ? 'border-rose-500 bg-rose-50/30 focus-visible:ring-rose-500' : ''
 
   const fields = [
-    ['Nacionalidade', 'nacionalidade', 'País de origem', true],
-    ['Gênero', 'genero', 'Identidade de gênero', true],
-    ['Estado Civil', 'civil', 'Estado civil atual', true],
-    ['Escolaridade', 'escolaridade', 'Grau de instrução completo', true],
-    ['Nome da Mãe', 'mae', 'Nome completo da mãe', true],
-    ['Nome do Pai', 'pai', 'Nome completo do pai (opcional se não registrado)', false],
-    ['Cidade Nasc.', 'cidade', 'Cidade onde nasceu', true],
-    ['UF Nasc.', 'uf', 'Estado onde nasceu', true],
-    ['Tipo Sanguíneo', 'sangue', 'Fator RH e tipo (ex: O+, A-)', false],
-    ['Data Nascimento', 'nascimento', 'Data de nascimento', true],
+    ['Nacionalidade', 'nacionalidade', 'País de origem', true, 'nationality'],
+    ['Gênero', 'genero', 'Identidade de gênero', true, 'gender'],
+    ['Estado Civil', 'civil', 'Estado civil atual', true, 'civil'],
+    ['Escolaridade', 'escolaridade', 'Grau de instrução completo', true, 'escolaridade'],
+    ['Nome da Mãe', 'mae', 'Nome completo da mãe', true, 'parents_names'],
+    ['Nome do Pai', 'pai', 'Nome completo do pai (opcional)', false, 'parents_names'],
+    ['Cidade Nasc.', 'cidade', 'Cidade onde nasceu', true, 'birth_city'],
+    ['UF Nasc.', 'uf', 'Estado onde nasceu', true, 'birth_uf'],
+    ['Tipo Sanguíneo', 'sangue', 'Fator RH e tipo (ex: O+, A-)', false, 'sangue'],
+    ['Data Nascimento', 'nascimento', 'Data de nascimento', true, 'birth_date'],
   ] as const
+
+  const getValidationError = (globalFieldName: string) => {
+    if (!validationMeta.errors || !validationMeta.errors.length) return null
+    const msgs = validationMeta.errors
+    if (globalFieldName === 'birth_date' && msgs.find((m: string) => m.includes('nascimento')))
+      return 'Data de nascimento não preenchida'
+    if (globalFieldName === 'nationality' && msgs.find((m: string) => m.includes('Nacionalidade')))
+      return 'Nacionalidade não preenchida'
+    if (globalFieldName === 'parents_names' && msgs.find((m: string) => m.includes('pais')))
+      return 'Nome dos pais não preenchido'
+    return null
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
@@ -313,10 +339,23 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
                 Extração OCR
               </Button>
             </div>
-            {data?.id && <ExtractionLogDialog entityId={data.id} />}
+            {globalData?.id && <ExtractionLogDialog entityId={globalData.id} />}
           </div>
         </div>
       </div>
+      {validationMeta.errors?.length > 0 && (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-sm">
+          <div className="flex items-center gap-2 text-rose-800 font-semibold mb-2">
+            <AlertTriangle className="w-4 h-4" />
+            Avisos de Compliance
+          </div>
+          <ul className="list-disc list-inside space-y-1 text-rose-700 ml-4">
+            {validationMeta.errors.map((msg: string, i: number) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row gap-8">
         <div className="flex flex-col items-center gap-3 shrink-0">
           <div
@@ -356,6 +395,8 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
             <FieldInput
               isExtracting={isExtracting}
               isMissing={missingFields.name}
+              isAutoFilled={isAutoFilled('name')}
+              isManuallyVerified={isManuallyVerified('name')}
               onClearMissing={() => setMissingFields((p) => ({ ...p, name: false }))}
               value={data?.name || ''}
               onChange={(e: any) => onChange('name', e.target.value)}
@@ -363,23 +404,21 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly }: Pr
               disabled={readOnly}
             />
           </div>
-          {fields.map(([label, field, tooltip, req]) => (
+          {fields.map(([label, field, tooltip, req, globalField]) => (
             <div key={field} className="space-y-1.5">
               <LabelT l={label} t={tooltip} req={req} />
               <FieldInput
                 type={field === 'nascimento' ? 'date' : 'text'}
                 isExtracting={isExtracting}
                 isMissing={missingFields[field]}
+                isAutoFilled={isAutoFilled(globalField)}
+                isManuallyVerified={isManuallyVerified(globalField)}
                 onClearMissing={() => setMissingFields((p) => ({ ...p, [field]: false }))}
                 value={data?.[field] || ''}
                 onChange={(e: any) => onChange(field, e.target.value)}
                 className={cn('shadow-sm', err(field))}
                 disabled={readOnly}
-                validationError={
-                  field === 'nascimento' && data?.validation_metadata?.expiry?.includes('vencido')
-                    ? data.validation_metadata.expiry
-                    : undefined
-                }
+                validationError={getValidationError(globalField)}
               />
             </div>
           ))}

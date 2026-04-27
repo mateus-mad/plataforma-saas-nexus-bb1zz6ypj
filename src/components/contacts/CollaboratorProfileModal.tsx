@@ -25,9 +25,11 @@ import {
   UserMinus,
   UserCheck,
   MessageCircle,
+  AlertCircle,
 } from 'lucide-react'
 import { getEntity, updateEntity } from '@/services/entities'
 import pb from '@/lib/pocketbase/client'
+import { cn } from '@/lib/utils'
 
 type Props = {
   open: boolean
@@ -303,24 +305,37 @@ export default function CollaboratorProfileModal({ open, onOpenChange, onEdit, e
                 }
               />
               <Field l="PIS/PASEP" v={dData.pis} />
-              <div className="space-y-1">
-                <p className="text-xs text-slate-500 font-medium">Status de Compliance</p>
-                <Badge
-                  variant="outline"
-                  className={
-                    data.compliance_status === 'vencido'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+              <div className="space-y-1 col-span-2">
+                <p className="text-xs text-slate-500 font-medium mb-1">Status de Compliance</p>
+                <div className="flex flex-col gap-2">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'w-fit px-3 py-1',
+                      data.compliance_status === 'vencido'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : data.compliance_status === 'em_dia'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200',
+                    )}
+                  >
+                    {data.compliance_status === 'vencido'
+                      ? 'Vencido'
                       : data.compliance_status === 'em_dia'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }
-                >
-                  {data.compliance_status === 'vencido'
-                    ? 'Vencido'
-                    : data.compliance_status === 'em_dia'
-                      ? 'Em dia'
-                      : 'Pendente'}
-                </Badge>
+                        ? 'Em dia'
+                        : 'Pendente'}
+                  </Badge>
+                  {data.validation_metadata?.errors?.length > 0 && (
+                    <ul className="text-xs text-rose-600 bg-rose-50 p-2 rounded border border-rose-100 space-y-1">
+                      {data.validation_metadata.errors.map((err: string, i: number) => (
+                        <li key={i} className="flex items-start gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{err}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
           </Section>
