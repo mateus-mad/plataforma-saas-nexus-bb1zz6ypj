@@ -163,8 +163,12 @@ export default function CollaboratorModal({
   const processFile = async (file: File) => {
     try {
       await startOCRProcess(file, docType)
-    } catch (e) {
-      // Handled in the hook itself
+    } catch (e: any) {
+      // Handled in the hook itself, ensuring the manual fallback is clear
+      toast({
+        title: 'Preenchimento Manual',
+        description: 'Ocorreu uma falha no OCR. Por favor, prossiga com o preenchimento manual.',
+      })
     }
     setLowQualityFile(null)
   }
@@ -359,7 +363,8 @@ export default function CollaboratorModal({
                         Preenchimento e Compliance (OCR)
                       </h4>
                       <p className="text-sm text-slate-500">
-                        Selecione o tipo e arraste um documento para extração automática.
+                        Arraste um documento para extração automática, ou preencha manualmente
+                        abaixo.
                       </p>
                     </div>
                   </div>

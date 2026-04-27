@@ -24,9 +24,7 @@ routerAdd(
 
     const apiKey = $secrets.get('OPENAI_API_KEY')
     if (!apiKey) {
-      throw new InternalServerError(
-        'A chave de API da OpenAI (OPENAI_API_KEY) não está configurada no servidor.',
-      )
+      throw new InternalServerError('Configuração de API pendente ou inválida no servidor.')
     }
 
     let extractedText = ''
@@ -189,10 +187,22 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
       })
 
       if (res.statusCode !== 200) {
-        console.log('OpenAI Error:', res.raw || JSON.stringify(res.json))
-        throw new InternalServerError(
-          'Erro na comunicação com o motor de IA da OpenAI. Verifique a configuração da chave de API ou tente novamente.',
-        )
+        console.log('OpenAI Error:', res.statusCode, res.raw || JSON.stringify(res.json))
+        if (res.statusCode === 401) {
+          throw new InternalServerError('Configuração de API pendente ou inválida no servidor.')
+        } else if (res.statusCode === 429) {
+          throw new TooManyRequestsError(
+            'Limite de requisições excedido na API de Inteligência Artificial.',
+          )
+        } else if (res.statusCode >= 500) {
+          throw new InternalServerError(
+            'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.',
+          )
+        } else {
+          throw new InternalServerError(
+            'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.',
+          )
+        }
       }
 
       const data = res.json
@@ -217,7 +227,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         birth_uf: parsed.birth_uf || '',
         nationality: parsed.nationality || '',
         docType: parsed.docType || 'Outro',
-        pis: parsed.pis_pasep || parsed.pis || '',
+        pis_pasep: parsed.pis_pasep || parsed.pis || '',
         docIssueDate: parsed.docIssueDate || '',
         expiryDate: parsed.expiryDate || '',
         mae: parsed.raw_fields?.mae || '',
