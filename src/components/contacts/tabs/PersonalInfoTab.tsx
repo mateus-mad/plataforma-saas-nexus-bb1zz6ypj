@@ -365,11 +365,20 @@ export default function PersonalInfoTab({
           description: 'Dados populados com sucesso. Verifique os campos destacados em amarelo.',
         })
       } catch (err: any) {
+        const errCode = err?.response?.data?.code || err?.data?.code
+        let description =
+          'O documento fornecido está ilegível ou o formato não é suportado no momento.'
+        if (errCode === 'validation_low_resolution') {
+          description =
+            'A imagem possui baixa resolução ou está borrada. Envie uma foto mais nítida.'
+        } else if (err.status === 500) {
+          description = 'Erro de configuração na API de Inteligência Artificial.'
+        }
+
         toast({
           variant: 'destructive',
           title: 'Falha na Extração (OCR)',
-          description:
-            'O documento fornecido está ilegível ou o formato não é suportado no momento.',
+          description,
         })
       } finally {
         setIsExtracting(false)

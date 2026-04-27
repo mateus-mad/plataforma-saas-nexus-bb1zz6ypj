@@ -12,7 +12,7 @@ routerAdd(
       base64.includes('application/pdf') ||
       base64.includes('data:application/pdf') ||
       body.docType === 'PDF' ||
-      base64.startsWith('JVBERi0') // magic number PDF
+      base64.startsWith('JVBERi0')
 
     if (!base64.startsWith('data:')) {
       if (isPdf) {
@@ -55,71 +55,37 @@ routerAdd(
 
       if (!extractedText || extractedText.length < 10) {
         throw new BadRequestError(
-          'Não foi possível ler o documento claramente, por favor tente uma foto de maior qualidade.',
-          {
-            code: 'validation_unreadable',
-          },
+          'Não foi possível extrair texto do PDF. O documento pode estar protegido ou ser uma imagem ilegível.',
+          { code: 'validation_unreadable' },
         )
       }
     }
 
     const promptText = `
 Você é um assistente especializado em extração de dados de documentos de identificação brasileiros (RG, CNH, CPF).
-${isPdf ? 'Analise o texto extraído do documento abaixo e estruture os dados:' : 'Analise a imagem fornecida e extraia os seguintes campos:'}
-Retorne ESTRITAMENTE no formato JSON abaixo.
-Se um campo não for encontrado, retorne uma string vazia "".
-Para o campo "confidence", retorne um número inteiro de 0 a 100 indicando a sua confiança geral na extração.
-Para "field_confidences", retorne um número inteiro de 0 a 100 para cada campo extraído.
+${isPdf ? 'Analise o texto extraído do documento abaixo e estruture os dados:' : 'Analise a imagem fornecida (corrija mentalmente a orientação se estiver rotacionada) e extraia os campos:'}
+Se o documento for ilegível ou não for um documento de identificação válido, retorne confidence baixo (ex: 10) e campos vazios.
 
-Formato esperado:
-{
-  "name": "Nome Completo",
-  "document_number": "Número do CPF ou RG com pontuação",
-  "birth_date": "YYYY-MM-DD",
-  "docType": "RG ou CNH ou CPF",
-  "pis": "000.00000.00-0",
-  "docIssueDate": "YYYY-MM-DD",
-  "expiryDate": "YYYY-MM-DD",
-  "parents_names": "Nome da Mãe e/ou Nome do Pai (ex: Maria da Silva / João da Silva)",
-  "nationality": "Brasileira",
-  "birth_city": "Cidade",
-  "birth_uf": "UF",
-  "gender": "masc ou fem ou outros",
-  "address": {
-    "cep": "",
-    "logradouro": "",
-    "numero": "",
-    "bairro": "",
-    "cidade": "",
-    "estado": ""
-  },
-  "confidence": 95,
-  "field_confidences": {
-    "name": 95,
-    "document_number": 90
-  },
-  "raw_fields": {
-    "cpf": "000.000.000-00",
-    "rg": "00.000.000-0",
-    "mae": "Nome da mãe",
-    "pai": "Nome do pai"
-  }
-}
-
-Importante: 
-- Mapeie 'gender' estritamente para "masc", "fem", ou "outros".
-- Mapeie datas preferencialmente para formato YYYY-MM-DD.
-- 'parents_names' deve conter os nomes da mãe e do pai separados por " / ".
+Regras Estritas:
+1. Mapeie 'gender' ESTRITAMENTE para "masc", "fem", ou "outros". Se não especificado, use "".
+2. Mapeie TODAS as datas ESTRITAMENTE para o formato ISO "YYYY-MM-DD". Se a data for 15/05/1990, retorne 1990-05-15.
+3. 'parents_names' deve conter os nomes da mãe e do pai separados por " / " (ex: "Maria da Silva / João da Silva"). Se houver apenas a mãe, retorne "Maria da Silva / ".
+4. Para o campo "confidence", retorne um número inteiro de 0 a 100 indicando a sua confiança geral na extração legível do documento.
+5. Se um campo não for encontrado, retorne uma string vazia "".
 
 ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
     const messages = [
       {
+        role: 'system',
+        content: promptText,
+      },
+      {
         role: 'user',
         content: isPdf
-          ? [{ type: 'text', text: promptText }]
+          ? 'Extraia os dados do texto fornecido.'
           : [
-              { type: 'text', text: promptText },
+              { type: 'text', text: 'Extraia os dados desta imagem de documento.' },
               { type: 'image_url', image_url: { url: base64 } },
             ],
       },
@@ -135,7 +101,88 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         },
         body: JSON.stringify({
           model: 'gpt-4o',
-          response_format: { type: 'json_object' },
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'document_extraction',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  document_number: { type: 'string' },
+                  birth_date: { type: 'string', description: 'YYYY-MM-DD' },
+                  docType: {
+                    type: 'string',
+                    enum: ['RG', 'CNH', 'CPF', 'Passaporte', 'Outro', ''],
+                  },
+                  pis_pasep: { type: 'string' },
+                  docIssueDate: { type: 'string', description: 'YYYY-MM-DD' },
+                  expiryDate: { type: 'string', description: 'YYYY-MM-DD' },
+                  parents_names: { type: 'string' },
+                  nationality: { type: 'string' },
+                  birth_city: { type: 'string' },
+                  birth_uf: { type: 'string' },
+                  gender: { type: 'string', enum: ['masc', 'fem', 'outros', ''] },
+                  address: {
+                    type: 'object',
+                    properties: {
+                      cep: { type: 'string' },
+                      logradouro: { type: 'string' },
+                      numero: { type: 'string' },
+                      bairro: { type: 'string' },
+                      cidade: { type: 'string' },
+                      estado: { type: 'string' },
+                    },
+                    required: ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado'],
+                    additionalProperties: false,
+                  },
+                  confidence: { type: 'integer' },
+                  field_confidences: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'integer' },
+                      document_number: { type: 'integer' },
+                      birth_date: { type: 'integer' },
+                      parents_names: { type: 'integer' },
+                    },
+                    required: ['name', 'document_number', 'birth_date', 'parents_names'],
+                    additionalProperties: false,
+                  },
+                  raw_fields: {
+                    type: 'object',
+                    properties: {
+                      cpf: { type: 'string' },
+                      rg: { type: 'string' },
+                      mae: { type: 'string' },
+                      pai: { type: 'string' },
+                    },
+                    required: ['cpf', 'rg', 'mae', 'pai'],
+                    additionalProperties: false,
+                  },
+                },
+                required: [
+                  'name',
+                  'document_number',
+                  'birth_date',
+                  'docType',
+                  'pis_pasep',
+                  'docIssueDate',
+                  'expiryDate',
+                  'parents_names',
+                  'nationality',
+                  'birth_city',
+                  'birth_uf',
+                  'gender',
+                  'address',
+                  'confidence',
+                  'field_confidences',
+                  'raw_fields',
+                ],
+                additionalProperties: false,
+              },
+            },
+          },
           messages: messages,
         }),
         timeout: 120,
@@ -144,13 +191,20 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
       if (res.statusCode !== 200) {
         console.log('OpenAI Error:', res.raw || JSON.stringify(res.json))
         throw new InternalServerError(
-          'Erro na comunicação com o motor de IA da OpenAI. Tente novamente mais tarde.',
+          'Erro na comunicação com o motor de IA da OpenAI. Verifique a configuração da chave de API ou tente novamente.',
         )
       }
 
       const data = res.json
       const content = data.choices[0].message.content
       const parsed = JSON.parse(content)
+
+      if (parsed.confidence < 40) {
+        throw new BadRequestError(
+          'A imagem está ilegível, borrada ou o documento não é suportado. Por favor, envie uma imagem com melhor qualidade.',
+          { code: 'validation_low_resolution' },
+        )
+      }
 
       return e.json(200, {
         name: parsed.name || '',
@@ -163,7 +217,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         birth_uf: parsed.birth_uf || '',
         nationality: parsed.nationality || '',
         docType: parsed.docType || 'Outro',
-        pis: parsed.pis || '',
+        pis: parsed.pis_pasep || parsed.pis || '',
         docIssueDate: parsed.docIssueDate || '',
         expiryDate: parsed.expiryDate || '',
         mae: parsed.raw_fields?.mae || '',
@@ -186,7 +240,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
     } catch (err) {
       if (err.status) throw err
       throw new BadRequestError(
-        'Não foi possível ler o documento claramente, por favor tente uma foto de maior qualidade.',
+        'Falha inesperada no processamento do documento. Tente novamente mais tarde.',
         { code: 'validation_unreadable' },
       )
     }

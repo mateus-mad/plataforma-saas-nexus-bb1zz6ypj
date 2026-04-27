@@ -574,15 +574,33 @@ export function useCollaboratorForm(entityId: string | null) {
     } catch (err: any) {
       let description =
         'Não foi possível extrair dados legíveis deste documento. Por favor, preencha manualmente.'
-      const fieldErrors = extractFieldErrors(err)
-      if (
-        fieldErrors?.image ||
-        err?.response?.data?.code === 'validation_unreadable' ||
-        err.message?.includes('ilegível') ||
-        err.message?.includes('qualidade')
-      ) {
+
+      const errCode = err?.response?.data?.code || err?.data?.code
+      if (errCode === 'validation_low_resolution' || err.message?.includes('ilegível')) {
         description =
-          'Não foi possível ler o documento claramente, por favor tente uma foto de maior qualidade.'
+          'A imagem possui baixa resolução, está borrada ou mal iluminada. Envie uma foto mais nítida do documento.'
+      } else if (err.status === 500) {
+        description =
+          'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.'
+      } else if (errCode === 'validation_unreadable' || err.message?.includes('qualidade')) {
+        description = 'Não foi possível ler o documento claramente ou o formato não é suportado.'
+      }
+
+      let newData = { ...data }
+      if (!newData.extraction_metadata)
+        newData.extraction_metadata = { auto_filled: [], manually_verified: [] }
+      newData.extraction_metadata.last_error = description
+      newData.extraction_metadata.last_error_time = new Date().toISOString()
+      setData(newData)
+
+      if (entityId) {
+        try {
+          const fd = new FormData()
+          fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata))
+          updateEntity(entityId, fd).catch(() => {})
+        } catch {
+          /* intentionally ignored */
+        }
       }
 
       toast({
@@ -590,7 +608,7 @@ export function useCollaboratorForm(entityId: string | null) {
         title: 'Falha no Processamento (OCR)',
         description,
       })
-      return { success: false, reason: 'error' }
+      return { success: false, reason: 'error', description }
     } finally {
       setIsProcessingOCR(false)
     }
@@ -691,7 +709,9 @@ export function useCollaboratorForm(entityId: string | null) {
         : editedDraft.docIssueDate
     }
     if (editedDraft.expiryDate) {
-      newData.docs.expiryDate = editedDraft.expiryDate
+      newData.docs.expiryDate = editedDraft.expiryDate.includes('/')
+        ? editedDraft.expiryDate.split('/').reverse().join('-')
+        : editedDraft.expiryDate
     }
 
     if (editedDraft.address) {
