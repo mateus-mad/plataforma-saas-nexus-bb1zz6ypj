@@ -549,10 +549,44 @@ export function useCollaboratorForm(entityId: string | null) {
     }
   }
 
-  const processOCR = async (file: File, docType: string = 'RG') => {
+  const [ocrDraft, setOcrDraft] = useState<any>(null)
+  const [ocrFile, setOcrFile] = useState<File | null>(null)
+  const [isReviewingOCR, setIsReviewingOCR] = useState(false)
+
+  const startOCRProcess = async (file: File, docType: string = 'RG') => {
     setIsProcessingOCR(true)
     setHasUnsavedChanges(true)
     try {
+      const result = await processDocumentOCR(file, docType)
+      let faceFile = null
+      try {
+        faceFile = await cropFaceFromImage(file)
+      } catch {
+        /* intentionally ignored */
+      }
+
+      setOcrDraft({ ...result, faceFile })
+      setOcrFile(file)
+      setIsReviewingOCR(true)
+      return { success: true }
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro na extração OCR',
+        description:
+          'Não foi possível extrair dados legíveis deste documento. Por favor, verifique a qualidade da imagem ou preencha manualmente.',
+      })
+      return { success: false, reason: 'error' }
+    } finally {
+      setIsProcessingOCR(false)
+    }
+  }
+
+  const confirmOCRData = async (editedDraft: any) => {
+    let newData = { ...data }
+    const file = ocrFile
+
+    if (file) {
       const type = 'Documento de Identificação'
       let newAnexo: any = {
         id: Date.now(),
@@ -572,170 +606,129 @@ export function useCollaboratorForm(entityId: string | null) {
           const created = await createAttachment(fd)
           newAnexo.id = created.id
           delete newAnexo.file
-        } catch (attErr) {
-          console.error(attErr)
+        } catch {
+          /* intentionally ignored */
         }
       }
-
-      let newData = { ...data }
       newData.anexos = [...newData.anexos, newAnexo]
-
-      let ocrResult = null
-      try {
-        ocrResult = await processDocumentOCR(file, docType)
-      } catch (err: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Erro na extração OCR',
-          description: 'Não foi possível extrair dados automaticamente.',
-        })
-        setIsProcessingOCR(false)
-        return { success: false, reason: 'error' }
-      }
-
-      if (ocrResult) {
-        if (!newData.extraction_metadata)
-          newData.extraction_metadata = { auto_filled: [], manually_verified: [] }
-        const autoFilled = new Set(newData.extraction_metadata.auto_filled || [])
-
-        if (ocrResult.name) {
-          newData.pessoal.name = ocrResult.name
-          autoFilled.add('name')
-        }
-        if (ocrResult.nascimento) {
-          newData.pessoal.nascimento = ocrResult.nascimento.includes('/')
-            ? ocrResult.nascimento.split('/').reverse().join('-')
-            : ocrResult.nascimento
-          autoFilled.add('birth_date')
-        }
-        if (ocrResult.genero) {
-          newData.pessoal.genero = ocrResult.genero
-          autoFilled.add('gender')
-        }
-        if (ocrResult.nacionalidade) {
-          newData.pessoal.nacionalidade = ocrResult.nacionalidade
-          autoFilled.add('nationality')
-        }
-        if (ocrResult.mae) {
-          newData.pessoal.mae = ocrResult.mae
-          autoFilled.add('parents_names')
-        }
-        if (ocrResult.pai) {
-          newData.pessoal.pai = ocrResult.pai
-          autoFilled.add('parents_names')
-        }
-        if (ocrResult.cidade_nasc) {
-          newData.pessoal.cidade = ocrResult.cidade_nasc
-          autoFilled.add('birth_city')
-        }
-        if (ocrResult.uf_nasc) {
-          newData.pessoal.uf = ocrResult.uf_nasc
-          autoFilled.add('birth_uf')
-        }
-
-        if (ocrResult.document_number) {
-          newData.docs.cpf = ocrResult.document_number
-          autoFilled.add('document_number')
-        } else if (ocrResult.cpf) {
-          newData.docs.cpf = ocrResult.cpf
-          autoFilled.add('document_number')
-        }
-
-        if (ocrResult.rg && ocrResult.docType === 'RG') {
-          // RG extracted
-        }
-
-        if (ocrResult.pis) {
-          newData.docs.pis = ocrResult.pis
-          autoFilled.add('pis_pasep')
-        }
-        if (ocrResult.docType) newData.docs.docType = ocrResult.docType
-        if (ocrResult.docIssueDate) {
-          newData.docs.docIssueDate = ocrResult.docIssueDate.includes('/')
-            ? ocrResult.docIssueDate.split('/').reverse().join('-')
-            : ocrResult.docIssueDate
-        }
-        if (ocrResult.rg && ocrResult.docType === 'RG') {
-          newData.docs.docType = 'RG'
-        }
-        if (ocrResult.expiryDate) {
-          newData.docs.expiryDate = ocrResult.expiryDate
-        }
-
-        // Compliance and Validation
-        const missingErrors: string[] = []
-        if (!newData.docs.cpf && !ocrResult.rg && !ocrResult.document_number)
-          missingErrors.push('CPF ou RG não encontrado no documento.')
-        if (!newData.pessoal.mae && !newData.pessoal.pai)
-          missingErrors.push('Filiação não encontrada no documento.')
-        if (!newData.pessoal.nascimento) missingErrors.push('Data de nascimento não encontrada.')
-        if (!newData.pessoal.name) missingErrors.push('Nome não encontrado no documento.')
-        if (!newData.pessoal.cidade) missingErrors.push('Naturalidade (cidade) não encontrada.')
-
-        if (!newData.validation_metadata) newData.validation_metadata = { errors: [] }
-        newData.validation_metadata.errors = missingErrors
-
-        if (missingErrors.length === 0) {
-          newData.docs.compliance.status = 'em_dia'
-        } else {
-          newData.docs.compliance.status = 'pendente'
-        }
-
-        if (entityId) {
-          const fd = new FormData()
-          fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata))
-          fd.append('validation_metadata', JSON.stringify(newData.validation_metadata))
-          fd.append('compliance_status', newData.docs.compliance.status)
-          updateEntity(entityId, fd).catch(() => {})
-        }
-
-        newData.extraction_metadata.auto_filled = Array.from(autoFilled)
-        newData.extraction_metadata.raw_text = ocrResult.raw_text
-        newData.extraction_metadata.confidence = ocrResult.confidence
-        if (ocrResult.rg) newData.extraction_metadata.rg_extracted = ocrResult.rg
-
-        if (ocrResult.address) {
-          const addr = ocrResult.address
-          newData.endereco = {
-            ...newData.endereco,
-            cep: addr.cep || newData.endereco.cep,
-            logradouro: addr.logradouro || newData.endereco.logradouro,
-            numero: addr.numero || newData.endereco.numero,
-            bairro: addr.bairro || newData.endereco.bairro,
-            cidade: addr.cidade || newData.endereco.cidade,
-            estado: addr.estado || newData.endereco.estado,
-          }
-        }
-        try {
-          const faceFile = await cropFaceFromImage(file)
-          if (faceFile) {
-            newData.pessoal.photoFile = faceFile
-            newData.pessoal.foto = URL.createObjectURL(faceFile)
-            newData.extraction_metadata.photo_extracted = true
-
-            if (entityId) {
-              const fd = new FormData()
-              fd.append('photo', faceFile)
-              await updateEntity(entityId, fd)
-            }
-          }
-        } catch (cropErr) {
-          console.error(cropErr)
-        }
-      }
-
-      setData(newData)
-      return { success: true }
-    } catch (e: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro na extração OCR',
-        description: 'Não foi possível extrair dados.',
-      })
-      return { success: false, reason: 'error' }
-    } finally {
-      setIsProcessingOCR(false)
     }
+
+    if (!newData.extraction_metadata)
+      newData.extraction_metadata = { auto_filled: [], manually_verified: [] }
+    const autoFilled = new Set(newData.extraction_metadata.auto_filled || [])
+
+    const mapField = (
+      draftField: string,
+      section: string,
+      dataField: string,
+      metaField: string,
+    ) => {
+      if (editedDraft[draftField]) {
+        newData[section][dataField] = editedDraft[draftField]
+        autoFilled.add(metaField)
+      }
+    }
+
+    mapField('name', 'pessoal', 'name', 'name')
+    if (editedDraft.nascimento) {
+      newData.pessoal.nascimento = editedDraft.nascimento.includes('/')
+        ? editedDraft.nascimento.split('/').reverse().join('-')
+        : editedDraft.nascimento
+      autoFilled.add('birth_date')
+    }
+    mapField('genero', 'pessoal', 'genero', 'gender')
+    mapField('nacionalidade', 'pessoal', 'nacionalidade', 'nationality')
+    mapField('mae', 'pessoal', 'mae', 'parents_names')
+    mapField('pai', 'pessoal', 'pai', 'parents_names')
+    mapField('cidade_nasc', 'pessoal', 'cidade', 'birth_city')
+    mapField('uf_nasc', 'pessoal', 'uf', 'birth_uf')
+
+    if (editedDraft.cpf) {
+      newData.docs.cpf = editedDraft.cpf
+      autoFilled.add('document_number')
+    }
+    if (editedDraft.rg && editedDraft.docType === 'RG') {
+      newData.docs.docType = 'RG'
+      autoFilled.add('rg')
+    }
+    if (editedDraft.pis) {
+      newData.docs.pis = editedDraft.pis
+      autoFilled.add('pis_pasep')
+    }
+    if (editedDraft.docType) newData.docs.docType = editedDraft.docType
+    if (editedDraft.docIssueDate) {
+      newData.docs.docIssueDate = editedDraft.docIssueDate.includes('/')
+        ? editedDraft.docIssueDate.split('/').reverse().join('-')
+        : editedDraft.docIssueDate
+    }
+    if (editedDraft.expiryDate) {
+      newData.docs.expiryDate = editedDraft.expiryDate
+    }
+
+    if (editedDraft.address) {
+      const addr = editedDraft.address
+      newData.endereco = {
+        ...newData.endereco,
+        cep: addr.cep || newData.endereco.cep,
+        logradouro: addr.logradouro || newData.endereco.logradouro,
+        numero: addr.numero || newData.endereco.numero,
+        bairro: addr.bairro || newData.endereco.bairro,
+        cidade: addr.cidade || newData.endereco.cidade,
+        estado: addr.estado || newData.endereco.estado,
+      }
+    }
+
+    const missingErrors: string[] = []
+    if (!newData.docs.cpf && !editedDraft.rg)
+      missingErrors.push('CPF ou RG não encontrado no documento.')
+    if (!newData.pessoal.mae && !newData.pessoal.pai)
+      missingErrors.push('Filiação não encontrada no documento.')
+    if (!newData.pessoal.nascimento) missingErrors.push('Data de nascimento não encontrada.')
+    if (!newData.pessoal.name) missingErrors.push('Nome não encontrado no documento.')
+    if (!newData.pessoal.cidade) missingErrors.push('Naturalidade (cidade) não encontrada.')
+
+    if (!newData.validation_metadata) newData.validation_metadata = { errors: [] }
+    newData.validation_metadata.errors = missingErrors
+
+    if (missingErrors.length === 0) {
+      newData.docs.compliance.status = 'em_dia'
+    } else {
+      newData.docs.compliance.status = 'pendente'
+    }
+
+    newData.extraction_metadata.auto_filled = Array.from(autoFilled)
+    newData.extraction_metadata.raw_text = editedDraft.raw_text
+    newData.extraction_metadata.confidence = editedDraft.confidence
+    if (editedDraft.rg) newData.extraction_metadata.rg_extracted = editedDraft.rg
+
+    if (editedDraft.faceFile) {
+      newData.pessoal.photoFile = editedDraft.faceFile
+      newData.pessoal.foto = URL.createObjectURL(editedDraft.faceFile)
+      newData.extraction_metadata.photo_extracted = true
+
+      if (entityId) {
+        const fd = new FormData()
+        fd.append('photo', editedDraft.faceFile)
+        updateEntity(entityId, fd).catch(() => {})
+      }
+    }
+
+    if (entityId) {
+      const fd = new FormData()
+      fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata))
+      fd.append('validation_metadata', JSON.stringify(newData.validation_metadata))
+      fd.append('compliance_status', newData.docs.compliance.status)
+      updateEntity(entityId, fd).catch(() => {})
+    }
+
+    setData(newData)
+    setIsReviewingOCR(false)
+    setOcrDraft(null)
+    setOcrFile(null)
+    toast({
+      title: 'Dados Aplicados',
+      description: 'Os dados do documento foram aplicados com sucesso à ficha.',
+    })
   }
 
   const fetchESocial = async () => {
@@ -805,7 +798,7 @@ export function useCollaboratorForm(entityId: string | null) {
     globalProgress,
     errors,
     validate,
-    processOCR,
+    startOCRProcess,
     isProcessingOCR,
     fetchESocial,
     isFetchingESocial,
@@ -813,5 +806,10 @@ export function useCollaboratorForm(entityId: string | null) {
     saveEntity: saveEntityLocal,
     hasUnsavedChanges,
     setHasUnsavedChanges,
+    ocrDraft,
+    ocrFile,
+    isReviewingOCR,
+    setIsReviewingOCR,
+    confirmOCRData,
   }
 }

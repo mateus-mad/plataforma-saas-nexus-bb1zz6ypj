@@ -215,19 +215,7 @@ export default function PersonalInfoTab({
     if (onProcessOCR) {
       setMissingFields({})
       await onProcessOCR(file)
-      setTimeout(() => {
-        setMissingFields({
-          nacionalidade: !data.nacionalidade,
-          genero: !data.genero,
-          civil: !data.civil,
-          escolaridade: !data.escolaridade,
-          mae: !data.mae && !data.pai,
-          cidade: !data.cidade,
-          uf: !data.uf,
-          nascimento: !data.nascimento,
-          name: !data.name,
-        })
-      }, 500)
+      e.target.value = ''
     } else {
       setIsExtracting(true)
       setMissingFields({})

@@ -60,6 +60,7 @@ import {
   ChargesTab,
   VacationTab,
 } from './tabs/FormTabs'
+import { OCRReviewModal } from './OCRReviewModal'
 
 export default function CollaboratorModal({
   open,
@@ -84,7 +85,7 @@ export default function CollaboratorModal({
     globalProgress,
     errors,
     validate,
-    processOCR,
+    startOCRProcess,
     isProcessingOCR,
     fetchESocial,
     isFetchingESocial,
@@ -92,6 +93,11 @@ export default function CollaboratorModal({
     saveEntity,
     hasUnsavedChanges,
     setHasUnsavedChanges,
+    ocrDraft,
+    ocrFile,
+    isReviewingOCR,
+    setIsReviewingOCR,
+    confirmOCRData,
   } = useCollaboratorForm(entityId)
 
   const { toast } = useToast()
@@ -156,13 +162,7 @@ export default function CollaboratorModal({
 
   const processFile = async (file: File) => {
     try {
-      const result = await processOCR(file, docType)
-      if (result && result.success) {
-        toast({
-          title: 'Inteligência Artificial (OCR)',
-          description: 'Dados extraídos e mapeados com sucesso.',
-        })
-      }
+      await startOCRProcess(file, docType)
     } catch (e) {
       // Handled in the hook itself
     }
@@ -585,7 +585,6 @@ export default function CollaboratorModal({
                 setShowDirtyWarning(false)
                 onOpenChange(false)
                 setHasUnsavedChanges(false)
-                if (entityId) loadEntity(entityId)
               }}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
@@ -594,6 +593,14 @@ export default function CollaboratorModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <OCRReviewModal
+        open={isReviewingOCR}
+        onOpenChange={setIsReviewingOCR}
+        ocrDraft={ocrDraft}
+        ocrFile={ocrFile}
+        onConfirm={confirmOCRData}
+      />
     </>
   )
 }

@@ -53,10 +53,10 @@ routerAdd(
         data.ParsedResults.length > 0
       ) {
         text = data.ParsedResults.map((r) => r.ParsedText).join('\n') || ''
-        confidence = 85 + Math.floor(Math.random() * 10) // Mocking confidence between 85-94% as OCR.space free doesn't give document-level confidence easily
+        confidence = 85 + Math.floor(Math.random() * 10) // Mocking confidence
       }
 
-      // Fallback para garantir funcionamento do protótipo caso a API OCR (gratuita) falhe por tamanho ou limites
+      // Fallback para teste/protótipo
       if (!text || text.length < 5) {
         const nextYear = new Date()
         nextYear.setFullYear(nextYear.getFullYear() + 1)
@@ -65,12 +65,15 @@ routerAdd(
         confidence = 99
       }
 
+      const field_confidences = {}
+
       const cpfMatch = text.match(/\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}/)
       const cpf = cpfMatch
         ? cpfMatch[0]
             .replace(/[^\d-]/g, '')
             .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
         : ''
+      field_confidences.cpf = cpf ? (text.includes('CPF') ? 95 : 75) : 0
 
       const cnpjMatch = text.match(/\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}/)
       const cnpj = cnpjMatch
@@ -83,6 +86,7 @@ routerAdd(
         text.match(/(?:RG|R\.G\.|Registro Geral|IDENTIDADE)[\s:]*([\d\.-]+[a-zA-Z]?)/i) ||
         text.match(/\b(\d{2}\.\d{3}\.\d{3}-\d{1,2}|[a-zA-Z]{0,2}\d{7,9})\b/)
       const rg = rgMatch ? rgMatch[1].replace(/[^\da-zA-Z\.-]/g, '') : ''
+      field_confidences.rg = rg ? 90 : 0
 
       const cnhMatch = text.match(/(?:CNH|Habilita[çc][ãa]o|Registro)[^\d]*(\d{11})/i)
       const cnh = cnhMatch ? cnhMatch[1] : ''
@@ -94,17 +98,33 @@ routerAdd(
 
       const dates = text.match(/\d{2}\/\d{2}\/\d{4}/g) || []
 
-      let nascimento = dates.length > 0 ? dates[0] : ''
-      let docIssueDate = dates.length > 1 ? dates[1] : ''
+      let nascimento = ''
+      let docIssueDate = ''
       let expiryDate = ''
 
       const nascMatch = text.match(/(?:DATA DE NASCIMENTO|NASCIMENTO)[^\d]*(\d{2}\/\d{2}\/\d{4})/i)
-      if (nascMatch) nascimento = nascMatch[1]
+      if (nascMatch) {
+        nascimento = nascMatch[1]
+        field_confidences.nascimento = 95
+      } else if (dates.length > 0) {
+        nascimento = dates[0]
+        field_confidences.nascimento = 70
+      } else {
+        field_confidences.nascimento = 0
+      }
 
       const expedicaoMatch = text.match(
         /(?:DATA DE EXPEDI[ÇC][ÃA]O|EXPEDI[ÇC][ÃA]O)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
       )
-      if (expedicaoMatch) docIssueDate = expedicaoMatch[1]
+      if (expedicaoMatch) {
+        docIssueDate = expedicaoMatch[1]
+        field_confidences.docIssueDate = 95
+      } else if (dates.length > 1) {
+        docIssueDate = dates[1]
+        field_confidences.docIssueDate = 70
+      } else {
+        field_confidences.docIssueDate = 0
+      }
 
       const validadeMatch = text.match(
         /(?:VALIDADE|VENCIMENTO|VÁLIDO ATÉ)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
@@ -134,25 +154,36 @@ routerAdd(
 
       for (let i = 0; i < lines.length; i++) {
         if (/(?:NOME|NOME DO TITULAR|IDENTIFICAÇÃO)/i.test(lines[i]) && !name) {
-          if (lines[i + 1] && !/(?:FILIAÇÃO|DATA|DOC|CPF|RG)/i.test(lines[i + 1]))
+          if (lines[i + 1] && !/(?:FILIAÇÃO|DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
             name = lines[i + 1]
+            field_confidences.name = 95
+          }
         }
         if (/(?:FILIAÇÃO|DOC ORIGEM|PAIS)/i.test(lines[i])) {
-          if (lines[i + 1] && !/(?:NATURALIDADE|DATA|DOC|CPF|RG)/i.test(lines[i + 1]))
+          if (lines[i + 1] && !/(?:NATURALIDADE|DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
             mae = lines[i + 1]
+            field_confidences.mae = 90
+          }
           if (
             lines[i + 2] &&
             !/(?:NATURALIDADE|DATA|DOC|CPF|RG)/i.test(lines[i + 2]) &&
             lines[i + 2].length > 5
-          )
+          ) {
             pai = lines[i + 2]
+            field_confidences.pai = 90
+          }
         }
         if (/(?:NATURALIDADE|LOCAL DE NASCIMENTO|ESTADO)/i.test(lines[i])) {
-          if (lines[i + 1] && !/(?:DATA|DOC|CPF|RG)/i.test(lines[i + 1]))
+          if (lines[i + 1] && !/(?:DATA|DOC|CPF|RG)/i.test(lines[i + 1])) {
             naturalidade = lines[i + 1]
+            field_confidences.cidade_nasc = 90
+          }
         }
         if (/(?:NACIONALIDADE)/i.test(lines[i])) {
-          if (lines[i + 1]) nacionalidade = lines[i + 1]
+          if (lines[i + 1]) {
+            nacionalidade = lines[i + 1]
+            field_confidences.nacionalidade = 95
+          }
         }
       }
 
@@ -160,9 +191,17 @@ routerAdd(
         const possibleNames = lines.filter(
           (l) => l === l.toUpperCase() && l.length > 5 && l.length < 40 && !/\d/.test(l),
         )
-        if (possibleNames.length > 0) name = possibleNames[0]
+        if (possibleNames.length > 0) {
+          name = possibleNames[0]
+          field_confidences.name = 60
+        }
       }
       name = name.replace(/[^a-zA-ZÀ-ÿ\s]/g, '').trim()
+
+      if (!field_confidences.name) field_confidences.name = 0
+      if (!field_confidences.mae) field_confidences.mae = 0
+      if (!field_confidences.pai) field_confidences.pai = 0
+      if (!field_confidences.nacionalidade) field_confidences.nacionalidade = 0
 
       let cidade_nasc = ''
       let uf_nasc = ''
@@ -177,16 +216,23 @@ routerAdd(
       }
 
       let genero = ''
-      if (/(?:FEMININO|FEM|MULHER|\bF\b)/i.test(text)) genero = 'Feminino'
-      else if (/(?:MASCULINO|MASC|HOMEM|\bM\b)/i.test(text)) genero = 'Masculino'
+      if (/(?:FEMININO|FEM|MULHER|\bF\b)/i.test(text)) {
+        genero = 'Feminino'
+        field_confidences.genero = 95
+      } else if (/(?:MASCULINO|MASC|HOMEM|\bM\b)/i.test(text)) {
+        genero = 'Masculino'
+        field_confidences.genero = 95
+      } else {
+        field_confidences.genero = 0
+      }
 
       const cepMatch = text.match(/\d{5}-?\d{3}/)
       const cep = cepMatch ? cepMatch[0].replace(/\D/g, '') : ''
-      let logradouro = ''
-      let numero = ''
-      let bairro = ''
-      let cidade = ''
-      let estado = ''
+      let logradouro = '',
+        numero = '',
+        bairro = '',
+        cidade = '',
+        estado = ''
 
       for (let i = 0; i < lines.length; i++) {
         const l = lines[i]
@@ -227,7 +273,7 @@ routerAdd(
       }
 
       return e.json(200, {
-        name: name || 'Documento Extraído',
+        name: name || '',
         mae,
         pai,
         nacionalidade,
@@ -244,14 +290,8 @@ routerAdd(
         expiryDate: expiryDate,
         raw_text: text,
         confidence: confidence,
-        address: {
-          cep: cep,
-          logradouro: logradouro,
-          numero: numero,
-          bairro: bairro,
-          cidade: cidade,
-          estado: estado,
-        },
+        field_confidences,
+        address: { cep, logradouro, numero, bairro, cidade, estado },
       })
     } catch (err) {
       throw new BadRequestError('Erro na extração: Formato não suportado ou arquivo corrompido')
