@@ -162,7 +162,20 @@ const cropFaceFromImage = async (file: File): Promise<File | null> => {
   })
 }
 
-export default function PersonalInfoTab({ data, onChange, errors, readOnly, globalData }: Props) {
+type ExtendedProps = Props & {
+  onProcessOCR?: (file: File) => Promise<void>
+  isProcessingOCR?: boolean
+}
+
+export default function PersonalInfoTab({
+  data,
+  onChange,
+  errors,
+  readOnly,
+  globalData,
+  onProcessOCR,
+  isProcessingOCR,
+}: ExtendedProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(data.foto || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -180,8 +193,10 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly, glob
   }
 
   const { toast } = useToast()
-  const [isExtracting, setIsExtracting] = useState(false)
+  const [isExtractingLocal, setIsExtracting] = useState(false)
   const [missingFields, setMissingFields] = useState<Record<string, boolean>>({})
+
+  const isExtracting = isExtractingLocal || isProcessingOCR
 
   const extractionMeta = globalData?.extraction_metadata ||
     data?.extraction_metadata || { auto_filled: [], manually_verified: [] }
@@ -197,155 +212,178 @@ export default function PersonalInfoTab({ data, onChange, errors, readOnly, glob
     const file = e.target.files?.[0]
     if (!file) return
 
-    setIsExtracting(true)
-    setMissingFields({})
-    toast({ title: 'Extraindo dados...', description: 'Analisando documento via Inteligência...' })
-
-    try {
-      if (globalData?.id) {
-        try {
-          const fd = new FormData()
-          fd.append('file', file)
-          fd.append('relacionamento_id', globalData.id)
-          fd.append('category', 'Documento de Identificação (OCR)')
-          if (pb.authStore.record?.id) {
-            fd.append('user_id', pb.authStore.record.id)
-          }
-          await pb.collection('attachments').create(fd)
-        } catch (e) {
-          console.error('Erro ao salvar anexo', e)
-        }
-      }
-
-      const reader = new FileReader()
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = reject
-        reader.readAsDataURL(file)
+    if (onProcessOCR) {
+      setMissingFields({})
+      await onProcessOCR(file)
+      setTimeout(() => {
+        setMissingFields({
+          nacionalidade: !data.nacionalidade,
+          genero: !data.genero,
+          civil: !data.civil,
+          escolaridade: !data.escolaridade,
+          mae: !data.mae && !data.pai,
+          cidade: !data.cidade,
+          uf: !data.uf,
+          nascimento: !data.nascimento,
+          name: !data.name,
+        })
+      }, 500)
+    } else {
+      setIsExtracting(true)
+      setMissingFields({})
+      toast({
+        title: 'Extraindo dados...',
+        description: 'Analisando documento via Inteligência...',
       })
-
-      const res = await pb.send('/backend/v1/ocr', {
-        method: 'POST',
-        body: JSON.stringify({ image: base64, docType: 'RG' }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      const missing: Record<string, boolean> = {
-        nacionalidade: !res.nacionalidade,
-        genero: !res.genero,
-        civil: true,
-        escolaridade: true,
-        mae: !res.mae && !res.pai,
-        pai: !res.pai && !res.mae,
-        cidade: !res.cidade_nasc,
-        uf: !res.uf_nasc,
-        sangue: true,
-        nascimento: !res.nascimento,
-      }
-
-      const capturedLocal = []
-      if (res.name) {
-        onChange('name', res.name)
-        capturedLocal.push('name')
-      }
-      if (res.nascimento) {
-        onChange(
-          'nascimento',
-          res.nascimento.includes('/')
-            ? res.nascimento.split('/').reverse().join('-')
-            : res.nascimento,
-        )
-        capturedLocal.push('birth_date')
-      }
-      if (res.nacionalidade) {
-        onChange('nacionalidade', res.nacionalidade)
-        capturedLocal.push('nationality')
-      }
-      if (res.genero) {
-        onChange('genero', res.genero)
-        capturedLocal.push('gender')
-      }
-      if (res.mae) {
-        onChange('mae', res.mae)
-        capturedLocal.push('parents_names')
-      }
-      if (res.pai) {
-        onChange('pai', res.pai)
-        capturedLocal.push('parents_names')
-      }
-      if (res.cidade_nasc) {
-        onChange('cidade', res.cidade_nasc)
-        capturedLocal.push('birth_city')
-      }
-      if (res.uf_nasc) {
-        onChange('uf', res.uf_nasc)
-        capturedLocal.push('birth_uf')
-      }
 
       try {
-        const faceFile = await cropFaceFromImage(file)
-        if (faceFile) {
-          onChange('foto', URL.createObjectURL(faceFile), faceFile)
-          capturedLocal.push('photo')
+        if (globalData?.id) {
+          try {
+            const fd = new FormData()
+            fd.append('file', file)
+            fd.append('relacionamento_id', globalData.id)
+            fd.append('category', 'Documento de Identificação (OCR)')
+            if (pb.authStore.record?.id) {
+              fd.append('user_id', pb.authStore.record.id)
+            }
+            await pb.collection('attachments').create(fd)
+          } catch (e) {
+            console.error('Erro ao salvar anexo', e)
+          }
         }
-      } catch (err) {
-        console.error(err)
+
+        const reader = new FileReader()
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+
+        const res = await pb.send('/backend/v1/ocr', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64, docType: 'RG' }),
+          headers: { 'Content-Type': 'application/json' },
+        })
+
+        const missing: Record<string, boolean> = {
+          nacionalidade: !res.nacionalidade,
+          genero: !res.genero,
+          civil: true,
+          escolaridade: true,
+          mae: !res.mae && !res.pai,
+          pai: !res.pai && !res.mae,
+          cidade: !res.cidade_nasc,
+          uf: !res.uf_nasc,
+          sangue: true,
+          nascimento: !res.nascimento,
+          name: !res.name,
+        }
+
+        const capturedLocal = []
+        if (res.name) {
+          onChange('name', res.name)
+          capturedLocal.push('name')
+        }
+        if (res.nascimento) {
+          onChange(
+            'nascimento',
+            res.nascimento.includes('/')
+              ? res.nascimento.split('/').reverse().join('-')
+              : res.nascimento,
+          )
+          capturedLocal.push('birth_date')
+        }
+        if (res.nacionalidade) {
+          onChange('nacionalidade', res.nacionalidade)
+          capturedLocal.push('nationality')
+        }
+        if (res.genero) {
+          onChange('genero', res.genero)
+          capturedLocal.push('gender')
+        }
+        if (res.mae) {
+          onChange('mae', res.mae)
+          capturedLocal.push('parents_names')
+        }
+        if (res.pai) {
+          onChange('pai', res.pai)
+          capturedLocal.push('parents_names')
+        }
+        if (res.cidade_nasc) {
+          onChange('cidade', res.cidade_nasc)
+          capturedLocal.push('birth_city')
+        }
+        if (res.uf_nasc) {
+          onChange('uf', res.uf_nasc)
+          capturedLocal.push('birth_uf')
+        }
+
+        try {
+          const faceFile = await cropFaceFromImage(file)
+          if (faceFile) {
+            onChange('foto', URL.createObjectURL(faceFile), faceFile)
+            capturedLocal.push('photo')
+          }
+        } catch (err) {
+          console.error(err)
+        }
+
+        setMissingFields(missing)
+
+        const validationErrors: string[] = []
+        if (!res.cpf && !res.rg) validationErrors.push('CPF ou RG não encontrado no documento.')
+        if (!res.mae && !res.pai) validationErrors.push('Filiação não encontrada no documento.')
+        if (!res.nascimento) validationErrors.push('Data de nascimento não encontrada.')
+
+        if (globalData?.id) {
+          const currentAutoFilled = extractionMeta.auto_filled || []
+          const newAutoFilled = Array.from(new Set([...currentAutoFilled, ...capturedLocal]))
+          const compStatus = validationErrors.length === 0 ? 'em_dia' : 'pendente'
+
+          await pb
+            .collection('relacionamentos')
+            .update(globalData.id, {
+              extraction_metadata: {
+                ...extractionMeta,
+                auto_filled: newAutoFilled,
+                raw_text: res.raw_text,
+                confidence: res.confidence,
+                rg_extracted: res.rg,
+              },
+              validation_metadata: { errors: validationErrors },
+              compliance_status: compStatus,
+            })
+            .catch(() => {})
+
+          await pb
+            .collection('audit_logs')
+            .create({
+              relacionamento_id: globalData.id,
+              user_id: pb.authStore.record?.id,
+              action: 'OCR Extraction',
+              module: 'extraction',
+              old_value: { status: 'Success' },
+              new_value: {
+                captured: capturedLocal,
+                missing: Object.keys(missing).filter((k) => missing[k]),
+              },
+            })
+            .catch(console.error)
+        }
+        toast({
+          title: 'Extração Concluída',
+          description: 'Dados populados com sucesso. Verifique os campos destacados em amarelo.',
+        })
+      } catch (err: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Falha na Extração (OCR)',
+          description:
+            'O documento fornecido está ilegível ou o formato não é suportado no momento.',
+        })
+      } finally {
+        setIsExtracting(false)
       }
-
-      setMissingFields(missing)
-
-      const validationErrors: string[] = []
-      if (!res.cpf && !res.rg) validationErrors.push('CPF ou RG não encontrado no documento.')
-      if (!res.mae && !res.pai) validationErrors.push('Filiação não encontrada no documento.')
-      if (!res.nascimento) validationErrors.push('Data de nascimento não encontrada.')
-
-      if (globalData?.id) {
-        const currentAutoFilled = extractionMeta.auto_filled || []
-        const newAutoFilled = Array.from(new Set([...currentAutoFilled, ...capturedLocal]))
-        const compStatus = validationErrors.length === 0 ? 'em_dia' : 'pendente'
-
-        await pb
-          .collection('relacionamentos')
-          .update(globalData.id, {
-            extraction_metadata: {
-              ...extractionMeta,
-              auto_filled: newAutoFilled,
-              raw_text: res.raw_text,
-              confidence: res.confidence,
-              rg_extracted: res.rg,
-            },
-            validation_metadata: { errors: validationErrors },
-            compliance_status: compStatus,
-          })
-          .catch(() => {})
-
-        await pb
-          .collection('audit_logs')
-          .create({
-            relacionamento_id: globalData.id,
-            user_id: pb.authStore.record?.id,
-            action: 'OCR Extraction',
-            module: 'extraction',
-            old_value: { status: 'Success' },
-            new_value: {
-              captured: capturedLocal,
-              missing: Object.keys(missing).filter((k) => missing[k]),
-            },
-          })
-          .catch(console.error)
-      }
-      toast({
-        title: 'Extração Concluída',
-        description: 'Dados populados com sucesso. Verifique os campos destacados em amarelo.',
-      })
-    } catch (err: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Falha na Extração (OCR)',
-        description: 'O documento fornecido está ilegível ou o formato não é suportado no momento.',
-      })
-    } finally {
-      setIsExtracting(false)
     }
   }
 

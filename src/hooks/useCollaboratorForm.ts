@@ -633,11 +633,11 @@ export function useCollaboratorForm(entityId: string | null) {
           autoFilled.add('birth_uf')
         }
 
-        if (ocrResult.cpf) {
-          newData.docs.cpf = ocrResult.cpf
-          autoFilled.add('document_number')
-        } else if (ocrResult.document_number) {
+        if (ocrResult.document_number) {
           newData.docs.cpf = ocrResult.document_number
+          autoFilled.add('document_number')
+        } else if (ocrResult.cpf) {
+          newData.docs.cpf = ocrResult.cpf
           autoFilled.add('document_number')
         }
 
@@ -655,17 +655,22 @@ export function useCollaboratorForm(entityId: string | null) {
             ? ocrResult.docIssueDate.split('/').reverse().join('-')
             : ocrResult.docIssueDate
         }
+        if (ocrResult.rg && ocrResult.docType === 'RG') {
+          newData.docs.docType = 'RG'
+        }
         if (ocrResult.expiryDate) {
           newData.docs.expiryDate = ocrResult.expiryDate
         }
 
         // Compliance and Validation
         const missingErrors: string[] = []
-        if (!newData.docs.cpf && !ocrResult.rg)
+        if (!newData.docs.cpf && !ocrResult.rg && !ocrResult.document_number)
           missingErrors.push('CPF ou RG não encontrado no documento.')
         if (!newData.pessoal.mae && !newData.pessoal.pai)
           missingErrors.push('Filiação não encontrada no documento.')
         if (!newData.pessoal.nascimento) missingErrors.push('Data de nascimento não encontrada.')
+        if (!newData.pessoal.name) missingErrors.push('Nome não encontrado no documento.')
+        if (!newData.pessoal.cidade) missingErrors.push('Naturalidade (cidade) não encontrada.')
 
         if (!newData.validation_metadata) newData.validation_metadata = { errors: [] }
         newData.validation_metadata.errors = missingErrors
@@ -674,6 +679,14 @@ export function useCollaboratorForm(entityId: string | null) {
           newData.docs.compliance.status = 'em_dia'
         } else {
           newData.docs.compliance.status = 'pendente'
+        }
+
+        if (entityId) {
+          const fd = new FormData()
+          fd.append('extraction_metadata', JSON.stringify(newData.extraction_metadata))
+          fd.append('validation_metadata', JSON.stringify(newData.validation_metadata))
+          fd.append('compliance_status', newData.docs.compliance.status)
+          updateEntity(entityId, fd).catch(() => {})
         }
 
         newData.extraction_metadata.auto_filled = Array.from(autoFilled)
@@ -699,6 +712,12 @@ export function useCollaboratorForm(entityId: string | null) {
             newData.pessoal.photoFile = faceFile
             newData.pessoal.foto = URL.createObjectURL(faceFile)
             newData.extraction_metadata.photo_extracted = true
+
+            if (entityId) {
+              const fd = new FormData()
+              fd.append('photo', faceFile)
+              await updateEntity(entityId, fd)
+            }
           }
         } catch (cropErr) {
           console.error(cropErr)

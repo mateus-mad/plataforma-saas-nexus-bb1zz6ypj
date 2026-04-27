@@ -93,9 +93,18 @@ routerAdd(
       const pis = pisMatch ? pisMatch[1].replace(/\D/g, '') : ''
 
       const dates = text.match(/\d{2}\/\d{2}\/\d{4}/g) || []
-      const nascimento = dates.length > 0 ? dates[0] : ''
-      const docIssueDate = dates.length > 1 ? dates[1] : ''
+
+      let nascimento = dates.length > 0 ? dates[0] : ''
+      let docIssueDate = dates.length > 1 ? dates[1] : ''
       let expiryDate = ''
+
+      const nascMatch = text.match(/(?:DATA DE NASCIMENTO|NASCIMENTO)[^\d]*(\d{2}\/\d{2}\/\d{4})/i)
+      if (nascMatch) nascimento = nascMatch[1]
+
+      const expedicaoMatch = text.match(
+        /(?:DATA DE EXPEDI[ÇC][ÃA]O|EXPEDI[ÇC][ÃA]O)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
+      )
+      if (expedicaoMatch) docIssueDate = expedicaoMatch[1]
 
       const validadeMatch = text.match(
         /(?:VALIDADE|VENCIMENTO|VÁLIDO ATÉ)[^\d]*(\d{2}\/\d{2}\/\d{4})/i,
@@ -168,8 +177,8 @@ routerAdd(
       }
 
       let genero = ''
-      if (/(?:FEMININO|FEM|MULHER)/i.test(text)) genero = 'Feminino'
-      else if (/(?:MASCULINO|MASC|HOMEM)/i.test(text)) genero = 'Masculino'
+      if (/(?:FEMININO|FEM|MULHER|\bF\b)/i.test(text)) genero = 'Feminino'
+      else if (/(?:MASCULINO|MASC|HOMEM|\bM\b)/i.test(text)) genero = 'Masculino'
 
       const cepMatch = text.match(/\d{5}-?\d{3}/)
       const cep = cepMatch ? cepMatch[0].replace(/\D/g, '') : ''
@@ -200,18 +209,21 @@ routerAdd(
       let docType = 'Outro'
       let document_number = ''
 
-      if (cnpj) {
+      if (
+        text.match(/REGISTRO GERAL|CARTEIRA DE IDENTIDADE|SECRETARIA DE ESTADO DA SEGURAN[ÇC]A/i) ||
+        rg
+      ) {
+        docType = 'RG'
+        document_number = rg || cpf || ''
+      } else if (cnhMatch || text.match(/CARTEIRA NACIONAL DE HABILITA[ÇC][ÃA]O/i)) {
+        docType = 'CNH'
+        document_number = cnh || cpf || ''
+      } else if (cnpj) {
         docType = 'CNPJ'
         document_number = cnpj
       } else if (cpf) {
         docType = 'CPF'
         document_number = cpf
-      } else if (cnh) {
-        docType = 'CNH'
-        document_number = cnh
-      } else if (rg) {
-        docType = 'RG'
-        document_number = rg
       }
 
       return e.json(200, {

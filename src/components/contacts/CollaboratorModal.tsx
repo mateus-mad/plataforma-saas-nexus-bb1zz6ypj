@@ -409,6 +409,13 @@ export default function CollaboratorModal({
                     onChange={(f, v, file) => updateData('pessoal', f, v, file)}
                     errors={errors}
                     readOnly={!isEditing}
+                    globalData={{
+                      id: entityId,
+                      extraction_metadata: data.extraction_metadata,
+                      validation_metadata: data.validation_metadata,
+                    }}
+                    onProcessOCR={(file) => processFile(file)}
+                    isProcessingOCR={isProcessingOCR}
                   />
                 )}
                 {activeTab === 'docs' && (
