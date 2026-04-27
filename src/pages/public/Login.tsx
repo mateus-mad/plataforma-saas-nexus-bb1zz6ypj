@@ -4,12 +4,13 @@ import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Hexagon, Loader2 } from 'lucide-react'
+import { Hexagon, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Login() {
   const [email, setEmail] = useState('contatos@madengenharia.com.br')
-  const [password, setPassword] = useState('securepassword123')
+  const [password, setPassword] = useState('Skip@Pass')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -20,14 +21,29 @@ export default function Login() {
     setLoading(true)
     const { error } = await signIn(email, password)
     setLoading(false)
+
     if (!error) {
       toast({ title: 'Login realizado com sucesso' })
-      navigate('/app/relacionamento/colaboradores')
+      navigate('/app/contatos')
     } else {
+      let description = 'Ocorreu um erro ao tentar fazer login.'
+
+      if (
+        error?.status === 400 ||
+        error?.status === 401 ||
+        error?.status === 403 ||
+        error?.status === 404
+      ) {
+        description =
+          'Erro nas credenciais: E-mail ou senha incorretos. Por favor, tente novamente.'
+      } else if (error?.status === 0 || error?.isAbort || error?.message === 'Failed to fetch') {
+        description = 'Erro de conexão. Verifique sua internet.'
+      }
+
       toast({
         variant: 'destructive',
         title: 'Falha no login',
-        description: 'Credenciais inválidas.',
+        description,
       })
     }
   }
@@ -39,9 +55,9 @@ export default function Login() {
           <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
             <Hexagon className="w-8 h-8 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Acesso à Plataforma</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Acesso ao Nexus</h1>
           <p className="text-slate-500 text-sm mt-2 text-center">
-            Insira suas credenciais para gerenciar seus dados no Nexus ERP.
+            Bem-vindo de volta! Insira suas credenciais para acessar a plataforma.
           </p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -51,16 +67,27 @@ export default function Login() {
           </div>
           <div className="space-y-2">
             <Label>Senha</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none"
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
           <Button type="submit" className="w-full h-12 text-lg" disabled={loading}>
             {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-            {loading ? 'Autenticando...' : 'Entrar no Sistema'}
+            {loading ? 'Autenticando...' : 'Entrar'}
           </Button>
         </form>
       </div>
