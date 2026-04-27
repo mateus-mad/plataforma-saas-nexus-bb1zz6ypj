@@ -26,7 +26,7 @@ routerAdd(
     if (!apiKey) {
       return e.json(400, {
         code: 'ERR_CONFIG',
-        message: 'Chave de API não configurada. Verifique as Integrações.',
+        message: 'Chave de API não configurada. Verifique as Integrações no painel do Skip.',
       })
     }
 
@@ -124,6 +124,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                   name: { type: 'string' },
                   document_number: { type: 'string' },
                   birth_date: { type: 'string', description: 'YYYY-MM-DD' },
+                  hire_date: { type: 'string', description: 'YYYY-MM-DD' },
                   docType: {
                     type: 'string',
                     enum: ['RG', 'CNH', 'CPF', 'Passaporte', 'CNPJ', 'Outro', ''],
@@ -217,7 +218,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         if (res.statusCode === 401) {
           return e.json(400, {
             code: 'ERR_CONFIG',
-            message: 'Chave de API não configurada. Verifique as Integrações.',
+            message: 'Chave de API não configurada. Verifique as Integrações no painel do Skip.',
           })
         } else if (res.statusCode === 429 || res.statusCode >= 500) {
           return e.json(400, {
@@ -255,6 +256,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
           parsed.raw_fields?.rg ||
           '',
         birth_date: parsed.birth_date || '',
+        hire_date: parsed.hire_date || '',
         parents_names: parsed.parents_names || '',
         gender: parsed.gender || '',
         birth_city: parsed.birth_city || '',

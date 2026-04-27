@@ -294,6 +294,9 @@ export function OCRReviewModal({
                     field="docIssueDate"
                     placeholder="YYYY-MM-DD"
                   />
+                  {draft.hire_date && (
+                    <Field label="Data de Admissão" field="hire_date" placeholder="YYYY-MM-DD" />
+                  )}
                   <div className="sm:col-span-2">
                     <Field label="Filiação (Mãe/Pai)" field="parents_names" />
                   </div>

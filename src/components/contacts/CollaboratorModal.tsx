@@ -46,6 +46,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useCollaboratorForm } from '@/hooks/useCollaboratorForm'
 import { checkImageQuality } from '@/lib/image-quality'
+import { checkOCRStatus } from '@/services/ocr'
 import PersonalInfoTab from './tabs/PersonalInfoTab'
 import HistoryTab from './tabs/HistoryTab'
 import ESocialTab from './tabs/ESocialTab'
@@ -102,6 +103,11 @@ export default function CollaboratorModal({
 
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [ocrConfigured, setOcrConfigured] = useState(true)
+
+  useEffect(() => {
+    checkOCRStatus().then((setConfigured) => setOcrConfigured(setConfigured))
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -380,21 +386,36 @@ export default function CollaboratorModal({
                   <div className="absolute top-0 right-0 w-64 h-full bg-blue-50/50 -skew-x-12 translate-x-10 -z-10 group-hover:bg-blue-100/50 transition-colors"></div>
 
                   <div className="flex items-center gap-4 pl-2 z-10 w-full lg:w-auto">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0 shadow-inner">
-                      <ScanLine className="w-6 h-6 text-blue-600" />
+                    <div
+                      className={cn(
+                        'w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner',
+                        ocrConfigured ? 'bg-blue-100' : 'bg-amber-100',
+                      )}
+                    >
+                      {ocrConfigured ? (
+                        <ScanLine className="w-6 h-6 text-blue-600" />
+                      ) : (
+                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-800 text-base">
                         Preenchimento e Compliance (OCR)
                       </h4>
-                      <p className="text-sm text-slate-500">
-                        Arraste um documento para extração automática, ou preencha manualmente
-                        abaixo.
-                      </p>
+                      {ocrConfigured ? (
+                        <p className="text-sm text-slate-500">
+                          Arraste um documento para extração automática, ou preencha manualmente
+                          abaixo.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-amber-600 font-medium">
+                          Chave de API não configurada. Verifique as Integrações no painel do Skip.
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-3 z-10 w-full lg:w-auto">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 z-10 w-full lg:w-auto">
                     <Select value={docType} onValueChange={setDocType} disabled={isProcessingOCR}>
                       <SelectTrigger className="w-full sm:w-[140px] bg-white shadow-sm font-medium">
                         <SelectValue placeholder="Documento" />
@@ -406,21 +427,31 @@ export default function CollaboratorModal({
                       </SelectContent>
                     </Select>
 
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md transition-all font-semibold"
-                      disabled={isProcessingOCR}
-                    >
-                      {isProcessingOCR ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando documento...
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud className="w-4 h-4 mr-2" /> Extrair Dados
-                        </>
+                    <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md transition-all font-semibold"
+                        disabled={isProcessingOCR}
+                      >
+                        {isProcessingOCR ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="w-4 h-4 mr-2" /> Extrair Dados
+                          </>
+                        )}
+                      </Button>
+                      {!ocrConfigured && (
+                        <div className="text-[10px] text-amber-600 text-center max-w-[180px] bg-amber-50 p-1.5 rounded border border-amber-100 mt-1">
+                          <strong>Aviso:</strong> Configure a variável{' '}
+                          <code className="font-mono text-amber-800">OPENAI_API_KEY</code> nas{' '}
+                          <strong>Integrações</strong> (ícone de nuvem ☁️) no painel do Skip para
+                          ativar.
+                        </div>
                       )}
-                    </Button>
+                    </div>
                     <input
                       type="file"
                       ref={fileInputRef}

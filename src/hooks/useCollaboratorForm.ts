@@ -662,6 +662,14 @@ export function useCollaboratorForm(entityId: string | null) {
       autoFilled.add('nascimento')
     }
 
+    if (editedDraft.hire_date) {
+      newData.trabalho.admissao = editedDraft.hire_date.includes('/')
+        ? editedDraft.hire_date.split('/').reverse().join('-')
+        : editedDraft.hire_date
+      autoFilled.add('hire_date')
+      autoFilled.add('admissao')
+    }
+
     let gen = editedDraft.gender
     if (gen) {
       if (gen === 'masc') newData.pessoal.genero = 'Masculino'
@@ -785,6 +793,7 @@ export function useCollaboratorForm(entityId: string | null) {
     newData.extraction_metadata.raw_text = editedDraft.raw_text
     newData.extraction_metadata.confidence = editedDraft.confidence
     newData.extraction_metadata.field_confidences = editedDraft.field_confidences
+    newData.extraction_metadata.ocr_response = editedDraft // Save full response
     if (editedDraft.rg) newData.extraction_metadata.rg_extracted = editedDraft.rg
 
     if (editedDraft.faceFile) {

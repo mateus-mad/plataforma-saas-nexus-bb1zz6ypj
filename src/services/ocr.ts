@@ -1,5 +1,14 @@
 import pb from '@/lib/pocketbase/client'
 
+export const checkOCRStatus = async () => {
+  try {
+    const res = await pb.send('/backend/v1/ocr/status', { method: 'GET' })
+    return res.configured
+  } catch (error) {
+    return false
+  }
+}
+
 export const processDocumentOCR = async (file: File, docType: string = 'RG') => {
   const reader = new FileReader()
   const base64 = await new Promise<string>((resolve, reject) => {

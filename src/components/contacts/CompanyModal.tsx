@@ -36,6 +36,7 @@ import { CompanyBankingTab } from './tabs/CompanyBankingTab'
 import { CompanyAgreementsTab } from './tabs/CompanyAgreementsTab'
 import { OCRReviewModal } from './OCRReviewModal'
 import { checkImageQuality } from '@/lib/image-quality'
+import { checkOCRStatus } from '@/services/ocr'
 
 export default function CompanyModal({
   open,
@@ -74,6 +75,11 @@ export default function CompanyModal({
     confirmOCRData,
   } = useCompanyForm(type, entityId)
   const { toast } = useToast()
+  const [ocrConfigured, setOcrConfigured] = useState(true)
+
+  useEffect(() => {
+    checkOCRStatus().then((setConfigured) => setOcrConfigured(setConfigured))
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -248,50 +254,63 @@ export default function CompanyModal({
                 </DialogDescription>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 border-blue-200 text-blue-700 hover:bg-blue-50 bg-blue-50/50 hidden sm:flex"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isProcessingOCR}
-                >
-                  {isProcessingOCR ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <ScanLine className="w-4 h-4 mr-2" />
-                  )}
-                  {isProcessingOCR ? 'Processando documento...' : 'Ler Cartão CNPJ'}
-                </Button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleOCRUpload}
-                />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 shadow-inner">
-                  {saveStatus === 'saving' ? (
-                    <span className="text-xs text-blue-600 font-semibold flex items-center">
-                      <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Salvando...
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-3">
+                  {!ocrConfigured && (
+                    <span className="text-xs text-amber-600 font-medium hidden sm:block bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
+                      API OCR não configurada.
                     </span>
-                  ) : saveStatus === 'saved' ? (
-                    <span className="text-xs text-emerald-600 font-semibold flex items-center">
-                      <CheckCircle2 className="w-3 h-3 mr-1.5" /> Salvo
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
                   )}
-                  {saveStatus === 'idle' && (
-                    <>
-                      <Progress
-                        value={globalProgress}
-                        className="w-20 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
-                      />
-                      <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
-                    </>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 border-blue-200 text-blue-700 hover:bg-blue-50 bg-blue-50/50 hidden sm:flex"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isProcessingOCR}
+                  >
+                    {isProcessingOCR ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <ScanLine className="w-4 h-4 mr-2" />
+                    )}
+                    {isProcessingOCR ? 'Processando documento...' : 'Ler Cartão CNPJ'}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleOCRUpload}
+                  />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 shadow-inner">
+                    {saveStatus === 'saving' ? (
+                      <span className="text-xs text-blue-600 font-semibold flex items-center">
+                        <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Salvando...
+                      </span>
+                    ) : saveStatus === 'saved' ? (
+                      <span className="text-xs text-emerald-600 font-semibold flex items-center">
+                        <CheckCircle2 className="w-3 h-3 mr-1.5" /> Salvo
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-500 font-medium">Preenchimento:</span>
+                    )}
+                    {saveStatus === 'idle' && (
+                      <>
+                        <Progress
+                          value={globalProgress}
+                          className="w-20 h-1.5 bg-slate-200 [&>div]:bg-blue-600"
+                        />
+                        <span className="text-sm font-bold text-slate-700">{globalProgress}%</span>
+                      </>
+                    )}
+                  </div>
                 </div>
+                {!ocrConfigured && (
+                  <div className="text-[10px] text-amber-600 hidden sm:block max-w-[220px] text-right">
+                    Configure a <code className="font-mono text-amber-800">OPENAI_API_KEY</code> nas{' '}
+                    <strong>Integrações</strong> (☁️) no painel do Skip para ativar a extração.
+                  </div>
+                )}
               </div>
             </div>
 

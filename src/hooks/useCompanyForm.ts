@@ -299,6 +299,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
 
     newData.extraction_metadata.auto_filled = Array.from(autoFilled)
     newData.extraction_metadata.confidence = editedDraft.confidence
+    newData.extraction_metadata.ocr_response = editedDraft
 
     setData(newData)
     dataRef.current = newData
