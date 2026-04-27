@@ -168,21 +168,13 @@ export default function CollaboratorModal({
 
   const processFile = async (file: File) => {
     try {
-      const res = await startOCRProcess(file, docType)
-      if (!res.success) {
-        toast({
-          variant: 'destructive',
-          title: 'Falha no Processamento',
-          description:
-            res.description ||
-            'Ocorreu uma falha no OCR. Por favor, prossiga com o preenchimento manual.',
-        })
-      }
+      await startOCRProcess(file, docType)
     } catch (e: any) {
       toast({
         variant: 'destructive',
         title: 'Preenchimento Manual',
-        description: 'Ocorreu uma falha no OCR. Por favor, prossiga com o preenchimento manual.',
+        description:
+          e.message || 'Ocorreu uma falha no OCR. Por favor, prossiga com o preenchimento manual.',
       })
     }
     setLowQualityFile(null)
@@ -409,7 +401,8 @@ export default function CollaboratorModal({
                         </p>
                       ) : (
                         <p className="text-sm text-amber-600 font-medium">
-                          Chave de API não configurada. Verifique as Integrações no painel do Skip.
+                          Configuração Pendente: A chave da API de inteligência não foi encontrada
+                          nas Secrets.
                         </p>
                       )}
                     </div>
@@ -431,7 +424,7 @@ export default function CollaboratorModal({
                       <Button
                         onClick={() => fileInputRef.current?.click()}
                         className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md transition-all font-semibold"
-                        disabled={isProcessingOCR}
+                        disabled={isProcessingOCR || !ocrConfigured}
                       >
                         {isProcessingOCR ? (
                           <>
@@ -443,14 +436,6 @@ export default function CollaboratorModal({
                           </>
                         )}
                       </Button>
-                      {!ocrConfigured && (
-                        <div className="text-[10px] text-amber-600 text-center max-w-[180px] bg-amber-50 p-1.5 rounded border border-amber-100 mt-1">
-                          <strong>Aviso:</strong> Configure a variável{' '}
-                          <code className="font-mono text-amber-800">OPENAI_API_KEY</code> nas{' '}
-                          <strong>Integrações</strong> (ícone de nuvem ☁️) no painel do Skip para
-                          ativar.
-                        </div>
-                      )}
                     </div>
                     <input
                       type="file"

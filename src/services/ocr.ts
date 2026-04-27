@@ -35,7 +35,7 @@ export const processDocumentOCR = async (file: File, docType: string = 'RG') => 
 
     if (error.name === 'AbortError' || error.isAbort) {
       error.message =
-        'O servidor demorou muito para responder (timeout). Por favor, utilize o preenchimento manual.'
+        'O serviço de inteligência está temporariamente indisponível. Por favor, tente novamente em instantes.'
       throw error
     }
 
@@ -47,7 +47,7 @@ export const processDocumentOCR = async (file: File, docType: string = 'RG') => 
     } else if (error.status === 0 || error.message === 'Failed to fetch') {
       error.code = 'ERR_SERVICE'
       error.message =
-        'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.'
+        'O serviço de inteligência está temporariamente indisponível. Por favor, tente novamente em instantes.'
     }
 
     throw error

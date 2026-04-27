@@ -124,7 +124,7 @@ export default function CompanyModal({
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Ocorreu um erro no processamento. Tente novamente.',
+        description: e.message || 'Ocorreu um erro no processamento. Tente novamente.',
       })
     }
     setLowQualityFile(null)
@@ -258,7 +258,8 @@ export default function CompanyModal({
                 <div className="flex items-center gap-3">
                   {!ocrConfigured && (
                     <span className="text-xs text-amber-600 font-medium hidden sm:block bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
-                      API OCR não configurada.
+                      Configuração Pendente: A chave da API de inteligência não foi encontrada nas
+                      Secrets.
                     </span>
                   )}
                   <Button
@@ -266,7 +267,7 @@ export default function CompanyModal({
                     size="sm"
                     className="h-9 border-blue-200 text-blue-700 hover:bg-blue-50 bg-blue-50/50 hidden sm:flex"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isProcessingOCR}
+                    disabled={isProcessingOCR || !ocrConfigured}
                   >
                     {isProcessingOCR ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -305,12 +306,6 @@ export default function CompanyModal({
                     )}
                   </div>
                 </div>
-                {!ocrConfigured && (
-                  <div className="text-[10px] text-amber-600 hidden sm:block max-w-[220px] text-right">
-                    Configure a <code className="font-mono text-amber-800">OPENAI_API_KEY</code> nas{' '}
-                    <strong>Integrações</strong> (☁️) no painel do Skip para ativar a extração.
-                  </div>
-                )}
               </div>
             </div>
 

@@ -26,7 +26,8 @@ routerAdd(
     if (!apiKey) {
       return e.json(400, {
         code: 'ERR_CONFIG',
-        message: 'Chave de API não configurada. Verifique as Integrações no painel do Skip.',
+        message:
+          'Configuração Pendente: A chave da API de inteligência não foi encontrada nas Secrets.',
       })
     }
 
@@ -218,19 +219,18 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         if (res.statusCode === 401) {
           return e.json(400, {
             code: 'ERR_CONFIG',
-            message: 'Chave de API não configurada. Verifique as Integrações no painel do Skip.',
+            message: 'Configuração Pendente: A chave da API de inteligência é inválida.',
           })
-        } else if (res.statusCode === 429 || res.statusCode >= 500) {
+        } else if (res.statusCode === 429) {
           return e.json(400, {
-            code: 'ERR_SERVICE',
-            message:
-              'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.',
+            code: 'ERR_QUOTA',
+            message: 'Limite de uso excedido. Verifique a cota da sua chave de API.',
           })
         } else {
           return e.json(400, {
             code: 'ERR_SERVICE',
             message:
-              'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.',
+              'O serviço de inteligência está temporariamente indisponível. Por favor, tente novamente em instantes.',
           })
         }
       }
@@ -308,7 +308,7 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
       return e.json(400, {
         code: 'ERR_SERVICE',
         message:
-          'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.',
+          'O serviço de inteligência está temporariamente indisponível. Por favor, tente novamente em instantes.',
       })
     }
   },
