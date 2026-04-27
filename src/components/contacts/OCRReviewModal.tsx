@@ -192,20 +192,20 @@ export function OCRReviewModal({ open, onOpenChange, ocrDraft, ocrFile, onConfir
               <div className="sm:col-span-2">
                 <Field label="Nome Completo" field="name" />
               </div>
-              <Field label="CPF" field="cpf" placeholder="000.000.000-00" />
-              <Field label="RG" field="rg" />
-              <Field label="Data de Nascimento" field="nascimento" placeholder="DD/MM/AAAA" />
-              <Field label="Data de Emissão (Doc)" field="docIssueDate" placeholder="DD/MM/AAAA" />
+              <Field
+                label="Documento (CPF/RG)"
+                field="document_number"
+                placeholder="000.000.000-00"
+              />
+              <Field label="Data de Nascimento" field="birth_date" placeholder="YYYY-MM-DD" />
+              <Field label="Data de Emissão (Doc)" field="docIssueDate" placeholder="YYYY-MM-DD" />
               <div className="sm:col-span-2">
-                <Field label="Nome da Mãe" field="mae" />
+                <Field label="Filiação (Mãe/Pai)" field="parents_names" />
               </div>
-              <div className="sm:col-span-2">
-                <Field label="Nome do Pai" field="pai" />
-              </div>
-              <Field label="Naturalidade (Cidade)" field="cidade_nasc" />
-              <Field label="UF (Estado)" field="uf_nasc" placeholder="Ex: SP" />
-              <Field label="Nacionalidade" field="nacionalidade" />
-              <Field label="Gênero" field="genero" />
+              <Field label="Naturalidade (Cidade)" field="birth_city" />
+              <Field label="UF (Estado)" field="birth_uf" placeholder="Ex: SP" />
+              <Field label="Nacionalidade" field="nationality" />
+              <Field label="Gênero" field="gender" />
             </div>
           </div>
         </div>

@@ -644,21 +644,35 @@ export function useCollaboratorForm(entityId: string | null) {
     }
 
     mapField('name', 'pessoal', 'name', 'name')
-    if (editedDraft.nascimento) {
-      newData.pessoal.nascimento = editedDraft.nascimento.includes('/')
-        ? editedDraft.nascimento.split('/').reverse().join('-')
-        : editedDraft.nascimento
+    if (editedDraft.birth_date) {
+      newData.pessoal.nascimento = editedDraft.birth_date.includes('/')
+        ? editedDraft.birth_date.split('/').reverse().join('-')
+        : editedDraft.birth_date
       autoFilled.add('birth_date')
     }
-    mapField('genero', 'pessoal', 'genero', 'gender')
-    mapField('nacionalidade', 'pessoal', 'nacionalidade', 'nationality')
-    mapField('mae', 'pessoal', 'mae', 'parents_names')
-    mapField('pai', 'pessoal', 'pai', 'parents_names')
-    mapField('cidade_nasc', 'pessoal', 'cidade', 'birth_city')
-    mapField('uf_nasc', 'pessoal', 'uf', 'birth_uf')
 
-    if (editedDraft.cpf) {
-      newData.docs.cpf = editedDraft.cpf
+    let gen = editedDraft.gender
+    if (gen) {
+      if (gen === 'masc') newData.pessoal.genero = 'Masculino'
+      else if (gen === 'fem') newData.pessoal.genero = 'Feminino'
+      else newData.pessoal.genero = 'Outros'
+      autoFilled.add('gender')
+    }
+
+    mapField('nationality', 'pessoal', 'nacionalidade', 'nationality')
+
+    if (editedDraft.parents_names) {
+      const parts = editedDraft.parents_names.split(' / ')
+      if (parts.length > 0) newData.pessoal.mae = parts[0]
+      if (parts.length > 1) newData.pessoal.pai = parts[1]
+      autoFilled.add('parents_names')
+    }
+
+    mapField('birth_city', 'pessoal', 'cidade', 'birth_city')
+    mapField('birth_uf', 'pessoal', 'uf', 'birth_uf')
+
+    if (editedDraft.document_number) {
+      newData.docs.cpf = editedDraft.document_number
       autoFilled.add('document_number')
     }
     if (editedDraft.rg) {

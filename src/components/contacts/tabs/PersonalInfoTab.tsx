@@ -254,16 +254,16 @@ export default function PersonalInfoTab({
         })
 
         const missing: Record<string, boolean> = {
-          nacionalidade: !res.nacionalidade,
-          genero: !res.genero,
+          nacionalidade: !res.nationality,
+          genero: !res.gender,
           civil: true,
           escolaridade: true,
-          mae: !res.mae && !res.pai,
-          pai: !res.pai && !res.mae,
-          cidade: !res.cidade_nasc,
-          uf: !res.uf_nasc,
+          mae: !res.parents_names,
+          pai: !res.parents_names,
+          cidade: !res.birth_city,
+          uf: !res.birth_uf,
           sangue: true,
-          nascimento: !res.nascimento,
+          nascimento: !res.birth_date,
           name: !res.name,
         }
 
@@ -272,37 +272,38 @@ export default function PersonalInfoTab({
           onChange('name', res.name)
           capturedLocal.push('name')
         }
-        if (res.nascimento) {
+        if (res.birth_date) {
           onChange(
             'nascimento',
-            res.nascimento.includes('/')
-              ? res.nascimento.split('/').reverse().join('-')
-              : res.nascimento,
+            res.birth_date.includes('/')
+              ? res.birth_date.split('/').reverse().join('-')
+              : res.birth_date,
           )
           capturedLocal.push('birth_date')
         }
-        if (res.nacionalidade) {
-          onChange('nacionalidade', res.nacionalidade)
+        if (res.nationality) {
+          onChange('nacionalidade', res.nationality)
           capturedLocal.push('nationality')
         }
-        if (res.genero) {
-          onChange('genero', res.genero)
+        if (res.gender) {
+          let gen = res.gender
+          if (gen === 'masc') onChange('genero', 'Masculino')
+          else if (gen === 'fem') onChange('genero', 'Feminino')
+          else onChange('genero', 'Outros')
           capturedLocal.push('gender')
         }
-        if (res.mae) {
-          onChange('mae', res.mae)
+        if (res.parents_names) {
+          const parts = res.parents_names.split(' / ')
+          if (parts.length > 0) onChange('mae', parts[0])
+          if (parts.length > 1) onChange('pai', parts[1])
           capturedLocal.push('parents_names')
         }
-        if (res.pai) {
-          onChange('pai', res.pai)
-          capturedLocal.push('parents_names')
-        }
-        if (res.cidade_nasc) {
-          onChange('cidade', res.cidade_nasc)
+        if (res.birth_city) {
+          onChange('cidade', res.birth_city)
           capturedLocal.push('birth_city')
         }
-        if (res.uf_nasc) {
-          onChange('uf', res.uf_nasc)
+        if (res.birth_uf) {
+          onChange('uf', res.birth_uf)
           capturedLocal.push('birth_uf')
         }
 

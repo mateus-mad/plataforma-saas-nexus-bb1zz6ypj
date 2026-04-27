@@ -74,19 +74,17 @@ Para "field_confidences", retorne um número inteiro de 0 a 100 para cada campo 
 Formato esperado:
 {
   "name": "Nome Completo",
-  "cpf": "000.000.000-00",
-  "rg": "00.000.000-0",
+  "document_number": "Número do CPF ou RG com pontuação",
+  "birth_date": "YYYY-MM-DD",
   "docType": "RG ou CNH ou CPF",
   "pis": "000.00000.00-0",
-  "nascimento": "DD/MM/YYYY",
-  "docIssueDate": "DD/MM/YYYY",
-  "expiryDate": "YYYY-MM-DD 12:00:00.000Z",
-  "mae": "Nome da Mãe",
-  "pai": "Nome do Pai",
-  "nacionalidade": "Brasileira",
-  "cidade_nasc": "Cidade",
-  "uf_nasc": "UF",
-  "genero": "Masculino ou Feminino",
+  "docIssueDate": "YYYY-MM-DD",
+  "expiryDate": "YYYY-MM-DD",
+  "parents_names": "Nome da Mãe e/ou Nome do Pai (ex: Maria da Silva / João da Silva)",
+  "nationality": "Brasileira",
+  "birth_city": "Cidade",
+  "birth_uf": "UF",
+  "gender": "masc ou fem ou outros",
   "address": {
     "cep": "",
     "logradouro": "",
@@ -98,9 +96,20 @@ Formato esperado:
   "confidence": 95,
   "field_confidences": {
     "name": 95,
-    "cpf": 90
+    "document_number": 90
+  },
+  "raw_fields": {
+    "cpf": "000.000.000-00",
+    "rg": "00.000.000-0",
+    "mae": "Nome da mãe",
+    "pai": "Nome do pai"
   }
 }
+
+Importante: 
+- Mapeie 'gender' estritamente para "masc", "fem", ou "outros".
+- Mapeie datas preferencialmente para formato YYYY-MM-DD.
+- 'parents_names' deve conter os nomes da mãe e do pai separados por " / ".
 
 ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
@@ -145,20 +154,22 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
       return e.json(200, {
         name: parsed.name || '',
-        mae: parsed.mae || '',
-        pai: parsed.pai || '',
-        nacionalidade: parsed.nacionalidade || '',
-        cidade_nasc: parsed.cidade_nasc || '',
-        uf_nasc: parsed.uf_nasc || '',
-        genero: parsed.genero || '',
-        document_number: parsed.cpf || parsed.rg || '',
-        cpf: parsed.cpf || '',
-        rg: parsed.rg || '',
+        document_number:
+          parsed.document_number || parsed.raw_fields?.cpf || parsed.raw_fields?.rg || '',
+        birth_date: parsed.birth_date || '',
+        parents_names: parsed.parents_names || '',
+        gender: parsed.gender || '',
+        birth_city: parsed.birth_city || '',
+        birth_uf: parsed.birth_uf || '',
+        nationality: parsed.nationality || '',
         docType: parsed.docType || 'Outro',
         pis: parsed.pis || '',
-        nascimento: parsed.nascimento || '',
         docIssueDate: parsed.docIssueDate || '',
         expiryDate: parsed.expiryDate || '',
+        mae: parsed.raw_fields?.mae || '',
+        pai: parsed.raw_fields?.pai || '',
+        cpf: parsed.raw_fields?.cpf || '',
+        rg: parsed.raw_fields?.rg || '',
         raw_text: content,
         confidence: parsed.confidence || 85,
         field_confidences: parsed.field_confidences || {},
