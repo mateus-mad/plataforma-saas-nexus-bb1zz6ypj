@@ -19,8 +19,9 @@ import {
   DialogDescription as DialogDesc,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { MapPin, Plus, QrCode, Trash2, Crosshair, Navigation, Edit } from 'lucide-react'
+import { MapPin, Plus, QrCode, Trash2, Crosshair, Navigation, Edit, Search } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useRealtime } from '@/hooks/use-realtime'
 import {
   getWorkSites,
   createWorkSite,
@@ -29,9 +30,11 @@ import {
   WorkSite,
 } from '@/services/work_sites'
 
-function InteractiveMap({ lat, lng, radius, onChange, onAddressFound }: any) {
+function InteractiveMap({ lat, lng, radius, onChange, onAddressFound, onLocationError }: any) {
   const [pinPos, setPinPos] = useState({ x: 50, y: 50 })
   const [isDragging, setIsDragging] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
   const mapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -86,6 +89,29 @@ function InteractiveMap({ lat, lng, radius, onChange, onAddressFound }: any) {
     }
   }
 
+  const handleSearchAddress = async () => {
+    if (!searchQuery) return
+    setIsSearching(true)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`,
+      )
+      const data = await res.json()
+      if (data && data.length > 0) {
+        const newLat = parseFloat(data[0].lat).toFixed(6)
+        const newLng = parseFloat(data[0].lon).toFixed(6)
+        onChange(newLat, newLng)
+        if (onAddressFound) onAddressFound(data[0].display_name)
+      } else {
+        onLocationError?.('Endereço não encontrado.')
+      }
+    } catch (err) {
+      onLocationError?.('Erro ao buscar endereço. Verifique sua conexão.')
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   const handleCurrentLocation = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (navigator.geolocation) {
@@ -105,22 +131,28 @@ function InteractiveMap({ lat, lng, radius, onChange, onAddressFound }: any) {
               if (data && data.display_name) {
                 onAddressFound(data.display_name)
               }
-            } catch (err) {}
+            } catch {
+              /* intentionally ignored */
+            }
           }
         },
-        () =>
-          alert('Não foi possível obter sua localização. Verifique as permissões do navegador.'),
+        (error) => {
+          console.error(error)
+          onLocationError?.(
+            'Não foi possível obter sua localização. Verifique as permissões do navegador.',
+          )
+        },
         { enableHighAccuracy: true },
       )
     } else {
-      alert('Geolocalização não suportada pelo navegador.')
+      onLocationError?.('Geolocalização não suportada pelo navegador.')
     }
   }
 
   const visualRadius = Math.min(Math.max((radius / 1000) * 200, 20), 400)
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label>Localização no Mapa</Label>
         <Button
@@ -133,6 +165,32 @@ function InteractiveMap({ lat, lng, radius, onChange, onAddressFound }: any) {
           <Navigation className="w-3 h-3 mr-1" /> Usar Minha Localização
         </Button>
       </div>
+
+      <div className="flex items-center gap-2">
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar endereço (ex: Av. Paulista, São Paulo)"
+          className="h-9 text-sm flex-1"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleSearchAddress()
+            }
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="h-9"
+          onClick={handleSearchAddress}
+          disabled={isSearching}
+        >
+          <Search className="w-4 h-4 mr-2" /> Buscar
+        </Button>
+      </div>
+
       <div
         ref={mapRef}
         className="relative w-full h-[250px] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-crosshair group touch-none"
@@ -186,6 +244,10 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
   useEffect(() => {
     loadSites()
   }, [])
+
+  useRealtime('work_sites', () => {
+    loadSites()
+  })
 
   const loadSites = async () => {
     try {
@@ -319,7 +381,9 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nome da Obra</Label>
+                  <Label>
+                    Nome da Obra <span className="text-rose-500">*</span>
+                  </Label>
                   <Input
                     required
                     value={formData.name}
@@ -330,7 +394,6 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
                 <div className="space-y-2">
                   <Label>Centro de Custo</Label>
                   <Input
-                    required
                     value={formData.cost_center}
                     onChange={(e) => setFormData({ ...formData, cost_center: e.target.value })}
                     placeholder="Ex: CC-2024-01"
@@ -349,11 +412,16 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
                   if (!formData.name)
                     setFormData((prev) => ({ ...prev, name: address.split(',')[0] }))
                 }}
+                onLocationError={(msg: string) => {
+                  toast({ title: 'Atenção', description: msg, variant: 'destructive' })
+                }}
               />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Latitude</Label>
+                  <Label>
+                    Latitude <span className="text-rose-500">*</span>
+                  </Label>
                   <Input
                     required
                     type="number"
@@ -364,7 +432,9 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Longitude</Label>
+                  <Label>
+                    Longitude <span className="text-rose-500">*</span>
+                  </Label>
                   <Input
                     required
                     type="number"
@@ -376,10 +446,13 @@ export default function GestaoObras({ hideHeader }: { hideHeader?: boolean }) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Raio de Tolerância (metros)</Label>
+                <Label>
+                  Raio de Tolerância (metros) <span className="text-rose-500">*</span>
+                </Label>
                 <Input
                   required
                   type="number"
+                  min="10"
                   value={formData.radius_meters}
                   onChange={(e) => setFormData({ ...formData, radius_meters: e.target.value })}
                   placeholder="100"

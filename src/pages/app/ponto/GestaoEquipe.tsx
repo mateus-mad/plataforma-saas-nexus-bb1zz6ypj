@@ -4,13 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Table,
   TableBody,
   TableCell,
@@ -26,11 +19,32 @@ import {
   DialogDescription as DialogDesc,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Users, MapPin, Trash2, CalendarDays, KeyRound, MessageCircle } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Plus,
+  Users,
+  MapPin,
+  Trash2,
+  CalendarDays,
+  KeyRound,
+  MessageCircle,
+  Check,
+  ChevronsUpDown,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { format } from 'date-fns'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import { useRealtime } from '@/hooks/use-realtime'
+import { cn } from '@/lib/utils'
 
 export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
   const [allocations, setAllocations] = useState<any[]>([])
@@ -40,6 +54,8 @@ export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
+  const [openEmp, setOpenEmp] = useState(false)
+  const [openSite, setOpenSite] = useState(false)
   const [formData, setFormData] = useState({
     relacionamento_id: '',
     work_site_id: '',
@@ -51,6 +67,10 @@ export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
   useEffect(() => {
     loadData()
   }, [])
+
+  useRealtime('allocations', () => {
+    loadData()
+  })
 
   const loadData = async () => {
     try {
@@ -75,6 +95,12 @@ export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!formData.relacionamento_id || !formData.work_site_id) {
+      toast({ title: 'Preencha todos os campos obrigatórios.', variant: 'destructive' })
+      return
+    }
+
     try {
       await pb.collection('allocations').create({
         ...formData,
@@ -154,7 +180,7 @@ export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
               <Plus className="w-4 h-4 mr-2" /> Nova Alocação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md overflow-visible">
             <DialogHeader>
               <DialogTitle>Alocar Colaborador</DialogTitle>
               <DialogDesc>
@@ -162,47 +188,117 @@ export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
               </DialogDesc>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-              <div className="space-y-2">
-                <Label>Colaborador</Label>
-                <Select
-                  value={formData.relacionamento_id}
-                  onValueChange={(v) => setFormData({ ...formData, relacionamento_id: v })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um colaborador..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.name} ({emp.document_number || 'Sem CPF'})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 flex flex-col">
+                <Label>
+                  Colaborador <span className="text-rose-500">*</span>
+                </Label>
+                <Popover open={openEmp} onOpenChange={setOpenEmp}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openEmp}
+                      className={cn(
+                        'w-full justify-between font-normal',
+                        !formData.relacionamento_id && 'text-muted-foreground',
+                      )}
+                    >
+                      {formData.relacionamento_id
+                        ? employees.find((emp) => emp.id === formData.relacionamento_id)?.name
+                        : 'Buscar colaborador...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[380px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Digite o nome..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum colaborador encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {employees.map((emp) => (
+                            <CommandItem
+                              key={emp.id}
+                              value={emp.name}
+                              onSelect={() => {
+                                setFormData({ ...formData, relacionamento_id: emp.id })
+                                setOpenEmp(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  formData.relacionamento_id === emp.id
+                                    ? 'opacity-100'
+                                    : 'opacity-0',
+                                )}
+                              />
+                              {emp.name} ({emp.document_number || 'Sem CPF'})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="space-y-2">
-                <Label>Obra (Centro de Custo)</Label>
-                <Select
-                  value={formData.work_site_id}
-                  onValueChange={(v) => setFormData({ ...formData, work_site_id: v })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a obra..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workSites.map((site) => (
-                      <SelectItem key={site.id} value={site.id}>
-                        {site.name} {site.cost_center ? `(${site.cost_center})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="space-y-2 flex flex-col">
+                <Label>
+                  Obra (Centro de Custo) <span className="text-rose-500">*</span>
+                </Label>
+                <Popover open={openSite} onOpenChange={setOpenSite}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openSite}
+                      className={cn(
+                        'w-full justify-between font-normal',
+                        !formData.work_site_id && 'text-muted-foreground',
+                      )}
+                    >
+                      {formData.work_site_id
+                        ? workSites.find((site) => site.id === formData.work_site_id)?.name
+                        : 'Buscar obra...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[380px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Digite o nome da obra..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhuma obra encontrada.</CommandEmpty>
+                        <CommandGroup>
+                          {workSites.map((site) => (
+                            <CommandItem
+                              key={site.id}
+                              value={site.name}
+                              onSelect={() => {
+                                setFormData({ ...formData, work_site_id: site.id })
+                                setOpenSite(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  formData.work_site_id === site.id ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {site.name} {site.cost_center ? `(${site.cost_center})` : ''}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Data de Início</Label>
+                  <Label>
+                    Data de Início <span className="text-rose-500">*</span>
+                  </Label>
                   <Input
                     type="date"
                     required
@@ -228,7 +324,7 @@ export default function GestaoEquipe({ hideHeader }: { hideHeader?: boolean }) {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">Salvar</Button>
+                <Button type="submit">Salvar Alocação</Button>
               </div>
             </form>
           </DialogContent>
