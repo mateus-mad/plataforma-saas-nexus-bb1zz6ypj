@@ -263,13 +263,15 @@ export function useCollaboratorForm(entityId: string | null) {
     let newData = { ...data }
 
     const globalField = FIELD_MAPPING[`${section}.${field}`]
-    if (globalField && newData.extraction_metadata?.auto_filled?.includes(globalField)) {
-      newData.extraction_metadata.auto_filled = newData.extraction_metadata.auto_filled.filter(
-        (f: string) => f !== globalField,
+    const autoFilled = newData.extraction_metadata?.auto_filled || []
+
+    if (autoFilled.includes(globalField) || autoFilled.includes(field as string)) {
+      newData.extraction_metadata.auto_filled = autoFilled.filter(
+        (f: string) => f !== globalField && f !== field,
       )
       if (!newData.extraction_metadata.manually_verified)
         newData.extraction_metadata.manually_verified = []
-      if (!newData.extraction_metadata.manually_verified.includes(globalField)) {
+      if (globalField && !newData.extraction_metadata.manually_verified.includes(globalField)) {
         newData.extraction_metadata.manually_verified.push(globalField)
       }
     }
@@ -574,17 +576,7 @@ export function useCollaboratorForm(entityId: string | null) {
     } catch (err: any) {
       let description =
         err.message ||
-        'Não foi possível extrair dados legíveis deste documento. Por favor, preencha manualmente.'
-      const errCode = err?.response?.data?.code || err?.data?.code || err?.response?.code
-
-      if (errCode === 'invalid_api_key') {
-        description = 'Configuração de API inválida (Chave de API).'
-      } else if (errCode === 'ai_service_unavailable') {
-        description = 'Serviço de Inteligência Artificial temporariamente indisponível.'
-      } else if (errCode === 'validation_low_resolution' || errCode === 'validation_unreadable') {
-        description =
-          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.'
-      }
+        'Não foi possível ler o documento. Certifique-se de que a foto está nítida e bem iluminada.'
 
       let newData = { ...data }
       if (!newData.extraction_metadata)
@@ -667,6 +659,7 @@ export function useCollaboratorForm(entityId: string | null) {
         ? editedDraft.birth_date.split('/').reverse().join('-')
         : editedDraft.birth_date
       autoFilled.add('birth_date')
+      autoFilled.add('nascimento')
     }
 
     let gen = editedDraft.gender
@@ -675,23 +668,54 @@ export function useCollaboratorForm(entityId: string | null) {
       else if (gen === 'fem') newData.pessoal.genero = 'Feminino'
       else newData.pessoal.genero = 'Outros'
       autoFilled.add('gender')
+      autoFilled.add('genero')
     }
 
-    mapField('nationality', 'pessoal', 'nacionalidade', 'nationality')
+    if (editedDraft.nationality) {
+      newData.pessoal.nacionalidade = editedDraft.nationality
+      autoFilled.add('nationality')
+      autoFilled.add('nacionalidade')
+    }
 
     if (editedDraft.parents_names) {
       const parts = editedDraft.parents_names.split(' / ')
-      if (parts.length > 0) newData.pessoal.mae = parts[0]
-      if (parts.length > 1) newData.pessoal.pai = parts[1]
+      if (parts.length > 0) {
+        newData.pessoal.mae = parts[0]
+        autoFilled.add('mae')
+      }
+      if (parts.length > 1) {
+        newData.pessoal.pai = parts[1]
+        autoFilled.add('pai')
+      }
       autoFilled.add('parents_names')
     }
 
-    mapField('birth_city', 'pessoal', 'cidade', 'birth_city')
-    mapField('birth_uf', 'pessoal', 'uf', 'birth_uf')
+    if (editedDraft.birth_city) {
+      newData.pessoal.cidade = editedDraft.birth_city
+      autoFilled.add('birth_city')
+      autoFilled.add('cidade')
+    }
+
+    if (editedDraft.birth_uf) {
+      newData.pessoal.uf = editedDraft.birth_uf
+      autoFilled.add('birth_uf')
+      autoFilled.add('uf')
+    }
+
+    if (editedDraft.phone) {
+      newData.contato.telPrinc = editedDraft.phone
+      autoFilled.add('telPrinc')
+      autoFilled.add('phone')
+    }
+    if (editedDraft.email) {
+      newData.contato.email = editedDraft.email
+      autoFilled.add('email')
+    }
 
     if (editedDraft.document_number) {
       newData.docs.cpf = editedDraft.document_number
       autoFilled.add('document_number')
+      autoFilled.add('cpf')
     }
     if (editedDraft.rg) {
       newData.docs.rg = editedDraft.rg
@@ -701,17 +725,23 @@ export function useCollaboratorForm(entityId: string | null) {
     if (editedDraft.pis) {
       newData.docs.pis = editedDraft.pis
       autoFilled.add('pis_pasep')
+      autoFilled.add('pis')
     }
-    if (editedDraft.docType) newData.docs.docType = editedDraft.docType
+    if (editedDraft.docType) {
+      newData.docs.docType = editedDraft.docType
+      autoFilled.add('docType')
+    }
     if (editedDraft.docIssueDate) {
       newData.docs.docIssueDate = editedDraft.docIssueDate.includes('/')
         ? editedDraft.docIssueDate.split('/').reverse().join('-')
         : editedDraft.docIssueDate
+      autoFilled.add('docIssueDate')
     }
     if (editedDraft.expiryDate) {
       newData.docs.expiryDate = editedDraft.expiryDate.includes('/')
         ? editedDraft.expiryDate.split('/').reverse().join('-')
         : editedDraft.expiryDate
+      autoFilled.add('expiryDate')
     }
 
     if (editedDraft.address) {
@@ -725,6 +755,12 @@ export function useCollaboratorForm(entityId: string | null) {
         cidade: addr.cidade || newData.endereco.cidade,
         estado: addr.estado || newData.endereco.estado,
       }
+      if (addr.cep) autoFilled.add('cep')
+      if (addr.logradouro) autoFilled.add('logradouro')
+      if (addr.numero) autoFilled.add('numero')
+      if (addr.bairro) autoFilled.add('bairro')
+      if (addr.cidade) autoFilled.add('cidade')
+      if (addr.estado) autoFilled.add('estado')
     }
 
     const missingErrors: string[] = []

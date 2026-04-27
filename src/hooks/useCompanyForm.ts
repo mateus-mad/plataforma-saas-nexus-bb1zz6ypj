@@ -127,13 +127,15 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     }
 
     const globalField = FIELD_MAPPING[`${section}.${field}`]
-    if (globalField && newData.extraction_metadata?.auto_filled?.includes(globalField)) {
-      newData.extraction_metadata.auto_filled = newData.extraction_metadata.auto_filled.filter(
-        (f: string) => f !== globalField,
+    const autoFilled = newData.extraction_metadata?.auto_filled || []
+
+    if (autoFilled.includes(globalField) || autoFilled.includes(field as string)) {
+      newData.extraction_metadata.auto_filled = autoFilled.filter(
+        (f: string) => f !== globalField && f !== field,
       )
       if (!newData.extraction_metadata.manually_verified)
         newData.extraction_metadata.manually_verified = []
-      if (!newData.extraction_metadata.manually_verified.includes(globalField)) {
+      if (globalField && !newData.extraction_metadata.manually_verified.includes(globalField)) {
         newData.extraction_metadata.manually_verified.push(globalField)
       }
     }
@@ -220,17 +222,7 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     } catch (err: any) {
       let description =
         err.message ||
-        'Não foi possível extrair dados legíveis deste documento. Por favor, preencha manualmente.'
-      const errCode = err?.response?.data?.code || err?.data?.code || err?.response?.code
-
-      if (errCode === 'invalid_api_key') {
-        description = 'Configuração de API inválida (Chave de API).'
-      } else if (errCode === 'ai_service_unavailable') {
-        description = 'Serviço de Inteligência Artificial temporariamente indisponível.'
-      } else if (errCode === 'validation_low_resolution' || errCode === 'validation_unreadable') {
-        description =
-          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.'
-      }
+        'Não foi possível ler o documento. Certifique-se de que a foto está nítida e bem iluminada.'
 
       let newData = { ...dataRef.current }
       if (!newData.extraction_metadata)
@@ -256,17 +248,34 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
     if (editedDraft.razao_social || editedDraft.name) {
       newData.dados.nomeRazao = editedDraft.razao_social || editedDraft.name
       autoFilled.add('name')
+      autoFilled.add('nomeRazao')
+      autoFilled.add('razao_social')
     }
     if (editedDraft.nome_fantasia) {
       newData.dados.fantasia = editedDraft.nome_fantasia
       autoFilled.add('fantasia')
+      autoFilled.add('nome_fantasia')
     }
     if (editedDraft.document_number) {
       newData.dados.documento = editedDraft.document_number
       autoFilled.add('document_number')
+      autoFilled.add('documento')
     }
     if (editedDraft.cnae) {
       newData.dados.segmento = editedDraft.cnae
+      autoFilled.add('cnae')
+      autoFilled.add('segmento')
+    }
+    if (editedDraft.phone) {
+      newData.contato.telefone = editedDraft.phone
+      autoFilled.add('telefone')
+      autoFilled.add('phone')
+    }
+    if (editedDraft.email) {
+      newData.contato.email = editedDraft.email
+      newData.contato.emailCobranca = editedDraft.email
+      autoFilled.add('email')
+      autoFilled.add('emailCobranca')
     }
 
     if (editedDraft.address) {
@@ -280,6 +289,12 @@ export function useCompanyForm(type: 'client' | 'supplier', entityId?: string | 
         cidade: addr.cidade || newData.endereco.cidade,
         estado: addr.estado || newData.endereco.estado,
       }
+      if (addr.cep) autoFilled.add('cep')
+      if (addr.logradouro) autoFilled.add('logradouro')
+      if (addr.numero) autoFilled.add('numero')
+      if (addr.bairro) autoFilled.add('bairro')
+      if (addr.cidade) autoFilled.add('cidade')
+      if (addr.estado) autoFilled.add('estado')
     }
 
     newData.extraction_metadata.auto_filled = Array.from(autoFilled)

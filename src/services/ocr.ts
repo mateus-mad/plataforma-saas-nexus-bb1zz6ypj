@@ -30,11 +30,15 @@ export const processDocumentOCR = async (file: File, docType: string = 'RG') => 
       throw error
     }
 
-    if (error?.response?.message) {
+    if (error?.response?.code) {
+      error.code = error.response.code
+      error.message = error.response.message
+    } else if (error?.response?.message) {
       error.message = error.response.message
     } else if (error.status === 0 || error.message === 'Failed to fetch') {
+      error.code = 'ERR_SERVICE'
       error.message =
-        'Erro de configuração no servidor ou API de Inteligência Artificial indisponível.'
+        'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.'
     }
 
     throw error

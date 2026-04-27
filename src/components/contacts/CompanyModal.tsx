@@ -197,8 +197,25 @@ export default function CompanyModal({
 
   const hasErrors = Object.keys(errors).length > 0
 
+  const getHighlightStyles = () => {
+    if (!data?.extraction_metadata?.auto_filled?.length) return null
+    const selectors = data.extraction_metadata.auto_filled
+      .map((field: string) => `[name="${field}"], [id="${field}"]`)
+      .join(', ')
+    return (
+      <style>{`
+        ${selectors} {
+          border-color: #22c55e !important;
+          background-color: #f0fdf4 !important;
+          transition: all 0.3s ease;
+        }
+      `}</style>
+    )
+  }
+
   return (
     <>
+      {getHighlightStyles()}
       <Dialog
         open={open}
         onOpenChange={(o) => {
@@ -244,7 +261,7 @@ export default function CompanyModal({
                   ) : (
                     <ScanLine className="w-4 h-4 mr-2" />
                   )}
-                  {isProcessingOCR ? 'Lendo CNPJ...' : 'Ler Cartão CNPJ'}
+                  {isProcessingOCR ? 'Processando documento...' : 'Ler Cartão CNPJ'}
                 </Button>
                 <input
                   type="file"

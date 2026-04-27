@@ -24,8 +24,9 @@ routerAdd(
 
     const apiKey = $secrets.get('OPENAI_API_KEY')
     if (!apiKey) {
-      throw new BadRequestError('Configuração de API inválida (Chave de API).', {
-        code: 'invalid_api_key',
+      return e.json(400, {
+        code: 'ERR_CONFIG',
+        message: 'Chave de API não configurada. Verifique as Integrações.',
       })
     }
 
@@ -62,10 +63,11 @@ routerAdd(
       }
 
       if (!extractedText || extractedText.length < 10) {
-        throw new BadRequestError(
-          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.',
-          { code: 'validation_unreadable' },
-        )
+        return e.json(400, {
+          code: 'ERR_CONTENT',
+          message:
+            'Não foi possível ler o documento. Certifique-se de que a foto está nítida e bem iluminada.',
+        })
       }
     }
 
@@ -79,8 +81,9 @@ Regras Estritas:
 3. Gênero: Mapeie 'gender' ESTRITAMENTE para "masc", "fem", ou "outros". Se não especificado, use "".
 4. Filiação: 'parents_names' deve conter os nomes da mãe e do pai separados por " / " (ex: "Maria da Silva / João da Silva").
 5. CNPJ: Se for um Cartão CNPJ, preencha razao_social, nome_fantasia, cnpj e cnae.
-6. Confiança: Para 'confidence', retorne um número de 0 a 100. Se for ilegível, retorne baixo (ex: 10).
-7. Se um campo não for encontrado, retorne uma string vazia "".
+6. Telefone: Se encontrar um telefone ou celular, formate para o padrão (XX) XXXXX-XXXX.
+7. Confiança: Para 'confidence', retorne um número de 0 a 100. Se for ilegível, retorne baixo (ex: 10).
+8. Se um campo não for encontrado, retorne uma string vazia "".
 
 ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
@@ -137,6 +140,8 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                   razao_social: { type: 'string' },
                   nome_fantasia: { type: 'string' },
                   cnae: { type: 'string' },
+                  phone: { type: 'string' },
+                  email: { type: 'string' },
                   address: {
                     type: 'object',
                     properties: {
@@ -192,6 +197,8 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
                   'razao_social',
                   'nome_fantasia',
                   'cnae',
+                  'phone',
+                  'email',
                   'address',
                   'confidence',
                   'field_confidences',
@@ -208,17 +215,21 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
 
       if (res.statusCode !== 200) {
         if (res.statusCode === 401) {
-          throw new BadRequestError('Configuração de API inválida (Chave de API).', {
-            code: 'invalid_api_key',
+          return e.json(400, {
+            code: 'ERR_CONFIG',
+            message: 'Chave de API não configurada. Verifique as Integrações.',
           })
         } else if (res.statusCode === 429 || res.statusCode >= 500) {
-          throw new BadRequestError(
-            'Serviço de Inteligência Artificial temporariamente indisponível.',
-            { code: 'ai_service_unavailable' },
-          )
+          return e.json(400, {
+            code: 'ERR_SERVICE',
+            message:
+              'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.',
+          })
         } else {
-          throw new BadRequestError('Falha na comunicação com o serviço de OCR.', {
-            code: 'ocr_failed',
+          return e.json(400, {
+            code: 'ERR_SERVICE',
+            message:
+              'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.',
           })
         }
       }
@@ -228,10 +239,11 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
       const parsed = JSON.parse(content)
 
       if (parsed.confidence < 40) {
-        throw new BadRequestError(
-          'Não foi possível extrair dados legíveis. Verifique a iluminação e qualidade da foto.',
-          { code: 'validation_low_resolution' },
-        )
+        return e.json(400, {
+          code: 'ERR_CONTENT',
+          message:
+            'Não foi possível ler o documento. Certifique-se de que a foto está nítida e bem iluminada.',
+        })
       }
 
       return e.json(200, {
@@ -260,6 +272,8 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         razao_social: parsed.razao_social || '',
         nome_fantasia: parsed.nome_fantasia || '',
         cnae: parsed.cnae || '',
+        phone: parsed.phone || '',
+        email: parsed.email || '',
         raw_text: content,
         confidence: parsed.confidence || 85,
         field_confidences: parsed.field_confidences || {},
@@ -274,8 +288,6 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         },
       })
     } catch (err) {
-      if (err.status) throw err
-
       if (extractedText) {
         const cpfMatch = extractedText.match(/\d{3}\.\d{3}\.\d{3}\-\d{2}/)
         const cnpjMatch = extractedText.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}/)
@@ -291,10 +303,11 @@ ${isPdf ? 'Texto extraído do documento:\n' + extractedText : ''}`
         }
       }
 
-      throw new BadRequestError(
-        'Falha inesperada no processamento do documento. Tente novamente mais tarde.',
-        { code: 'validation_unreadable' },
-      )
+      return e.json(400, {
+        code: 'ERR_SERVICE',
+        message:
+          'O serviço de inteligência está temporariamente indisponível. Tente preencher manualmente.',
+      })
     }
   },
   $apis.bodyLimit(20 * 1024 * 1024),
