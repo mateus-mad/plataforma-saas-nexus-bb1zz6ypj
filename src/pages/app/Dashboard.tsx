@@ -30,6 +30,10 @@ import {
   ChevronRight,
   Compass,
   Wallet,
+  CalendarClock,
+  Timer,
+  AlertCircle,
+  Target,
 } from 'lucide-react'
 import {
   Area,
@@ -59,8 +63,14 @@ import { useAuth } from '@/hooks/use-auth'
 import { useRealtime } from '@/hooks/use-realtime'
 import pb from '@/lib/pocketbase/client'
 import { db } from '@/lib/database'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { FinancialTransaction, getFinancialTransactions } from '@/services/financial_transactions'
+import { DashboardGoal, getDashboardGoal } from '@/services/dashboard_goals'
+import {
+  GoalsAndAlertsWidget,
+  DashboardAlertItem,
+} from '@/components/dashboard/GoalsAndAlertsWidget'
 
 interface FinancialTx {
   id: string
@@ -140,6 +150,10 @@ export default function Dashboard() {
   const [workSites, setWorkSites] = useState<any[]>([])
   const [alerts, setAlerts] = useState<any[]>([])
 
+  // Novos dados do banco (Faturas e Metas)
+  const [financialRecords, setFinancialRecords] = useState<FinancialTransaction[]>([])
+  const [currentGoal, setCurrentGoal] = useState<DashboardGoal | null>(null)
+
   // Dados do módulo Financeiro
   const [financialTxs, setFinancialTxs] = useState<FinancialTx[]>([])
   const [decryptedTxs, setDecryptedTxs] = useState<FinancialTx[]>([])
@@ -202,6 +216,23 @@ export default function Dashboard() {
       }
       setAlerts(secAlerts)
 
+      // 3.1. Faturas / Transações financeiras reais do banco de dados
+      try {
+        const txs = await getFinancialTransactions()
+        setFinancialRecords(txs)
+      } catch (err) {
+        console.warn('Erro ao carregar financial_transactions:', err)
+      }
+
+      // 3.2. Metas do mês corrente do banco de dados
+      try {
+        const currentYearMonth = new Date().toISOString().slice(0, 7)
+        const goal = await getDashboardGoal(currentYearMonth)
+        setCurrentGoal(goal)
+      } catch (err) {
+        console.warn('Erro ao carregar dashboard_goals:', err)
+      }
+
       // 4. Financeiro (leitura de localStorage sincronizada com Financial.tsx)
       try {
         const storedTxs = (await db.get('financial_v2' as any)) as any[]
@@ -230,6 +261,8 @@ export default function Dashboard() {
   useRealtime('relacionamentos', () => loadDashboardData(true))
   useRealtime('time_entries', () => loadDashboardData(true))
   useRealtime('security_alerts', () => loadDashboardData(true))
+  useRealtime('financial_transactions', () => loadDashboardData(true))
+  useRealtime('dashboard_goals', () => loadDashboardData(true))
 
   // Descriptografia de transações financeiras para exibição
   useEffect(() => {
@@ -270,6 +303,315 @@ export default function Dashboard() {
       setDecryptedTxs([])
     }
   }, [financialTxs, isSetup, isAdminMode, decrypt])
+
+  // Cálculo do KPI Faturas Vencidas (baseado nas coleções reais do banco)
+  const overdueInvoicesMetric = useMemo(() => {
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+
+    // Filtra transações financeiras reais vencidas
+    // não pagas e com due_date anterior a hoje
+    const overdueList = financialRecords.filter((tx) => {
+      if (tx.status === 'paid' || tx.status === 'cancelled') return false
+      if (!tx.due_date) return false
+      const due = new Date(tx.due_date)
+      return due < today || tx.status === 'overdue'
+    })
+
+    const count = overdueList.length
+    const totalAmount = overdueList.reduce((acc, tx) => acc + (Number(tx.amount) || 0), 0)
+
+    // Também consideramos transações de despesa e receita para apuração
+    const overdueReceivables = overdueList
+      .filter((tx) => tx.type === 'income')
+      .reduce((acc, tx) => acc + (Number(tx.amount) || 0), 0)
+    const overduePayables = overdueList
+      .filter((tx) => tx.type === 'expense')
+      .reduce((acc, tx) => acc + (Number(tx.amount) || 0), 0)
+
+    return {
+      count,
+      totalAmount,
+      overdueReceivables,
+      overduePayables,
+      list: overdueList,
+      hasOverdue: count > 0,
+    }
+  }, [financialRecords])
+
+  // Cálculo do KPI Horas Trabalhadas na Semana corrente (Seg a Dom)
+  const weeklyHoursMetric = useMemo(() => {
+    const now = new Date()
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 }) // Segunda
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 }) // Domingo
+    const prevWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
+    const prevWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
+
+    // Função para calcular total de horas trabalhadas de uma lista de batidas
+    const calculateHours = (entriesList: any[]) => {
+      // Agrupar por colaborador ou user_id e por dia (yyyy-MM-dd)
+      const groups: Record<string, any[]> = {}
+      entriesList.forEach((e) => {
+        const entTime = e.timestamp || e.created
+        if (!entTime) return
+        const d = new Date(entTime)
+        const dateKey = d.toISOString().split('T')[0]
+        const personKey = e.relacionamento_id || e.user_id || 'default'
+        const groupKey = `${personKey}_${dateKey}`
+        if (!groups[groupKey]) groups[groupKey] = []
+        groups[groupKey].push(e)
+      })
+
+      let totalMinutes = 0
+
+      // Para cada grupo dia/colaborador, calcular pares entrada/saída ou pausas
+      Object.values(groups).forEach((dayEntries) => {
+        // Ordenar cronologicamente
+        dayEntries.sort((a, b) => {
+          const tA = new Date(a.timestamp || a.created).getTime()
+          const tB = new Date(b.timestamp || b.created).getTime()
+          return tA - tB
+        })
+
+        // Algoritmo de pareamento: entrada -> (pausa_inicio -> pausa_fim)* -> saida
+        let currentStart: Date | null = null
+        let pauseStart: Date | null = null
+        let totalPauseMinutes = 0
+
+        dayEntries.forEach((entry) => {
+          const t = new Date(entry.timestamp || entry.created)
+          if (entry.type === 'entrada') {
+            if (!currentStart) {
+              currentStart = t
+            }
+          } else if (entry.type === 'pausa_inicio') {
+            if (currentStart && !pauseStart) {
+              pauseStart = t
+            }
+          } else if (entry.type === 'pausa_fim') {
+            if (pauseStart) {
+              const diff = (t.getTime() - pauseStart.getTime()) / (1000 * 60)
+              if (diff > 0) totalPauseMinutes += diff
+              pauseStart = null
+            }
+          } else if (entry.type === 'saida') {
+            if (currentStart) {
+              const diff = (t.getTime() - currentStart.getTime()) / (1000 * 60)
+              const worked = Math.max(0, diff - totalPauseMinutes)
+              totalMinutes += worked
+              currentStart = null
+              pauseStart = null
+              totalPauseMinutes = 0
+            }
+          }
+        })
+
+        // Se ainda está com entrada em aberto (expediente em andamento hoje)
+        if (currentStart) {
+          const isToday =
+            currentStart.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+          if (isToday) {
+            const nowTime = new Date()
+            const diff = (nowTime.getTime() - currentStart.getTime()) / (1000 * 60)
+            const worked = Math.max(0, diff - totalPauseMinutes)
+            totalMinutes += Math.min(worked, 720) // trava em max 12h
+          }
+        }
+      })
+
+      return totalMinutes / 60
+    }
+
+    // Filtrar entries da semana corrente
+    const currentWeekEntries = timeEntries.filter((e) => {
+      const entTime = e.timestamp || e.created
+      if (!entTime) return false
+      const d = new Date(entTime)
+      return isWithinInterval(d, { start: weekStart, end: weekEnd })
+    })
+
+    // Filtrar entries da semana anterior
+    const prevWeekEntries = timeEntries.filter((e) => {
+      const entTime = e.timestamp || e.created
+      if (!entTime) return false
+      const d = new Date(entTime)
+      return isWithinInterval(d, { start: prevWeekStart, end: prevWeekEnd })
+    })
+
+    const currentHours = calculateHours(currentWeekEntries)
+    const prevHours = calculateHours(prevWeekEntries)
+
+    // Meta semanal baseada nos colaboradores cadastrados
+    const colaboradores = relacionamentos.filter((r) => r.type === 'colaborador')
+    let totalWeeklyTargetHours = 0
+    colaboradores.forEach((colab) => {
+      const weeklyHours =
+        colab.work_details?.weekly_hours ||
+        (colab.work_details?.daily_hours ? colab.work_details.daily_hours * 5 : 44)
+      totalWeeklyTargetHours += Number(weeklyHours) || 44
+    })
+    if (totalWeeklyTargetHours === 0) totalWeeklyTargetHours = 44
+
+    // Variação percentual vs semana anterior
+    let variationPercent = 0
+    if (prevHours > 0) {
+      variationPercent = Math.round(((currentHours - prevHours) / prevHours) * 100)
+    }
+
+    const progressPercent = Math.min(Math.round((currentHours / totalWeeklyTargetHours) * 100), 100)
+
+    return {
+      currentHours: Math.round(currentHours * 10) / 10,
+      prevHours: Math.round(prevHours * 10) / 10,
+      targetHours: totalWeeklyTargetHours,
+      variationPercent,
+      progressPercent,
+      entriesCount: currentWeekEntries.length,
+    }
+  }, [timeEntries, relacionamentos])
+
+  // Lista de Alertas Automáticos gerados a partir de dados reais
+  const dashboardAlerts = useMemo<DashboardAlertItem[]>(() => {
+    const list: DashboardAlertItem[] = []
+
+    // 1. Alerta de Faturas Vencidas
+    if (overdueInvoicesMetric.count > 0) {
+      list.push({
+        id: 'alert-overdue-invoices',
+        title: `${overdueInvoicesMetric.count} fatura(s) vencida(s) em aberto`,
+        description: `Total de R$ ${overdueInvoicesMetric.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} pendente de regularização financeira.`,
+        severity: 'destructive',
+        link: '/app/financeiro',
+        linkLabel: 'Ver no Financeiro',
+        count: overdueInvoicesMetric.count,
+        category: 'financeiro',
+      })
+    }
+
+    // 2. Alerta de Meta Financeira Mensal
+    const currentMonthTarget = currentGoal?.target_revenue || 0
+    const now = new Date()
+    const currentDay = now.getDate()
+    const currentYearMonth = now.toISOString().slice(0, 7)
+
+    // Receita deste mês (calculada a partir das transações reais e do módulo financeiro)
+    let currentMonthRealized = 0
+    financialRecords.forEach((tx) => {
+      if (tx.type === 'income' && tx.status === 'paid') {
+        const txDate = tx.payment_date || tx.due_date || tx.created || ''
+        if (txDate.startsWith(currentYearMonth)) {
+          currentMonthRealized += Number(tx.amount) || 0
+        }
+      }
+    })
+    if (currentMonthRealized === 0 && metrics.totalReceitas > 0) {
+      currentMonthRealized = metrics.totalReceitas
+    }
+
+    if (currentMonthTarget > 0) {
+      const monthProgressRatio = currentDay / 30 // Proporção esperada do mês
+      const expectedRevenueSoFar = currentMonthTarget * monthProgressRatio
+      if (currentDay >= 10 && currentMonthRealized < expectedRevenueSoFar * 0.8) {
+        list.push({
+          id: 'alert-revenue-goal-behind',
+          title: 'Receita do mês abaixo da meta projetada',
+          description: `Realizado R$ ${currentMonthRealized.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ ${currentMonthTarget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} previstos para o período.`,
+          severity: 'warning',
+          link: '/app/financeiro',
+          linkLabel: 'Acompanhar Fluxo',
+          category: 'financeiro',
+        })
+      }
+    }
+
+    // 3. Alerta de Colaboradores com pendências de compliance/documentação
+    const colabsPendente = relacionamentos.filter(
+      (r) =>
+        r.type === 'colaborador' &&
+        (r.compliance_status === 'vencido' || r.compliance_status === 'pendente'),
+    )
+    if (colabsPendente.length > 0) {
+      list.push({
+        id: 'alert-colabs-compliance',
+        title: `${colabsPendente.length} colaborador(es) com pendências de documentação`,
+        description:
+          'Documentos, ASOs ou qualificações cadastrais precisam de atualização para manter a conformidade.',
+        severity: colabsPendente.some((c) => c.compliance_status === 'vencido')
+          ? 'destructive'
+          : 'warning',
+        link: '/app/contatos/colaboradores',
+        linkLabel: 'Ver Colaboradores',
+        count: colabsPendente.length,
+        category: 'compliance',
+      })
+    }
+
+    // 4. Alerta de Pontos com inconsistência (ex: batida de entrada sem saída no dia anterior)
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const yesterdayEntries = timeEntries.filter((e) => {
+      const entDate = (e.timestamp || e.created || '').split('T')[0]
+      return entDate === yesterday
+    })
+
+    if (yesterdayEntries.length > 0) {
+      const entriesByColab: Record<string, any[]> = {}
+      yesterdayEntries.forEach((e) => {
+        const id = e.relacionamento_id || e.user_id || 'unk'
+        if (!entriesByColab[id]) entriesByColab[id] = []
+        entriesByColab[id].push(e)
+      })
+
+      let inconsistentCount = 0
+      Object.values(entriesByColab).forEach((colabEntries) => {
+        const hasEntrada = colabEntries.some((e) => e.type === 'entrada')
+        const hasSaida = colabEntries.some((e) => e.type === 'saida')
+        if (hasEntrada && !hasSaida) {
+          inconsistentCount++
+        }
+      })
+
+      if (inconsistentCount > 0) {
+        list.push({
+          id: 'alert-ponto-inconsistency',
+          title: `${inconsistentCount} inconsistência(s) de ponto identificada(s)`,
+          description:
+            'Detectada batida de entrada sem encerramento de expediente no dia anterior.',
+          severity: 'warning',
+          link: '/app/controle-de-ponto/espelho',
+          linkLabel: 'Ajustar Espelho',
+          count: inconsistentCount,
+          category: 'ponto',
+        })
+      }
+    }
+
+    return list
+  }, [
+    overdueInvoicesMetric,
+    currentGoal,
+    financialRecords,
+    metrics.totalReceitas,
+    relacionamentos,
+    timeEntries,
+  ])
+
+  // Receita realizada no mês atual para o widget de metas
+  const currentMonthRevenue = useMemo(() => {
+    const currentYearMonth = new Date().toISOString().slice(0, 7)
+    let rev = 0
+    financialRecords.forEach((tx) => {
+      if (tx.type === 'income' && tx.status === 'paid') {
+        const txDate = tx.payment_date || tx.due_date || tx.created || ''
+        if (txDate.startsWith(currentYearMonth)) {
+          rev += Number(tx.amount) || 0
+        }
+      }
+    })
+    if (rev === 0 && metrics.totalReceitas > 0) {
+      return metrics.totalReceitas
+    }
+    return rev
+  }, [financialRecords, metrics.totalReceitas])
 
   // Cálculos de métricas consolidadas
   const metrics = useMemo(() => {
@@ -654,10 +996,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Grid de KPIs Principais no Topo */}
+      {/* Grid de KPIs Principais no Topo (incluindo os novos indicadores mantendo todos os existentes) */}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="p-6">
               <Skeleton className="h-4 w-24 mb-3" />
               <Skeleton className="h-8 w-32 mb-2" />
@@ -666,8 +1008,8 @@ export default function Dashboard() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* KPI 1: Contatos Totais & Distribuição */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {/* KPI 1: Contatos Totais & Distribuição (Existente) */}
           <Card className="relative overflow-hidden border-slate-200/80 hover:shadow-md transition-shadow">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -696,7 +1038,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* KPI 2: Empresas Ativas */}
+          {/* KPI 2: Empresas Ativas (Existente) */}
           <Card className="relative overflow-hidden border-slate-200/80 hover:shadow-md transition-shadow">
             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -718,7 +1060,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* KPI 3: Saldo / Receitas Financeiras */}
+          {/* KPI 3: Saldo / Receitas Financeiras (Existente) */}
           <Card className="relative overflow-hidden border-slate-200/80 hover:shadow-md transition-shadow">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -751,7 +1093,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* KPI 4: Pontos Hoje / Presença */}
+          {/* KPI 4: Pontos Hoje / Presença (Existente) */}
           <Card className="relative overflow-hidden border-slate-200/80 hover:shadow-md transition-shadow">
             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -773,6 +1115,101 @@ export default function Dashboard() {
                 </span>{' '}
                 colaboradores presentes hoje
               </p>
+            </CardContent>
+          </Card>
+
+          {/* NOVO KPI 5: Faturas Vencidas */}
+          <Card
+            className={`relative overflow-hidden transition-all hover:shadow-md ${
+              overdueInvoicesMetric.hasOverdue
+                ? 'border-rose-300 bg-rose-50/20'
+                : 'border-slate-200/80'
+            }`}
+          >
+            <div
+              className={`absolute top-0 right-0 w-24 h-24 rounded-bl-full pointer-events-none ${
+                overdueInvoicesMetric.hasOverdue ? 'bg-rose-500/10' : 'bg-emerald-500/5'
+              }`}
+            />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                Faturas Vencidas
+                {overdueInvoicesMetric.hasOverdue && (
+                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                )}
+              </CardTitle>
+              <div
+                className={`p-2 rounded-lg ${
+                  overdueInvoicesMetric.hasOverdue
+                    ? 'bg-rose-100 text-rose-600'
+                    : 'bg-emerald-50 text-emerald-600'
+                }`}
+              >
+                <CalendarClock className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div
+                className={`text-3xl font-extrabold tracking-tight ${
+                  overdueInvoicesMetric.hasOverdue ? 'text-rose-600' : 'text-emerald-600'
+                }`}
+              >
+                {overdueInvoicesMetric.count}
+              </div>
+              <div className="mt-2 text-xs">
+                {overdueInvoicesMetric.hasOverdue ? (
+                  <p className="text-rose-700 font-semibold flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                    R${' '}
+                    {overdueInvoicesMetric.totalAmount.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    em aberto
+                  </p>
+                ) : (
+                  <p className="text-emerald-600 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Nenhuma fatura em atraso
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* NOVO KPI 6: Horas Trabalhadas na Semana */}
+          <Card className="relative overflow-hidden border-slate-200/80 hover:shadow-md transition-shadow">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-bl-full pointer-events-none" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Horas na Semana
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-violet-50 text-violet-600">
+                <Timer className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-extrabold tracking-tight text-foreground flex items-baseline gap-1">
+                {weeklyHoursMetric.currentHours}
+                <span className="text-sm font-medium text-muted-foreground">h</span>
+              </div>
+              <div className="flex items-center justify-between mt-2 text-xs">
+                <span
+                  className={`font-medium flex items-center gap-0.5 ${
+                    weeklyHoursMetric.variationPercent >= 0 ? 'text-emerald-600' : 'text-amber-600'
+                  }`}
+                >
+                  {weeklyHoursMetric.variationPercent >= 0 ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  {weeklyHoursMetric.variationPercent >= 0 ? '+' : ''}
+                  {weeklyHoursMetric.variationPercent}% vs. semana ant.
+                </span>
+                <span className="text-muted-foreground text-[11px]">
+                  Meta: {weeklyHoursMetric.targetHours}h
+                </span>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -812,6 +1249,17 @@ export default function Dashboard() {
 
         {/* ================= ABA 1: VISÃO GERAL ================= */}
         <TabsContent value="geral" className="space-y-6 animate-fade-in">
+          {/* Nova Seção: Metas & Alertas Automáticos */}
+          <GoalsAndAlertsWidget
+            currentGoal={currentGoal}
+            currentMonthLabel={format(new Date(), 'MMMM yyyy', { locale: ptBR })}
+            currentYearMonth={new Date().toISOString().slice(0, 7)}
+            currentMonthRevenue={currentMonthRevenue}
+            alerts={dashboardAlerts}
+            loading={loading}
+            onGoalUpdated={() => loadDashboardData(true)}
+          />
+
           {/* Seção de Gráficos Principais */}
           <div className="grid gap-6 lg:grid-cols-7">
             {/* Gráfico de Fluxo de Caixa (Área) */}
