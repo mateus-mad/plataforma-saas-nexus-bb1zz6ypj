@@ -470,6 +470,68 @@ export default function Dashboard() {
     }
   }, [timeEntries, relacionamentos])
 
+  // Cálculos de métricas consolidadas
+  const metrics = useMemo(() => {
+    const totalContatos = relacionamentos.length
+    const clientes = relacionamentos.filter((r) => r.type === 'cliente')
+    const fornecedores = relacionamentos.filter((r) => r.type === 'fornecedor')
+    const colaboradores = relacionamentos.filter((r) => r.type === 'colaborador')
+
+    const empresas = relacionamentos.filter(
+      (r) =>
+        r.type === 'fornecedor' ||
+        r.type === 'cliente' ||
+        r.data?.dados?.tipoPessoa === 'PJ' ||
+        (r.document_number && r.document_number.replace(/\D/g, '').length === 14),
+    )
+    const empresasAtivas = empresas.filter(
+      (r) => !r.status || r.status.toLowerCase() === 'ativo',
+    ).length
+
+    // Compliance
+    const compliance = { em_dia: 0, pendente: 0, vencido: 0 }
+    relacionamentos.forEach((r) => {
+      if (r.compliance_status === 'em_dia') compliance.em_dia++
+      else if (r.compliance_status === 'vencido') compliance.vencido++
+      else compliance.pendente++
+    })
+
+    // Financeiro
+    let totalReceitas = 0
+    let totalDespesas = 0
+    decryptedTxs.forEach((tx) => {
+      const val = Number(tx.amount) || 0
+      if (tx.type === 'income') totalReceitas += val
+      else if (tx.type === 'expense') totalDespesas += val
+    })
+    const saldoLiquido = totalReceitas - totalDespesas
+
+    // Ponto Hoje
+    const today = new Date().toISOString().split('T')[0]
+    const pontosHoje = timeEntries.filter((e) => {
+      const d = (e.timestamp || e.created || '').split('T')[0]
+      return d === today
+    })
+    const usuariosAtivosHoje = new Set(
+      pontosHoje.filter((e) => e.type === 'entrada').map((e) => e.user_id || e.relacionamento_id),
+    ).size
+
+    return {
+      totalContatos,
+      totalClientes: clientes.length,
+      totalFornecedores: fornecedores.length,
+      totalColaboradores: colaboradores.length,
+      empresasAtivas,
+      compliance,
+      totalReceitas,
+      totalDespesas,
+      saldoLiquido,
+      pontosHojeTotal: pontosHoje.length,
+      usuariosAtivosHoje,
+      totalObras: workSites.length,
+    }
+  }, [relacionamentos, decryptedTxs, timeEntries, workSites])
+
   // Lista de Alertas Automáticos gerados a partir de dados reais
   const dashboardAlerts = useMemo<DashboardAlertItem[]>(() => {
     const list: DashboardAlertItem[] = []
@@ -612,68 +674,6 @@ export default function Dashboard() {
     }
     return rev
   }, [financialRecords, metrics.totalReceitas])
-
-  // Cálculos de métricas consolidadas
-  const metrics = useMemo(() => {
-    const totalContatos = relacionamentos.length
-    const clientes = relacionamentos.filter((r) => r.type === 'cliente')
-    const fornecedores = relacionamentos.filter((r) => r.type === 'fornecedor')
-    const colaboradores = relacionamentos.filter((r) => r.type === 'colaborador')
-
-    const empresas = relacionamentos.filter(
-      (r) =>
-        r.type === 'fornecedor' ||
-        r.type === 'cliente' ||
-        r.data?.dados?.tipoPessoa === 'PJ' ||
-        (r.document_number && r.document_number.replace(/\D/g, '').length === 14),
-    )
-    const empresasAtivas = empresas.filter(
-      (r) => !r.status || r.status.toLowerCase() === 'ativo',
-    ).length
-
-    // Compliance
-    const compliance = { em_dia: 0, pendente: 0, vencido: 0 }
-    relacionamentos.forEach((r) => {
-      if (r.compliance_status === 'em_dia') compliance.em_dia++
-      else if (r.compliance_status === 'vencido') compliance.vencido++
-      else compliance.pendente++
-    })
-
-    // Financeiro
-    let totalReceitas = 0
-    let totalDespesas = 0
-    decryptedTxs.forEach((tx) => {
-      const val = Number(tx.amount) || 0
-      if (tx.type === 'income') totalReceitas += val
-      else if (tx.type === 'expense') totalDespesas += val
-    })
-    const saldoLiquido = totalReceitas - totalDespesas
-
-    // Ponto Hoje
-    const today = new Date().toISOString().split('T')[0]
-    const pontosHoje = timeEntries.filter((e) => {
-      const d = (e.timestamp || e.created || '').split('T')[0]
-      return d === today
-    })
-    const usuariosAtivosHoje = new Set(
-      pontosHoje.filter((e) => e.type === 'entrada').map((e) => e.user_id || e.relacionamento_id),
-    ).size
-
-    return {
-      totalContatos,
-      totalClientes: clientes.length,
-      totalFornecedores: fornecedores.length,
-      totalColaboradores: colaboradores.length,
-      empresasAtivas,
-      compliance,
-      totalReceitas,
-      totalDespesas,
-      saldoLiquido,
-      pontosHojeTotal: pontosHoje.length,
-      usuariosAtivosHoje,
-      totalObras: workSites.length,
-    }
-  }, [relacionamentos, decryptedTxs, timeEntries, workSites])
 
   // Gráfico de distribuição de contatos
   const contactDistribution = useMemo(() => {
