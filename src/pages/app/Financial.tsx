@@ -97,48 +97,73 @@ export default function Financial() {
   const { isSetup, isAdminMode, encrypt, decrypt } = useSecurityStore()
 
   useEffect(() => {
+    let isMounted = true
     const loadDB = async () => {
-      let data = (await db.get('financial_v2')) as any[]
-      if (!data) {
-        if (isSetup) {
-          data = await Promise.all(
-            MOCK_TRANSACTIONS.map(async (tx) => ({
-              ...tx,
-              description: await encrypt(tx.description),
-            })),
-          )
-        } else {
-          data = MOCK_TRANSACTIONS
+      try {
+        let data = (await db.get('financial_v2')) as any[]
+        if (!data || data.length === 0) {
+          if (isSetup) {
+            data = await Promise.all(
+              MOCK_TRANSACTIONS.map(async (tx) => ({
+                ...tx,
+                description: await encrypt(tx.description),
+              })),
+            )
+          } else {
+            data = MOCK_TRANSACTIONS
+          }
+          await db.set('financial_v2', data)
         }
-        await db.set('financial_v2', data)
+        if (isMounted) setTxDB(data)
+      } catch (err) {
+        console.warn('Erro ao carregar banco financeiro:', err)
+        if (isMounted) setTxDB(MOCK_TRANSACTIONS)
       }
-      setTxDB(data)
     }
     loadDB()
+    return () => {
+      isMounted = false
+    }
   }, [isSetup, encrypt])
 
   useEffect(() => {
+    let isMounted = true
     const computeDisplay = async () => {
       if (!isSetup) {
-        setDisplayTx(txDB)
+        if (isMounted) setDisplayTx(txDB)
       } else if (isAdminMode) {
-        setDisplayTx(
-          txDB.map((tx) => ({
-            ...tx,
-            description: `[Encrypted] ${tx.description?.substring(0, 15)}...`,
-          })),
-        )
+        if (isMounted) {
+          setDisplayTx(
+            txDB.map((tx) => ({
+              ...tx,
+              description: `[Encrypted] ${String(tx.description || '').substring(0, 15)}...`,
+            })),
+          )
+        }
       } else {
         const dec = await Promise.all(
-          txDB.map(async (tx) => ({
-            ...tx,
-            description: await decrypt(tx.description),
-          })),
+          txDB.map(async (tx) => {
+            let desc = tx.description
+            try {
+              if (desc && typeof desc === 'string' && desc.includes(':')) {
+                desc = await decrypt(desc)
+              }
+            } catch {
+              // mantém original se não for cifra
+            }
+            return {
+              ...tx,
+              description: desc,
+            }
+          }),
         )
-        setDisplayTx(dec)
+        if (isMounted) setDisplayTx(dec)
       }
     }
     if (txDB.length > 0) computeDisplay()
+    return () => {
+      isMounted = false
+    }
   }, [txDB, isSetup, isAdminMode, decrypt])
 
   const handleAddTx = async (e: React.FormEvent<HTMLFormElement>) => {

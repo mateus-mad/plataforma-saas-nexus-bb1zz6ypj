@@ -169,80 +169,53 @@ export default function Dashboard() {
     else setLoading(true)
 
     try {
-      // 1. Relacionamentos
-      let rels: any[] = []
-      try {
-        rels = await pb.collection('relacionamentos').getFullList({
-          sort: '-created',
-        })
-      } catch (err) {
-        console.warn('Erro ao carregar relacionamentos:', err)
-      }
-      setRelacionamentos(rels)
+      const [relsRes, entriesRes, sitesRes, alertsRes, txsRes, goalRes, storedTxsRes] =
+        await Promise.allSettled([
+          pb.collection('relacionamentos').getFullList({ sort: '-created' }),
+          pb.collection('time_entries').getFullList({
+            sort: '-timestamp',
+            limit: 100,
+            expand: 'user_id,work_site_id,relacionamento_id',
+          }),
+          pb.collection('work_sites').getFullList({ sort: 'name' }),
+          pb.collection('security_alerts').getFullList({
+            sort: '-created',
+            limit: 10,
+            expand: 'user_id',
+          }),
+          getFinancialTransactions(),
+          (async () => {
+            const currentYearMonth = new Date().toISOString().slice(0, 7)
+            return await getDashboardGoal(currentYearMonth)
+          })(),
+          db.get('financial_v2' as any),
+        ])
 
-      // 2. Pontos e Obras
-      let entries: any[] = []
-      try {
-        entries = await pb.collection('time_entries').getFullList({
-          sort: '-timestamp',
-          limit: 100,
-          expand: 'user_id,work_site_id,relacionamento_id',
-        })
-      } catch (err) {
-        console.warn('Erro ao carregar time_entries:', err)
-      }
-      setTimeEntries(entries)
+      if (relsRes.status === 'fulfilled') setRelacionamentos(relsRes.value)
+      else console.warn('Erro ao carregar relacionamentos:', relsRes.reason)
 
-      let sites: any[] = []
-      try {
-        sites = await pb.collection('work_sites').getFullList({
-          sort: 'name',
-        })
-      } catch (err) {
-        console.warn('Erro ao carregar work_sites:', err)
-      }
-      setWorkSites(sites)
+      if (entriesRes.status === 'fulfilled') setTimeEntries(entriesRes.value)
+      else console.warn('Erro ao carregar time_entries:', entriesRes.reason)
 
-      // 3. Alertas de segurança
-      let secAlerts: any[] = []
-      try {
-        secAlerts = await pb.collection('security_alerts').getFullList({
-          sort: '-created',
-          limit: 10,
-          expand: 'user_id',
-        })
-      } catch (err) {
-        console.warn('Erro ao carregar security_alerts:', err)
-      }
-      setAlerts(secAlerts)
+      if (sitesRes.status === 'fulfilled') setWorkSites(sitesRes.value)
+      else console.warn('Erro ao carregar work_sites:', sitesRes.reason)
 
-      // 3.1. Faturas / Transações financeiras reais do banco de dados
-      try {
-        const txs = await getFinancialTransactions()
-        setFinancialRecords(txs)
-      } catch (err) {
-        console.warn('Erro ao carregar financial_transactions:', err)
-      }
+      if (alertsRes.status === 'fulfilled') setAlerts(alertsRes.value)
+      else console.warn('Erro ao carregar security_alerts:', alertsRes.reason)
 
-      // 3.2. Metas do mês corrente do banco de dados
-      try {
-        const currentYearMonth = new Date().toISOString().slice(0, 7)
-        const goal = await getDashboardGoal(currentYearMonth)
-        setCurrentGoal(goal)
-      } catch (err) {
-        console.warn('Erro ao carregar dashboard_goals:', err)
-      }
+      if (txsRes.status === 'fulfilled') setFinancialRecords(txsRes.value)
+      else console.warn('Erro ao carregar financial_transactions:', txsRes.reason)
 
-      // 4. Financeiro (leitura de localStorage sincronizada com Financial.tsx)
-      try {
-        const storedTxs = (await db.get('financial_v2' as any)) as any[]
-        if (storedTxs && Array.isArray(storedTxs) && storedTxs.length > 0) {
-          setFinancialTxs(storedTxs)
-        } else {
-          setFinancialTxs(FALLBACK_FINANCIAL_TX)
-        }
-      } catch (err) {
-        console.warn('Erro ao carregar financeiro:', err)
+      if (goalRes.status === 'fulfilled') setCurrentGoal(goalRes.value)
+      else console.warn('Erro ao carregar dashboard_goals:', goalRes.reason)
+
+      if (
+        storedTxsRes.status === 'fulfilled' &&
+        Array.isArray(storedTxsRes.value) &&
+        storedTxsRes.value.length > 0
+      ) {
+        setFinancialTxs(storedTxsRes.value)
+      } else {
         setFinancialTxs(FALLBACK_FINANCIAL_TX)
       }
     } catch (error) {
@@ -310,12 +283,13 @@ export default function Dashboard() {
     today.setHours(23, 59, 59, 999)
 
     // Filtra transações financeiras reais vencidas
-    // não pagas e com due_date anterior a hoje
+    // não pagas e com due_date anterior a hoje, ou marcadas explicitamente como overdue
     const overdueList = financialRecords.filter((tx) => {
       if (tx.status === 'paid' || tx.status === 'cancelled') return false
+      if (tx.status === 'overdue') return true
       if (!tx.due_date) return false
       const due = new Date(tx.due_date)
-      return due < today || tx.status === 'overdue'
+      return due < today
     })
 
     const count = overdueList.length
@@ -559,15 +533,19 @@ export default function Dashboard() {
     // Receita deste mês (calculada a partir das transações reais e do módulo financeiro)
     let currentMonthRealized = 0
     financialRecords.forEach((tx) => {
-      if (tx.type === 'income' && tx.status === 'paid') {
+      if (tx.type === 'income' && (tx.status === 'paid' || !tx.status)) {
         const txDate = tx.payment_date || tx.due_date || tx.created || ''
         if (txDate.startsWith(currentYearMonth)) {
           currentMonthRealized += Number(tx.amount) || 0
         }
       }
     })
-    if (currentMonthRealized === 0 && metrics.totalReceitas > 0) {
-      currentMonthRealized = metrics.totalReceitas
+    // Se não encontrou do mês corrente específico, consolida pagas de financialRecords
+    if (currentMonthRealized === 0) {
+      const allPaidIncome = financialRecords
+        .filter((tx) => tx.type === 'income' && tx.status === 'paid')
+        .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+      currentMonthRealized = allPaidIncome > 0 ? allPaidIncome : metrics.totalReceitas
     }
 
     if (currentMonthTarget > 0) {
@@ -662,15 +640,18 @@ export default function Dashboard() {
     const currentYearMonth = new Date().toISOString().slice(0, 7)
     let rev = 0
     financialRecords.forEach((tx) => {
-      if (tx.type === 'income' && tx.status === 'paid') {
+      if (tx.type === 'income' && (tx.status === 'paid' || !tx.status)) {
         const txDate = tx.payment_date || tx.due_date || tx.created || ''
         if (txDate.startsWith(currentYearMonth)) {
           rev += Number(tx.amount) || 0
         }
       }
     })
-    if (rev === 0 && metrics.totalReceitas > 0) {
-      return metrics.totalReceitas
+    if (rev === 0) {
+      const allPaidIncome = financialRecords
+        .filter((tx) => tx.type === 'income' && tx.status === 'paid')
+        .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+      return allPaidIncome > 0 ? allPaidIncome : metrics.totalReceitas
     }
     return rev
   }, [financialRecords, metrics.totalReceitas])
@@ -681,7 +662,7 @@ export default function Dashboard() {
       { name: 'Clientes', value: metrics.totalClientes, color: '#3b82f6' },
       { name: 'Fornecedores', value: metrics.totalFornecedores, color: '#f59e0b' },
       { name: 'Colaboradores', value: metrics.totalColaboradores, color: '#10b981' },
-    ]
+    ].filter((item) => item.value > 0)
   }, [metrics])
 
   // Gráfico de evolução financeira dos últimos 6 meses

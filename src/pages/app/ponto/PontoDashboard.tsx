@@ -338,50 +338,47 @@ export default function PontoDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card
-          className="hover:border-primary/30 transition-colors group cursor-pointer"
-          onClick={() => (window.location.href = '/app/controle-de-ponto/espelho')}
-        >
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <History className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-slate-800">Espelho de Ponto</h3>
-              <p className="text-sm text-slate-500">Histórico mensal.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <Link to="/app/controle-de-ponto/espelho" className="block">
+          <Card className="hover:border-primary/30 transition-colors group cursor-pointer h-full">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <History className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-slate-800">Espelho de Ponto</h3>
+                <p className="text-sm text-slate-500">Histórico mensal.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card
-          className="hover:border-primary/30 transition-colors group cursor-pointer"
-          onClick={() => (window.location.href = '/app/controle-de-ponto/gestao')}
-        >
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-slate-800">Monitoramento</h3>
-              <p className="text-sm text-slate-500">Eventos em tempo real.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <Link to="/app/controle-de-ponto/gestao" className="block">
+          <Card className="hover:border-primary/30 transition-colors group cursor-pointer h-full">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-slate-800">Monitoramento</h3>
+                <p className="text-sm text-slate-500">Eventos em tempo real.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card
-          className="hover:border-primary/30 transition-colors group cursor-pointer"
-          onClick={() => (window.location.href = '/app/controle-de-ponto/custos')}
-        >
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Activity className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-slate-800">Custos de Obras</h3>
-              <p className="text-sm text-slate-500">Gastos diários com equipe.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <Link to="/app/controle-de-ponto/custos" className="block">
+          <Card className="hover:border-primary/30 transition-colors group cursor-pointer h-full">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Activity className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-slate-800">Custos de Obras</h3>
+                <p className="text-sm text-slate-500">Gastos diários com equipe.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   )
