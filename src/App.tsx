@@ -19,6 +19,7 @@ import Dashboard from '@/pages/app/Dashboard'
 import Contatos from '@/pages/app/Contatos'
 import Financial from '@/pages/app/Financial'
 import FinanceOrbixPilot from '@/features/orbix-finance/FinanceOrbixPilot'
+import MigrationConsole from '@/features/orbix-migration/MigrationConsole'
 import Settings from '@/pages/app/Settings'
 import WorkShifts from '@/pages/app/WorkShifts'
 import ComingSoon from '@/pages/app/ComingSoon'
@@ -120,6 +121,7 @@ const App = () => (
                       }
                     />
                     <Route path="/app/configuracoes/*" element={<Settings />} />
+                    <Route path="/app/migracao-orbix" element={<MigrationConsole />} />
                     <Route
                       path="/app/configuracoes/rh/jornada"
                       element={
