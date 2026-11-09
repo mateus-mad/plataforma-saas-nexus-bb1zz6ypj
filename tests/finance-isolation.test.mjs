@@ -81,7 +81,7 @@ test('PocketBase: isolamento financeiro por empresa e bloqueio de escrita', asyn
     const denied = (action, status=403) => assert.rejects(action, e => e.status === status)
 
     await t.test('regras aplicadas coincidem com o schema versionado', async () => {
-      const schema = JSON.parse(await readFile(new URL('../pocketbase/schema-targets/0026_finance_company_isolation.json', import.meta.url),'utf8'))
+      const schema = JSON.parse(await readFile(new URL('./fixtures/finance-schema.target.json', import.meta.url),'utf8'))
       for (const name of ['finance_companies','finance_memberships','financial_transactions','dashboard_goals']) {
         const live = await admin.collections.getOne(name)
         const expected = schema.collections.find(c=>c.name===name)

@@ -2,9 +2,9 @@
 
 ## Estado em 09/11/2026
 
-Branch `test/orbix-finance-pilot-mad`; PR #1 em rascunho. O piloto adapta indicadores do ORBIX para o PocketBase do Skip. A etapa atual implementa **consulta isolada por empresa no servidor**. Não é integração completa dos ERPs nem migração financeira homologada.
+Branch `test/orbix-finance-pilot-mad`; PR #1 integrada à main. O piloto adapta indicadores do ORBIX para o PocketBase do Skip. A etapa atual implementa **consulta isolada por empresa no servidor**. Não é integração completa dos ERPs nem migração financeira homologada.
 
-A migração foi validada em PocketBase local **0.26.6** e aplicada por mecanismo nativo na cópia de homologação do Skip. Também foram concluídos testes HTTP externos com contas comuns contra esse backend hospedado. O Supabase do ORBIX não foi alterado nem teve dados financeiros importados. A produção ainda não recebeu a integração; o backup lógico restrito das duas coleções foi concluído e sua restauração em estruturas separadas foi verificada. A versão numérica exata do servidor hospedado não foi confirmada.
+A migração foi validada em PocketBase local **0.26.6** e aplicada por mecanismo nativo na cópia de homologação do Skip. Também foram concluídos testes HTTP externos com contas comuns contra esse backend hospedado. O Supabase do ORBIX não foi alterado nem teve dados financeiros importados. O backend principal recebeu o isolamento; o backup lógico restrito das duas coleções foi concluído e sua restauração em estruturas separadas foi verificada. A publicação do frontend é registrada separadamente. A versão numérica exata do servidor hospedado não foi confirmada.
 
 ## Alteração de autorização
 
@@ -19,7 +19,7 @@ As regras são aplicadas por PocketBase, inclusive em HTTP direto; filtros React
 
 `company_id` é uma relação obrigatória para novos lançamentos/metas. Os registros existentes sem empresa permanecem armazenados e ocultos das contas normais. **Não há atribuição automática à MAD, exclusão ou classificação automática como dado real.** A migração histórica 0024 insere dados demonstrativos; esses registros também ficam sem empresa. Revisar origem e titularidade antes de qualquer atribuição administrativa.
 
-O índice mensal das metas passa de global para `(company_id, month)`, sem conflitar com registros legados. O contrato alvo das quatro coleções fica em `pocketbase/schema-targets/0026_finance_company_isolation.json`, separado do snapshot gerenciado `src/lib/pocketbase/schema.json`, que o Skip regenera a cada sincronização. O contrato alvo não representa uma exportação do servidor em produção. Os testes comparam esse contrato com a migração realmente executada no banco descartável.
+O índice mensal das metas passa de global para `(company_id, month)`, sem conflitar com registros legados. O contrato alvo das quatro coleções fica em `tests/fixtures/finance-schema.target.json`, separado do snapshot gerenciado `src/lib/pocketbase/schema.json`, que o Skip regenera a cada sincronização. O contrato alvo não representa uma exportação do servidor em produção. Os testes comparam esse contrato com a migração realmente executada no banco descartável.
 
 ## Interface do piloto
 
@@ -71,7 +71,7 @@ A opção de processo único habilita renderização SwiftShader para o ambiente
 
 ## Aplicação em homologação
 
-1. Manter esta PR em rascunho. Confirmar versão e diretórios efetivos do PocketBase no Skip.
+1. Procedimento histórico: a PR foi posteriormente integrada à main. Confirmar versão e diretórios efetivos do PocketBase no Skip.
 2. Gerar backup consistente do banco e arquivos; demonstrar restauração em uma instância isolada antes da aplicação hospedada.
 3. Usar cópia isolada do banco existente, revisar colisões com nomes/campos da nova migração e aplicar a 0026 pelo mecanismo do Skip. Não executar seeds antigos separadamente nem importar o snapshot parcial como substituto de todas as coleções.
 4. Por administração confiável do PocketBase, cadastrar duas empresas fictícias ativas e seus vínculos com usuários de teste (`company_id`, `user_id`, `active=true`, `can_read=true`). Não usar superusuário no app.
@@ -83,7 +83,7 @@ Não existe downgrade automático da 0026: retornar regras amplas da 0024 reabri
 
 ## Pendências para integração completa
 
-- Homologação hospedada, backup/restauração e validação de navegador com autenticação e backend reais.
+- Migração integral dos dados e fluxos; validação autenticada do proprietário no aplicativo publicado. Homologação HTTP hospedada do piloto e backup/restauração restritos já foram executados.
 - Modelo ORBIX → PocketBase para obras/centros de custo, fornecedores, parcelas, competência e chave de origem contra duplicidade; mapear o schema atual da fonte antes de importar.
 - Permissões separadas de lançamento, edição, aprovação e baixa, com trilha de auditoria confiável no servidor. Nesta etapa todas as escritas normais estão bloqueadas.
 - Remover dependência dos dados demonstrativos no financeiro e no tenant global; revisar isolamento dos demais módulos e possíveis expansões de relações antes de migrar dados.
@@ -140,3 +140,13 @@ Mapeamento da fonte ORBIX e identificação dos ambientes em `ORBIX_SKIP_MAPEAME
 ### Numeração da migração no principal
 
 A preparação de backup lógico do principal utiliza o próximo número disponível, **0025**. Por isso, o arquivo de isolamento da branch foi renumerado para **`0026_finance_company_isolation.js`**, com a mesma lógica e regras testadas. O teste descartável aponta para esse novo nome. A cópia de homologação já recebeu a versão nativa de isolamento como 0025; **não reaplicar 0026 nessa cópia sem reconciliar o histórico**, pois a estrutura já existe. No principal, verificar o backup 0025 antes da aplicação do isolamento 0026. Não confundir número de migração com versão de preview.
+
+## Estado verificado ao concluir a implantação do backend
+
+O ledger do painel Skip Cloud mostra **0026_finance_company_isolation**, aplicada em 09/11/2026 (11:01:43 exibido pela interface), seguida de 0025_backup_collections. Embora a resposta do agente tenha chamado a alternativa de 0027, o histórico persistido confirma 0026; a tentativa temporária de 0027 não deve ser reaplicada. As quatro coleções/regras/índices do snapshot gerenciado foram comparadas com o contrato testado. HTTP externo anônimo retornou 200 e zero registros nas quatro coleções; os backups retornaram 403. A prova A/B autenticada foi realizada na cópia, não repetida no principal. QA nativo 0.0.177 e QA local passaram. O contrato de testes fica fora da pasta gerenciada `pocketbase`, pois ela foi regenerada pelo Skip e removeu o arquivo auxiliar anterior.
+
+O Supabase foi conectado como **origem** para a migração integral; o destino permanece Skip Cloud. A instalação foi confirmada, porém operações do novo conector ainda não foram expostas nesta sessão. Nenhum dado real do Supabase foi importado. Inventário e critérios de aceite em ORBIX_MIGRACAO_INTEGRAL.md.
+
+## Publicação confirmada
+
+O frontend 0.0.177 / `80a744a` foi publicado pela interface em 09/11/2026 e aberto no domínio principal `https://plataforma-saas-bf8b5.goskip.app/?v=80a744a`. A rota protegida do piloto redirecionou para `/login` sem sessão. Nenhuma empresa/vínculo foi concedido ao proprietário e nenhum legado atribuído automaticamente. A migração completa dos dados e módulos do ORBIX continua pendente, embora o piloto esteja publicado.

@@ -27,9 +27,9 @@ A visão `budget_offline_sync_queue` deve ser reconstruída a partir de definiç
 
 ## Acesso necessário e estado atual
 
-O Lovable informa Supabase habilitado, mas consultas SQL retornam `database_not_managed`: o banco externo não é acessível por esse endpoint. A conexão oficial Supabase foi localizada e oferecida ao proprietário. Não usar chaves privilegiadas no frontend, chat ou repositório. A autenticação recuperada do aplicativo Nexus não concede acesso administrativo ao banco Supabase do ORBIX.
+O Lovable informa Supabase habilitado, mas consultas SQL retornam `database_not_managed`: o banco externo não é acessível por esse endpoint. A conexão oficial Supabase foi instalada e conectada pelo proprietário em 09/11/2026, confirmada pelo ambiente e pelo catálogo. O destino permanece Skip Cloud. Entretanto, a sessão corrente ainda não expôs operações Supabase para listar projetos ou executar SQL. Não solicitar nova instalação: o bloqueio é a disponibilização dos comandos nesta sessão. Não usar chaves privilegiadas no frontend, chat ou repositório. A autenticação recuperada do aplicativo Nexus não concede acesso administrativo ao banco Supabase do ORBIX.
 
-Sem essa conexão não é possível confirmar contagens, empresas, titularidade, RLS, arquivos, funções, gatilhos ou valores para conciliação. Nenhum registro financeiro, RH ou documento real foi copiado neste levantamento.
+Sem as operações de consulta disponíveis ainda não é possível confirmar contagens, empresas, titularidade, RLS, arquivos, funções, gatilhos ou valores para conciliação. Nenhum registro financeiro, RH ou documento real foi copiado neste levantamento.
 
 ## Ordem de execução e aceite
 
