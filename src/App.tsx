@@ -103,7 +103,14 @@ const App = () => (
 
                     <Route path="/app/contatos" element={<Contatos />} />
                     <Route path="/app/contatos/:view" element={<Contatos />} />
-                    <Route path="/app/financeiro/orbix-piloto" element={<ModuleProtectedRoute moduleName="Financeiro"><FinanceOrbixPilot /></ModuleProtectedRoute>} />
+                    <Route
+                      path="/app/financeiro/orbix-piloto"
+                      element={
+                        <ModuleProtectedRoute moduleName="Financeiro">
+                          <FinanceOrbixPilot />
+                        </ModuleProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/app/financeiro"
                       element={

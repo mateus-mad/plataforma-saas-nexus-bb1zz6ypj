@@ -8,22 +8,22 @@ Arquivos: `src/components/FinancialOverview.tsx`, `FinancialPayables.tsx` e `Fin
 
 ## Correspondência e limites
 
-| ORBIX | Piloto Skip | Tratamento |
-| --- | --- | --- |
-| `accounts_payable` | `financial_transactions`, `type=expense` | Correspondência conceitual; nenhum importador executado |
-| `accounts_receivable` | `financial_transactions`, `type=income` | Correspondência conceitual; nenhum importador executado |
-| `description` | `description` | Mesmo significado |
-| `amount` | `amount` | Mesmo valor nominal; sem inferir saldo após pagamento parcial |
-| `due_date` | `due_date` | Data de vencimento, preservada como data civil |
-| `payment_date` | `payment_date` | Data informada; não comprova conciliação |
-| `status=pending/paid/cancelled` | `status` | Requer validar domínio completo antes de importar; não mapear estados desconhecidos silenciosamente |
-| `supplier_id` / `customer_id` | `relacionamento_id` | Exige tabela de correspondência por empresa; IDs não são intercambiáveis |
-| `approval_status`, `approved_at`, `approved_by` | Sem equivalente no piloto | Preservar como etapa de modelagem; não converter aprovação em pagamento |
-| `document_number`, `document_type`, `issue_date` | Sem equivalente dedicado | Não perder rastreabilidade em uma futura importação |
-| `cost_center_id`, `site_id`, `account_id` | Sem equivalente no piloto | Exige relações isoladas por empresa antes da migração |
-| `payment_method`, anexos de fatura | Sem equivalente dedicado | Não copiar URLs assinadas temporárias como anexos permanentes |
-| Origem Supabase e `id` | Chave de origem ainda não modelada | Prevenção de duplicidade é pré-requisito de importação |
-| Empresa autorizada | `finance_companies` + `finance_memberships` | Cadastro administrativo explícito; nunca deduzido de nome, usuário ou tenant demonstrativo |
+| ORBIX                                            | Piloto Skip                                 | Tratamento                                                                                          |
+| ------------------------------------------------ | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `accounts_payable`                               | `financial_transactions`, `type=expense`    | Correspondência conceitual; nenhum importador executado                                             |
+| `accounts_receivable`                            | `financial_transactions`, `type=income`     | Correspondência conceitual; nenhum importador executado                                             |
+| `description`                                    | `description`                               | Mesmo significado                                                                                   |
+| `amount`                                         | `amount`                                    | Mesmo valor nominal; sem inferir saldo após pagamento parcial                                       |
+| `due_date`                                       | `due_date`                                  | Data de vencimento, preservada como data civil                                                      |
+| `payment_date`                                   | `payment_date`                              | Data informada; não comprova conciliação                                                            |
+| `status=pending/paid/cancelled`                  | `status`                                    | Requer validar domínio completo antes de importar; não mapear estados desconhecidos silenciosamente |
+| `supplier_id` / `customer_id`                    | `relacionamento_id`                         | Exige tabela de correspondência por empresa; IDs não são intercambiáveis                            |
+| `approval_status`, `approved_at`, `approved_by`  | Sem equivalente no piloto                   | Preservar como etapa de modelagem; não converter aprovação em pagamento                             |
+| `document_number`, `document_type`, `issue_date` | Sem equivalente dedicado                    | Não perder rastreabilidade em uma futura importação                                                 |
+| `cost_center_id`, `site_id`, `account_id`        | Sem equivalente no piloto                   | Exige relações isoladas por empresa antes da migração                                               |
+| `payment_method`, anexos de fatura               | Sem equivalente dedicado                    | Não copiar URLs assinadas temporárias como anexos permanentes                                       |
+| Origem Supabase e `id`                           | Chave de origem ainda não modelada          | Prevenção de duplicidade é pré-requisito de importação                                              |
+| Empresa autorizada                               | `finance_companies` + `finance_memberships` | Cadastro administrativo explícito; nunca deduzido de nome, usuário ou tenant demonstrativo          |
 
 O piloto utiliza os lançamentos já existentes no PocketBase; não faz sincronização periódica com Supabase. O ORBIX mantém tabelas e recursos que o piloto ainda não representa, incluindo aprovação e vínculos contábeis. A transferência nesta etapa é da lógica de consulta e indicadores.
 

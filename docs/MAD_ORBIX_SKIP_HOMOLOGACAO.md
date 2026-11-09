@@ -8,12 +8,12 @@ A migração foi validada em PocketBase local **0.26.6** e aplicada por mecanism
 
 ## Alteração de autorização
 
-| Coleção | Consulta normal | Escrita normal |
-| --- | --- | --- |
-| `finance_companies` | Empresa ativa e vínculo ativo com `can_read` | Bloqueada |
-| `finance_memberships` | Somente vínculo do próprio usuário com acesso ativo | Bloqueada |
-| `financial_transactions` | Empresa ativa e vínculo ativo do solicitante com `can_read` | Bloqueada |
-| `dashboard_goals` | Mesma regra de lançamentos | Bloqueada |
+| Coleção                  | Consulta normal                                             | Escrita normal |
+| ------------------------ | ----------------------------------------------------------- | -------------- |
+| `finance_companies`      | Empresa ativa e vínculo ativo com `can_read`                | Bloqueada      |
+| `finance_memberships`    | Somente vínculo do próprio usuário com acesso ativo         | Bloqueada      |
+| `financial_transactions` | Empresa ativa e vínculo ativo do solicitante com `can_read` | Bloqueada      |
+| `dashboard_goals`        | Mesma regra de lançamentos                                  | Bloqueada      |
 
 As regras são aplicadas por PocketBase, inclusive em HTTP direto; filtros React não concedem acesso. Superusuários continuam tendo poderes administrativos e suas credenciais nunca devem ir ao frontend. Usuários não podem se autoatribuir empresas ou permissões.
 
@@ -96,7 +96,6 @@ Não existe downgrade automático da 0026: retornar regras amplas da 0024 reabri
 
 A documentação atual pode descrever versões posteriores; os testes locais executaram 0.26.6. A aprovação local não autoriza considerar a produção homologada.
 
-
 ## Homologação hospedada — 09/11/2026
 
 Autenticação do proprietário no workspace Skip confirmada pela interface. Projeto principal: `af44e044-8a93-4b25-a413-19c99ab6e5cd` (Plataforma SaaS Nexus), repositório conectado confirmado. Cópia nativa de teste: **MAD — Homologação ORBIX → Skip**, ID `aab3c043-4734-4a5a-add7-34c111dd6a24`, sem publicação pública.
@@ -111,20 +110,20 @@ O primeiro roteiro hospedado tentou HTTP recursivo dentro dos hooks e não produ
 
 Foram criadas duas empresas explicitamente fictícias, duas contas de prova com senhas aleatórias mantidas somente na memória do cliente e dois lançamentos identificados como **HOMOLOGAÇÃO API / FICTÍCIO**. Os vínculos foram cadastrados pelo painel administrativo da cópia, sem alterar regras ou dar poderes administrativos às contas.
 
-| Verificação | Resultado observado |
-| --- | --- |
-| Requisição anônima a lançamentos | HTTP 200, lista vazia |
-| Duas contas autenticadas sem vínculo | HTTP 200, lista vazia para ambas |
-| Conta A lista lançamentos | HTTP 200, exatamente o registro da A |
-| Conta B lista lançamentos | HTTP 200, exatamente o registro da B |
-| Conta A busca por ID da B | HTTP 404 |
-| Conta B busca por ID da A | HTTP 404 |
-| Conta A tenta `PATCH status=paid` no próprio lançamento fictício | HTTP 403 |
-| Conta B tenta `PATCH status=paid` no próprio lançamento fictício | HTTP 403 |
-| Conta A tenta `DELETE` do próprio lançamento fictício | HTTP 403 |
-| Conta B tenta `DELETE` do próprio lançamento fictício | HTTP 403 |
-| Vínculo A desativado, token já emitido reutilizado | A lista vazia; B continua com apenas o próprio registro |
-| Vínculo B desativado ao encerrar | Ambas as contas recebem lista vazia |
+| Verificação                                                      | Resultado observado                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------- |
+| Requisição anônima a lançamentos                                 | HTTP 200, lista vazia                                   |
+| Duas contas autenticadas sem vínculo                             | HTTP 200, lista vazia para ambas                        |
+| Conta A lista lançamentos                                        | HTTP 200, exatamente o registro da A                    |
+| Conta B lista lançamentos                                        | HTTP 200, exatamente o registro da B                    |
+| Conta A busca por ID da B                                        | HTTP 404                                                |
+| Conta B busca por ID da A                                        | HTTP 404                                                |
+| Conta A tenta `PATCH status=paid` no próprio lançamento fictício | HTTP 403                                                |
+| Conta B tenta `PATCH status=paid` no próprio lançamento fictício | HTTP 403                                                |
+| Conta A tenta `DELETE` do próprio lançamento fictício            | HTTP 403                                                |
+| Conta B tenta `DELETE` do próprio lançamento fictício            | HTTP 403                                                |
+| Vínculo A desativado, token já emitido reutilizado               | A lista vazia; B continua com apenas o próprio registro |
+| Vínculo B desativado ao encerrar                                 | Ambas as contas recebem lista vazia                     |
 
 Os oito primeiros testes A/B com vínculo ativo passaram; as duas leituras após revogar A e as duas após revogar B também passaram. O processo cliente foi encerrado e descartou o estado de autenticação em memória. Não foram gravados senhas ou tokens em arquivos, chat, código ou relatório. Os dois vínculos de prova terminaram inativos; as empresas/lançamentos fictícios permanecem identificados na cópia, para rastreabilidade, sem atribuição à MAD real.
 
@@ -137,7 +136,6 @@ Preparação concluída na versão nativa 0.0.172 / `9876955`: migração `0025_
 O código da branch foi reconciliado com o principal, preservando a migração de backup, documentação, configuração gerenciada e demais alterações nativas. Implantação do isolamento 0026 e publicação permanecem a etapa seguinte.
 
 Mapeamento da fonte ORBIX e identificação dos ambientes em `ORBIX_SKIP_MAPEAMENTO_FINANCEIRO.md`.
-
 
 ### Numeração da migração no principal
 
