@@ -2,6 +2,8 @@ import pb from '@/lib/pocketbase/client'
 
 export interface FinancialTransaction {
   id: string
+  /** Empty only on legacy records quarantined by migration 0025. */
+  company_id?: string
   description: string
   type: 'income' | 'expense'
   amount: number
