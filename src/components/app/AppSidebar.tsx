@@ -14,7 +14,7 @@ import {
   Clock,
   MapPin,
 } from 'lucide-react'
-import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES } from '@/config/modules'
+import { MENU_CATEGORIES, MANAGER_MENU_CATEGORIES, type MenuItem } from '@/config/modules'
 import useModuleStore from '@/stores/useModuleStore'
 import useSecurityStore from '@/stores/useSecurityStore'
 import {
@@ -338,7 +338,7 @@ export function AppSidebar() {
                             </div>
                           </div>
                           <div className="p-2 flex flex-col gap-1">
-                            {category.items?.map((item) => {
+                            {category.items?.map((item: MenuItem) => {
                               const isSubActive = currentFullPath === decodeURIComponent(item.path)
                               return (
                                 <Link

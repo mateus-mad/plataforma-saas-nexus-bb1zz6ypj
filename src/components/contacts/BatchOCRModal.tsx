@@ -262,16 +262,14 @@ export default function BatchOCRModal({
                         <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
                       )}
                       {f.status === 'done' && (
-                        <CheckCircle2
-                          className="w-4 h-4 text-emerald-500"
-                          title="Extraído com sucesso"
-                        />
+                        <span title="Extraído com sucesso" className="inline-flex">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        </span>
                       )}
                       {f.status === 'error' && (
-                        <AlertTriangle
-                          className="w-4 h-4 text-amber-500"
-                          title="Rascunho criado, mas OCR falhou"
-                        />
+                        <span title="Rascunho criado, mas OCR falhou" className="inline-flex">
+                          <AlertTriangle className="w-4 h-4 text-amber-500" />
+                        </span>
                       )}
 
                       {!isProcessing && (

@@ -32,6 +32,7 @@ import {
   History,
   UserSquare2,
 } from 'lucide-react'
+import type React from 'react'
 
 export const ACTIVE_MODULES = [
   {
@@ -207,7 +208,21 @@ export const MANAGER_MENU_CATEGORIES = [
   },
 ]
 
-export const MENU_CATEGORIES = [
+export interface MenuItem {
+  name: string
+  path: string
+  icon: React.ComponentType<{ className?: string }>
+  description?: string
+  isUpcoming?: boolean
+  requireAdmin?: boolean
+}
+
+export const MENU_CATEGORIES: Array<{
+  name: string
+  icon: React.ComponentType<{ className?: string }>
+  path?: string
+  items?: MenuItem[]
+}> = [
   {
     name: 'Visão Geral',
     icon: LayoutDashboard,

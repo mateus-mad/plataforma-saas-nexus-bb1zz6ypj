@@ -41,7 +41,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [])
 
   const setupSecurity = async (password: string) => {
-    const salt = generateSalt()
+    const salt: Uint8Array<ArrayBuffer> = generateSalt()
     const saltB64 = bufferToBase64(salt)
 
     const newMasterKey = await generateDataKey()
@@ -76,7 +76,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!saltB64 || !encPwd) return false
 
     try {
-      const salt = base64ToBuffer(saltB64)
+      const salt: Uint8Array<ArrayBuffer> = base64ToBuffer(saltB64)
       const pwdKey = await generateKey(password, salt)
       const rawDataKeyStr = await decryptData(encPwd, pwdKey)
 
@@ -100,7 +100,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!saltB64) return false
 
     try {
-      const salt = base64ToBuffer(saltB64)
+      const salt: Uint8Array<ArrayBuffer> = base64ToBuffer(saltB64)
       const secretKey = await generateKey(secret, salt)
 
       let rawDataKeyStr = null

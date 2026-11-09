@@ -4,6 +4,7 @@ export interface DatabaseSchema {
   collaborators_data: any
   companies_data: any
   whatsapp_config: any
+  financial_v2: any[]
 }
 
 class MockDatabase {

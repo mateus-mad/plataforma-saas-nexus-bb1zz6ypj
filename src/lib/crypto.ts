@@ -13,7 +13,10 @@ export const base64ToBuffer = (base64: string) => {
   return bytes
 }
 
-export const generateKey = async (secret: string, salt: Uint8Array): Promise<CryptoKey> => {
+export const generateKey = async (
+  secret: string,
+  salt: Uint8Array<ArrayBuffer>,
+): Promise<CryptoKey> => {
   const enc = new TextEncoder()
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
