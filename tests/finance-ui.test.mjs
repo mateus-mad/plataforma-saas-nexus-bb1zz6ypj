@@ -52,6 +52,8 @@ test('interface do piloto: sessão, seleção, leitura e falha explícita', asyn
     await t.test('rota sem sessão redireciona para login',async()=>{
       await page.goto(`${app}/app/financeiro/orbix-piloto`)
       await page.waitForURL('**/login')
+      assert.equal(await page.getByLabel('E-mail Corporativo',{exact:true}).inputValue(),'')
+      assert.equal(await page.getByLabel('Senha',{exact:true}).inputValue(),'')
     })
     const token=`test.${Buffer.from(JSON.stringify({exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')}.test`
     await page.evaluate(({token})=>localStorage.setItem('pocketbase_auth',JSON.stringify({token,record:{id:'testuser0000001',collectionName:'users',collectionId:'_pb_users_auth_',email:'ui@example.invalid'}})),{token})

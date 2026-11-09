@@ -31,6 +31,8 @@ O índice mensal das metas passa de global para `(company_id, month)`, sem confl
 - Exibe até 100 linhas e informa quando os indicadores incluem registros além das linhas visíveis.
 - O status `paid` é informação do banco, não comprovação bancária/Pix nem lançamento no Mais Controle.
 
+O login da branch inicia com e-mail/senha vazios, sem credenciais fixas no frontend, e possui rótulos/autocomplete para autenticação segura. Nenhuma senha de conta foi modificada. O teste de navegador verifica os dois campos vazios.
+
 A tela antiga do Financeiro agora mostra um aviso de demonstração/registros locais e o link “Abrir consulta ORBIX por empresa”. O teste de navegador local cobre esse caminho até o piloto.
 
 O seletor de empresas desta página usa `finance_companies`. O seletor global `useTenantStore` ainda é demonstrativo e não é fonte de autorização. Não assumir que o restante do ERP está isolado por empresa.
