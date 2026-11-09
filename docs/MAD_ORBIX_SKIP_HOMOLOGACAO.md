@@ -31,6 +31,8 @@ O índice mensal das metas passa de global para `(company_id, month)`, sem confl
 - Exibe até 100 linhas e informa quando os indicadores incluem registros além das linhas visíveis.
 - O status `paid` é informação do banco, não comprovação bancária/Pix nem lançamento no Mais Controle.
 
+A tela antiga do Financeiro agora mostra um aviso de demonstração/registros locais e o link “Abrir consulta ORBIX por empresa”. O teste de navegador local cobre esse caminho até o piloto.
+
 O seletor de empresas desta página usa `finance_companies`. O seletor global `useTenantStore` ainda é demonstrativo e não é fonte de autorização. Não assumir que o restante do ERP está isolado por empresa.
 
 ## Validação reproduzível
@@ -91,3 +93,14 @@ Não existe downgrade automático da 0025: retornar regras amplas da 0024 reabri
 - https://pocketbase.io/docs/js-migrations/
 
 A documentação atual pode descrever versões posteriores; os testes locais executaram 0.26.6. A aprovação local não autoriza considerar a produção homologada.
+
+
+## Execução hospedada em andamento — 09/11/2026
+
+Autenticação do proprietário no workspace Skip confirmada pela interface. Projeto principal identificado: `af44e044-8a93-4b25-a413-19c99ab6e5cd` (Plataforma SaaS Nexus), com o repositório esperado conectado. Foi criada uma cópia nativa, renomeada **MAD — Homologação ORBIX → Skip**, ID `aab3c043-4734-4a5a-add7-34c111dd6a24`, sem publicação.
+
+O painel Skip Cloud confirma backend próprio da cópia em `plataforma-saas-copy-49ea6.shrd01.internal.goskip.dev`. O principal usa atualmente `plataforma-saas-bf8b5.shrd03.internal.goskip.dev`, diferente do endereço `shrd00` do `.env` exportado. Preservar a configuração gerenciada de cada projeto.
+
+Os arquivos do commit `658f905` foram enviados à cópia como JSON `files[path, content]` (o upload de ZIP foi recusado pelo Skip). A interface de execução registrou importação de arquivos e alteração de banco. A homologação ainda não tem resultado final verificado. Não interpretar essa evidência intermediária como aprovação do isolamento hospedado, backup/restauração ou produção. O projeto principal não recebeu a migração nesta execução.
+
+Mapeamento da fonte ORBIX e identificação dos ambientes em `ORBIX_SKIP_MAPEAMENTO_FINANCEIRO.md`.

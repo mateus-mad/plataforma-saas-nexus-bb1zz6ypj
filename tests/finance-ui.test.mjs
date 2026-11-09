@@ -56,7 +56,9 @@ test('interface do piloto: sessão, seleção, leitura e falha explícita', asyn
     const token=`test.${Buffer.from(JSON.stringify({exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')}.test`
     await page.evaluate(({token})=>localStorage.setItem('pocketbase_auth',JSON.stringify({token,record:{id:'testuser0000001',collectionName:'users',collectionId:'_pb_users_auth_',email:'ui@example.invalid'}})),{token})
     await t.test('empresa autorizada apresenta registros e troca sem misturar valores',async()=>{
-      await page.goto(`${app}/app/financeiro/orbix-piloto`)
+      await page.goto(`${app}/app/financeiro`)
+      await page.getByRole('note').filter({hasText:'valores demonstrativos'}).waitFor()
+      await page.getByRole('link',{name:'Abrir consulta ORBIX por empresa',exact:true}).click()
       await page.getByText('Conta teste A',{exact:true}).waitFor()
       await page.getByLabel('Empresa',{exact:true}).selectOption('companyb0000001')
       await page.getByText('Conta teste B',{exact:true}).waitFor()
