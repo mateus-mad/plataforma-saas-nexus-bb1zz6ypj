@@ -4,7 +4,7 @@
 
 Branch `test/orbix-finance-pilot-mad`; PR #1 em rascunho. O piloto adapta indicadores do ORBIX para o PocketBase do Skip. A etapa atual implementa **consulta isolada por empresa no servidor**. Não é integração completa dos ERPs nem migração financeira homologada.
 
-A migração foi validada em PocketBase local **0.26.6** e aplicada por mecanismo nativo na cópia de homologação do Skip. Também foram concluídos testes HTTP externos com contas comuns contra esse backend hospedado. O Supabase do ORBIX não foi alterado nem teve dados financeiros importados. A produção ainda não recebeu a integração; a preparação do backup das coleções afetadas está em andamento. A versão numérica exata do servidor hospedado não foi confirmada.
+A migração foi validada em PocketBase local **0.26.6** e aplicada por mecanismo nativo na cópia de homologação do Skip. Também foram concluídos testes HTTP externos com contas comuns contra esse backend hospedado. O Supabase do ORBIX não foi alterado nem teve dados financeiros importados. A produção ainda não recebeu a integração; o backup lógico restrito das duas coleções foi concluído e sua restauração em estruturas separadas foi verificada. A versão numérica exata do servidor hospedado não foi confirmada.
 
 ## Alteração de autorização
 
@@ -53,7 +53,7 @@ O teste de isolamento cria banco temporário em loopback, senhas aleatórias e d
 
 Resultados desta etapa: build aprovado (avisos preexistentes sobre tamanho de bundle/imports); lint dos arquivos alterados sem avisos; cálculos e integração PocketBase aprovados. A sequência completa das migrações históricas não foi reaplicada e não está certificada.
 
-O `tsc` global continua bloqueado pela configuração preexistente `paths: {"*/*": ...}` (TS5061). A checagem dirigida do módulo foi executada com configuração temporária que mantém somente o alias `@/*`; não foi alterado o arquivo de configuração do Skip.
+A checagem dirigida do módulo passou. A configuração inválida preexistente `paths: {"*/*": ...}` foi removida pelo projeto principal na preparação nativa e preservada na reconciliação desta branch.
 
 O teste de navegador `tests/finance-ui.test.mjs` foi executado com **Playwright 1.62.1 e Chromium 153.0.8010.0**, fornecido pelo pacote `@sparticuz/chromium@153.0.0`. O download padrão do Playwright continua retornando HTML “Site Unavailable”; a instalação alternativa permitiu executar o teste sem alterar dependências do projeto.
 
@@ -132,7 +132,9 @@ A matriz completa de testes locais é mais ampla que a amostra HTTP hospedada. N
 
 ### Aplicação no principal
 
-Pendente: preservar e verificar a reversão das duas coleções afetadas, reconciliar a versão de código a implantar e executar a implantação controlada. O backup lógico dessas coleções, caso usado, não substitui backup integral de banco/arquivos. Manter a PR em rascunho enquanto esse trabalho estiver pendente.
+Preparação concluída na versão nativa 0.0.172 / `9876955`: migração `0025_backup_collections.js`, documentada em `backup-orbix-pilot.md`, preserva 8 lançamentos e 1 meta em `_backup_financial_transactions` e `_backup_dashboard_goals`. Restauração comparada campo a campo em estruturas separadas e originais preservados, conforme execução nativa. Cliente externo confirmou HTTP 403 para acesso anônimo às duas coleções de backup. Todas as regras de API permanecem null. Este é um backup lógico restrito, sem usuários, arquivos, outras coleções ou segredos; não é backup integral.
+
+O código da branch foi reconciliado com o principal, preservando a migração de backup, documentação, configuração gerenciada e demais alterações nativas. Implantação do isolamento 0026 e publicação permanecem a etapa seguinte.
 
 Mapeamento da fonte ORBIX e identificação dos ambientes em `ORBIX_SKIP_MAPEAMENTO_FINANCEIRO.md`.
 
