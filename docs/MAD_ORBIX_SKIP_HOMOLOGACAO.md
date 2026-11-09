@@ -19,7 +19,7 @@ As regras são aplicadas por PocketBase, inclusive em HTTP direto; filtros React
 
 `company_id` é uma relação obrigatória para novos lançamentos/metas. Os registros existentes sem empresa permanecem armazenados e ocultos das contas normais. **Não há atribuição automática à MAD, exclusão ou classificação automática como dado real.** A migração histórica 0024 insere dados demonstrativos; esses registros também ficam sem empresa. Revisar origem e titularidade antes de qualquer atribuição administrativa.
 
-O índice mensal das metas passa de global para `(company_id, month)`, sem conflitar com registros legados. O snapshot `src/lib/pocketbase/schema.json` descreve o alvo da migração pendente; não representa uma exportação do servidor em produção.
+O índice mensal das metas passa de global para `(company_id, month)`, sem conflitar com registros legados. O contrato alvo das quatro coleções fica em `pocketbase/schema-targets/0026_finance_company_isolation.json`, separado do snapshot gerenciado `src/lib/pocketbase/schema.json`, que o Skip regenera a cada sincronização. O contrato alvo não representa uma exportação do servidor em produção. Os testes comparam esse contrato com a migração realmente executada no banco descartável.
 
 ## Interface do piloto
 

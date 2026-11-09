@@ -1,0 +1,273 @@
+{
+  "source": "0026_finance_company_isolation.js",
+  "kind": "target only; not a live export",
+  "collections": [
+    {
+      "name": "financial_transactions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && company_id != '' && company_id.active = true && @collection.finance_memberships.company_id ?= company_id && @collection.finance_memberships.user_id ?= @request.auth.id && @collection.finance_memberships.active ?= true && @collection.finance_memberships.can_read ?= true",
+        "view": "@request.auth.id != '' && company_id != '' && company_id.active = true && @collection.finance_memberships.company_id ?= company_id && @collection.finance_memberships.user_id ?= @request.auth.id && @collection.finance_memberships.active ?= true && @collection.finance_memberships.can_read ?= true",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "description",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "income",
+            "expense"
+          ]
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "due_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "payment_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "pending",
+            "paid",
+            "overdue",
+            "cancelled"
+          ]
+        },
+        {
+          "name": "relacionamento_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "relacionamentos"
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "company_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "finance_companies",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_fin_tx_due_date ON financial_transactions (due_date)",
+        "CREATE INDEX idx_fin_tx_status ON financial_transactions (status)",
+        "CREATE INDEX idx_fin_tx_type ON financial_transactions (type)",
+        "CREATE INDEX idx_financial_transactions_company ON financial_transactions (company_id)"
+      ]
+    },
+    {
+      "name": "dashboard_goals",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && company_id != '' && company_id.active = true && @collection.finance_memberships.company_id ?= company_id && @collection.finance_memberships.user_id ?= @request.auth.id && @collection.finance_memberships.active ?= true && @collection.finance_memberships.can_read ?= true",
+        "view": "@request.auth.id != '' && company_id != '' && company_id.active = true && @collection.finance_memberships.company_id ?= company_id && @collection.finance_memberships.user_id ?= @request.auth.id && @collection.finance_memberships.active ?= true && @collection.finance_memberships.can_read ?= true",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "month",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "target_revenue",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "target_hours",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "company_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "finance_companies",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_dashboard_goals_company ON dashboard_goals (company_id)",
+        "CREATE UNIQUE INDEX idx_dash_goals_company_month ON dashboard_goals (company_id, month) WHERE company_id != ''"
+      ]
+    },
+    {
+      "name": "finance_companies",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && active = true && @collection.finance_memberships.company_id ?= id && @collection.finance_memberships.user_id ?= @request.auth.id && @collection.finance_memberships.active ?= true && @collection.finance_memberships.can_read ?= true",
+        "view": "@request.auth.id != '' && active = true && @collection.finance_memberships.company_id ?= id && @collection.finance_memberships.user_id ?= @request.auth.id && @collection.finance_memberships.active ?= true && @collection.finance_memberships.can_read ?= true",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "finance_memberships",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id && active = true && can_read = true && company_id.active = true",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id && active = true && can_read = true && company_id.active = true",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "company_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "finance_companies",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "can_read",
+          "type": "bool",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_finance_membership_company_user ON finance_memberships (company_id, user_id)"
+      ]
+    }
+  ]
+}
