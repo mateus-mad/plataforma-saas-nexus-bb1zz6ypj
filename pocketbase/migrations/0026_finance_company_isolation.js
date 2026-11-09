@@ -1,5 +1,7 @@
 // Read-only finance pilot. Apply to a backed-up homologation database first.
 // Never assign legacy/demo transactions to a company automatically.
+// NOTE: this file's content is the source for 0027_finance_company_isolation_implant.js
+// (this 0026 file was never recognized by the managed migration mechanism).
 migrate(
   (app) => {
     const users = app.findCollectionByNameOrId('users')
