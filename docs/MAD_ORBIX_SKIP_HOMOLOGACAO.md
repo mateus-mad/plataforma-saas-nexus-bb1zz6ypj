@@ -51,7 +51,19 @@ Resultados desta etapa: build aprovado (avisos preexistentes sobre tamanho de bu
 
 O `tsc` global continua bloqueado pela configuração preexistente `paths: {"*/*": ...}` (TS5061). A checagem dirigida do módulo foi executada com configuração temporária que mantém somente o alias `@/*`; não foi alterado o arquivo de configuração do Skip.
 
-O roteiro automatizado opcional `tests/finance-ui.test.mjs` usa respostas sintéticas e requer Playwright com Chromium instalado. **Ainda não validado**: a execução não passou da abertura do navegador; o download do Chromium retornou ZIP inválido neste ambiente. Não conta como aceite de tela, login real ou comportamento mobile.
+O teste de navegador `tests/finance-ui.test.mjs` foi executado com **Playwright 1.62.1 e Chromium 153.0.8010.0**, fornecido pelo pacote `@sparticuz/chromium@153.0.0`. O download padrão do Playwright continua retornando HTML “Site Unavailable”; a instalação alternativa permitiu executar o teste sem alterar dependências do projeto.
+
+**Seis cenários de interface aprovados**: redirecionamento sem sessão, seleção/troca de empresa, descarte de resposta atrasada, falha de leitura sem saldo zero, ausência de vínculo e seleção dentro da largura de uma tela de 390 px. O roteiro também verifica ausência de erros JavaScript e de escrita financeira. Usa sessão e respostas API sintéticas: não comprova login real nem aplicação da migração no Skip hospedado.
+
+Com Playwright/Chromium padrão instalados, executar `node --test tests/finance-ui.test.mjs`. Para navegador fornecido pelo ambiente, o roteiro aceita:
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/caminho/chromium \
+PLAYWRIGHT_CHROMIUM_SINGLE_PROCESS=1 \
+node --test tests/finance-ui.test.mjs
+```
+
+A opção de processo único habilita renderização SwiftShader para o ambiente de testes. O executável deve ter suas bibliotecas SwiftShader correspondentes disponíveis. Essa opção não altera as regras de segurança do aplicativo ou do PocketBase.
 
 ## Aplicação em homologação
 
@@ -67,7 +79,7 @@ Não existe downgrade automático da 0025: retornar regras amplas da 0024 reabri
 
 ## Pendências para integração completa
 
-- Homologação hospedada, backup/restauração e validação de navegador.
+- Homologação hospedada, backup/restauração e validação de navegador com autenticação e backend reais.
 - Modelo ORBIX → PocketBase para obras/centros de custo, fornecedores, parcelas, competência e chave de origem contra duplicidade; mapear o schema atual da fonte antes de importar.
 - Permissões separadas de lançamento, edição, aprovação e baixa, com trilha de auditoria confiável no servidor. Nesta etapa todas as escritas normais estão bloqueadas.
 - Remover dependência dos dados demonstrativos no financeiro e no tenant global; revisar isolamento dos demais módulos e possíveis expansões de relações antes de migrar dados.

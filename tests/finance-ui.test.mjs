@@ -20,7 +20,12 @@ test('interface do piloto: sessão, seleção, leitura e falha explícita', asyn
       await new Promise(resolve=>setTimeout(resolve,100))
     }
     assert.ok(ready,'Vite failed to start')
-    browser = await chromium.launch({headless:true})
+    browser = await chromium.launch({
+      headless:true,
+      executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+      args:process.env.PLAYWRIGHT_CHROMIUM_SINGLE_PROCESS==='1'
+        ? ['--single-process','--no-zygote','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'] : [],
+    })
     const page = await browser.newPage()
     let mode='normal'
     let delayed=false
