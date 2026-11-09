@@ -10,18 +10,18 @@ O guia inicial abrangia somente o piloto financeiro de leitura; o pedido atual a
 
 Agrupamento técnico preliminar por nome de tabela, sujeito à validação do banco vivo:
 
-| Domínio | Tabelas de origem | Situação no Skip |
-| --- | ---: | --- |
-| Orçamento e suprimentos | 66 | Mapeamento e dados pendentes; não migrado integralmente |
-| CRM e comercial | 29 | Mapeamento e dados pendentes; não migrado integralmente |
-| Financeiro | 15 | Mapeamento e dados pendentes; não migrado integralmente |
-| Pessoas, RH e ponto | 37 | Mapeamento e dados pendentes; não migrado integralmente |
-| Frota, equipamentos e oficina | 32 | Mapeamento e dados pendentes; não migrado integralmente |
-| Obras e planejamento | 6 | Mapeamento e dados pendentes; não migrado integralmente |
-| Documentos | 10 | Mapeamento e dados pendentes; não migrado integralmente |
-| Assistente pessoal | 13 | Mapeamento e dados pendentes; não migrado integralmente |
-| Identidade, segurança e configuração | 19 | Mapeamento e dados pendentes; não migrado integralmente |
-| Outros cadastros e operações | 19 | Mapeamento e dados pendentes; não migrado integralmente |
+| Domínio                              | Tabelas de origem | Situação no Skip                                        |
+| ------------------------------------ | ----------------: | ------------------------------------------------------- |
+| Orçamento e suprimentos              |                66 | Mapeamento e dados pendentes; não migrado integralmente |
+| CRM e comercial                      |                29 | Mapeamento e dados pendentes; não migrado integralmente |
+| Financeiro                           |                15 | Mapeamento e dados pendentes; não migrado integralmente |
+| Pessoas, RH e ponto                  |                37 | Mapeamento e dados pendentes; não migrado integralmente |
+| Frota, equipamentos e oficina        |                32 | Mapeamento e dados pendentes; não migrado integralmente |
+| Obras e planejamento                 |                 6 | Mapeamento e dados pendentes; não migrado integralmente |
+| Documentos                           |                10 | Mapeamento e dados pendentes; não migrado integralmente |
+| Assistente pessoal                   |                13 | Mapeamento e dados pendentes; não migrado integralmente |
+| Identidade, segurança e configuração |                19 | Mapeamento e dados pendentes; não migrado integralmente |
+| Outros cadastros e operações         |                19 | Mapeamento e dados pendentes; não migrado integralmente |
 
 A visão `budget_offline_sync_queue` deve ser reconstruída a partir de definição SQL verificada, não copiada como uma tabela de registros.
 

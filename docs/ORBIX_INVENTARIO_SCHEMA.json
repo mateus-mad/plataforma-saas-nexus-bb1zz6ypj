@@ -20,9 +20,7 @@
         "reason: string | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees"
-      ],
+      "referencedRelations": ["employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -37,10 +35,7 @@
         "id: string",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "accounts",
-        "tenants"
-      ],
+      "referencedRelations": ["accounts", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -61,9 +56,7 @@
         "type: Database[\"public\"][\"Enums\"][\"account_type\"]",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -138,12 +131,7 @@
         "status: Database[\"public\"][\"Enums\"][\"payment_status\"]",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "chart_of_accounts",
-        "cost_centers",
-        "customers",
-        "sites"
-      ],
+      "referencedRelations": ["chart_of_accounts", "cost_centers", "customers", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -162,10 +150,7 @@
         "type: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -221,10 +206,7 @@
         "task_id: string | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "assistant_meetings",
-        "assistant_tasks"
-      ],
+      "referencedRelations": ["assistant_meetings", "assistant_tasks"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -239,9 +221,7 @@
         "title: string",
         "version: number"
       ],
-      "referencedRelations": [
-        "assistant_ideas"
-      ],
+      "referencedRelations": ["assistant_ideas"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -281,9 +261,7 @@
         "status: string | null",
         "topic: string"
       ],
-      "referencedRelations": [
-        "assistant_meetings"
-      ],
+      "referencedRelations": ["assistant_meetings"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -298,10 +276,7 @@
         "meeting_id: string",
         "rationale: string | null"
       ],
-      "referencedRelations": [
-        "assistant_meeting_agenda",
-        "assistant_meetings"
-      ],
+      "referencedRelations": ["assistant_meeting_agenda", "assistant_meetings"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -319,9 +294,7 @@
         "meeting_id: string",
         "version: number | null"
       ],
-      "referencedRelations": [
-        "assistant_meetings"
-      ],
+      "referencedRelations": ["assistant_meetings"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -336,10 +309,7 @@
         "meeting_id: string",
         "note_type: string | null"
       ],
-      "referencedRelations": [
-        "assistant_meeting_agenda",
-        "assistant_meetings"
-      ],
+      "referencedRelations": ["assistant_meeting_agenda", "assistant_meetings"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -355,9 +325,7 @@
         "name: string",
         "role: string | null"
       ],
-      "referencedRelations": [
-        "assistant_meetings"
-      ],
+      "referencedRelations": ["assistant_meetings"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -454,9 +422,7 @@
         "updated_at: string | null",
         "user_id: string"
       ],
-      "referencedRelations": [
-        "assistant_tasks"
-      ],
+      "referencedRelations": ["assistant_tasks"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -475,9 +441,7 @@
         "tenant_id: string",
         "user_agent: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -498,9 +462,7 @@
         "tenant_id: string | null",
         "user_agent: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -522,11 +484,7 @@
         "transaction_type: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "accounts",
-        "accounts_payable",
-        "accounts_receivable"
-      ],
+      "referencedRelations": ["accounts", "accounts_payable", "accounts_receivable"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -546,9 +504,7 @@
         "user_agent: string | null",
         "user_id: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -592,11 +548,7 @@
         "result_values: Json",
         "version_id: string | null"
       ],
-      "referencedRelations": [
-        "budget_items",
-        "budget_projects",
-        "budget_versions"
-      ],
+      "referencedRelations": ["budget_items", "budget_projects", "budget_versions"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -626,9 +578,7 @@
         "valid_from: string | null",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -664,9 +614,7 @@
         "valid_from: string | null",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -683,10 +631,7 @@
         "tenant_id: string | null",
         "type: string | null"
       ],
-      "referencedRelations": [
-        "budget_categories",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_categories", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -708,9 +653,7 @@
         "tenant_id: string",
         "user_agent: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -724,10 +667,7 @@
         "id: string",
         "input_id: string | null"
       ],
-      "referencedRelations": [
-        "budget_compositions",
-        "budget_inputs"
-      ],
+      "referencedRelations": ["budget_compositions", "budget_inputs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -755,10 +695,7 @@
         "unit: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_categories",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_categories", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -796,11 +733,7 @@
         "updated_at: string | null",
         "warranty_period_months: number | null"
       ],
-      "referencedRelations": [
-        "budget_projects",
-        "budget_proposals",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_projects", "budget_proposals", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -821,11 +754,7 @@
         "wbs_id: string | null",
         "workers_count: number | null"
       ],
-      "referencedRelations": [
-        "budget_items",
-        "budget_daily_logs",
-        "budget_wbs"
-      ],
+      "referencedRelations": ["budget_items", "budget_daily_logs", "budget_wbs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -841,10 +770,7 @@
         "notes: string | null",
         "status: string | null"
       ],
-      "referencedRelations": [
-        "budget_daily_logs",
-        "budget_equipments"
-      ],
+      "referencedRelations": ["budget_daily_logs", "budget_equipments"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -870,9 +796,7 @@
         "title: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_daily_logs"
-      ],
+      "referencedRelations": ["budget_daily_logs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -909,10 +833,7 @@
         "work_end_time: string | null",
         "work_start_time: string | null"
       ],
-      "referencedRelations": [
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -932,9 +853,7 @@
         "synced_at: string | null",
         "taken_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_daily_logs"
-      ],
+      "referencedRelations": ["budget_daily_logs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -951,9 +870,7 @@
         "notes: string | null",
         "quantity: number"
       ],
-      "referencedRelations": [
-        "budget_daily_logs"
-      ],
+      "referencedRelations": ["budget_daily_logs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -971,11 +888,7 @@
         "status: string | null",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "budget_equipments",
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_equipments", "budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -996,10 +909,7 @@
         "supplier: string | null",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "budget_equipments",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_equipments", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1019,10 +929,7 @@
         "usage_date: string",
         "wbs_id: string | null"
       ],
-      "referencedRelations": [
-        "budget_equipment_allocations",
-        "budget_wbs"
-      ],
+      "referencedRelations": ["budget_equipment_allocations", "budget_wbs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1056,9 +963,7 @@
         "tenant_id: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1076,9 +981,7 @@
         "total_price: number | null",
         "version_number: number"
       ],
-      "referencedRelations": [
-        "budget_estimates"
-      ],
+      "referencedRelations": ["budget_estimates"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1105,10 +1008,7 @@
         "total_price: number | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1130,9 +1030,7 @@
         "total_cost: number | null",
         "work_type: Database[\"public\"][\"Enums\"][\"budget_work_type\"]"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1159,10 +1057,7 @@
         "valid_from: string",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_inputs",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_inputs", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1191,10 +1086,7 @@
         "unit_cost: number | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_categories",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_categories", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1215,11 +1107,7 @@
         "tenant_id: string",
         "warehouse_id: string"
       ],
-      "referencedRelations": [
-        "budget_projects",
-        "budget_tenants",
-        "budget_warehouses"
-      ],
+      "referencedRelations": ["budget_projects", "budget_tenants", "budget_warehouses"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1239,11 +1127,7 @@
         "system_quantity: number | null",
         "unit: string"
       ],
-      "referencedRelations": [
-        "budget_inputs",
-        "budget_inventories",
-        "budget_stock"
-      ],
+      "referencedRelations": ["budget_inputs", "budget_inventories", "budget_stock"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1261,9 +1145,7 @@
         "valid_from: string | null",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1325,11 +1207,7 @@
         "stock_id: string | null",
         "unit: string"
       ],
-      "referencedRelations": [
-        "budget_inputs",
-        "budget_material_requisitions",
-        "budget_stock"
-      ],
+      "referencedRelations": ["budget_inputs", "budget_material_requisitions", "budget_stock"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1379,9 +1257,7 @@
         "total_estimated: number | null",
         "work_type: Database[\"public\"][\"Enums\"][\"budget_work_type\"]"
       ],
-      "referencedRelations": [
-        "budget_projects"
-      ],
+      "referencedRelations": ["budget_projects"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1424,10 +1300,7 @@
         "updated_at: string | null",
         "work_type: Database[\"public\"][\"Enums\"][\"budget_work_type\"]"
       ],
-      "referencedRelations": [
-        "budget_bdi_configs",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_bdi_configs", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1446,10 +1319,7 @@
         "unit: string | null",
         "unit_price: number | null"
       ],
-      "referencedRelations": [
-        "budget_items",
-        "budget_proposals"
-      ],
+      "referencedRelations": ["budget_items", "budget_proposals"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1495,11 +1365,7 @@
         "version: number | null",
         "warranty_terms: string | null"
       ],
-      "referencedRelations": [
-        "budget_estimates",
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_estimates", "budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1572,11 +1438,7 @@
         "request_id: string",
         "unit: string"
       ],
-      "referencedRelations": [
-        "budget_items",
-        "budget_inputs",
-        "budget_purchase_requests"
-      ],
+      "referencedRelations": ["budget_items", "budget_inputs", "budget_purchase_requests"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1597,10 +1459,7 @@
         "updated_at: string | null",
         "urgency: string | null"
       ],
-      "referencedRelations": [
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1617,10 +1476,7 @@
         "rfq_id: string",
         "winner_supplier_id: string | null"
       ],
-      "referencedRelations": [
-        "budget_rfqs",
-        "budget_rfq_suppliers"
-      ],
+      "referencedRelations": ["budget_rfqs", "budget_rfq_suppliers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1645,11 +1501,7 @@
         "tenant_id: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_receipts",
-        "budget_receipt_items",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_receipts", "budget_receipt_items", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1669,11 +1521,7 @@
         "unit: string",
         "unit_price: number | null"
       ],
-      "referencedRelations": [
-        "budget_inputs",
-        "budget_purchase_order_items",
-        "budget_receipts"
-      ],
+      "referencedRelations": ["budget_inputs", "budget_purchase_order_items", "budget_receipts"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1730,11 +1578,7 @@
         "run_date: string",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "budget_contracts",
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_contracts", "budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1751,10 +1595,7 @@
         "total_price: number | null",
         "unit_price: number | null"
       ],
-      "referencedRelations": [
-        "budget_purchase_request_items",
-        "budget_rfq_suppliers"
-      ],
+      "referencedRelations": ["budget_purchase_request_items", "budget_rfq_suppliers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1775,9 +1616,7 @@
         "supplier_name: string",
         "total_quoted: number | null"
       ],
-      "referencedRelations": [
-        "budget_rfqs"
-      ],
+      "referencedRelations": ["budget_rfqs"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1793,10 +1632,7 @@
         "sent_at: string | null",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "budget_purchase_requests",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_purchase_requests", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1903,9 +1739,7 @@
         "website: string | null",
         "zip_code: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1931,9 +1765,7 @@
         "tenant_id: string",
         "user_id: string"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -1992,10 +1824,7 @@
         "valid_from: string | null",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_tax_regime_profiles",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tax_regime_profiles", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2019,9 +1848,7 @@
         "valid_from: string",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2045,9 +1872,7 @@
         "valid_from: string | null",
         "valid_to: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2067,9 +1892,7 @@
         "wbs_structure: Json",
         "work_type: Database[\"public\"][\"Enums\"][\"budget_work_type\"]"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2090,9 +1913,7 @@
         "tax_regime_valid_from: string | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2106,9 +1927,7 @@
         "tenant_id: string",
         "user_id: string"
       ],
-      "referencedRelations": [
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2134,9 +1953,7 @@
         "total_price: number | null",
         "version_number: number"
       ],
-      "referencedRelations": [
-        "budget_projects"
-      ],
+      "referencedRelations": ["budget_projects"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2152,10 +1969,7 @@
         "project_id: string",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "budget_projects",
-        "budget_tenants"
-      ],
+      "referencedRelations": ["budget_projects", "budget_tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2177,11 +1991,7 @@
         "updated_at: string | null",
         "version_id: string | null"
       ],
-      "referencedRelations": [
-        "budget_wbs",
-        "budget_projects",
-        "budget_versions"
-      ],
+      "referencedRelations": ["budget_wbs", "budget_projects", "budget_versions"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2199,9 +2009,7 @@
         "parent_id: string | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "chart_of_accounts"
-      ],
+      "referencedRelations": ["chart_of_accounts"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2222,10 +2030,7 @@
         "signature_url: string | null",
         "tool_id: string"
       ],
-      "referencedRelations": [
-        "tools_equipment",
-        "maintenance_checklists"
-      ],
+      "referencedRelations": ["tools_equipment", "maintenance_checklists"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2246,11 +2051,7 @@
         "trip_id: string | null",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "checklist_templates",
-        "trips",
-        "vehicles"
-      ],
+      "referencedRelations": ["checklist_templates", "trips", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2396,9 +2197,7 @@
         "updated_at: string",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "vehicles"
-      ],
+      "referencedRelations": ["vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2414,9 +2213,7 @@
         "parent_id: string | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "cost_centers"
-      ],
+      "referencedRelations": ["cost_centers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2449,10 +2246,7 @@
         "updated_at: string | null",
         "website: string | null"
       ],
-      "referencedRelations": [
-        "customers",
-        "crm_accounts"
-      ],
+      "referencedRelations": ["customers", "crm_accounts"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2488,12 +2282,7 @@
         "type: Database[\"public\"][\"Enums\"][\"activity_type\"]",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "crm_accounts",
-        "crm_contacts",
-        "crm_leads",
-        "crm_opportunities"
-      ],
+      "referencedRelations": ["crm_accounts", "crm_contacts", "crm_leads", "crm_opportunities"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2512,9 +2301,7 @@
         "target_type: string | null",
         "trigger_data: Json | null"
       ],
-      "referencedRelations": [
-        "crm_automations"
-      ],
+      "referencedRelations": ["crm_automations"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2571,10 +2358,7 @@
         "twitter: string | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "crm_accounts",
-        "crm_leads"
-      ],
+      "referencedRelations": ["crm_accounts", "crm_leads"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2595,9 +2379,7 @@
         "tenant_id: string | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2638,12 +2420,7 @@
         "total_value: number | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "crm_accounts",
-        "crm_opportunities",
-        "crm_proposals",
-        "tenants"
-      ],
+      "referencedRelations": ["crm_accounts", "crm_opportunities", "crm_proposals", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2741,9 +2518,7 @@
         "webhook_secret: string | null",
         "webhook_url: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2766,9 +2541,7 @@
         "status: string",
         "tenant_id: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2869,12 +2642,7 @@
         "opportunity_id: string | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "crm_accounts",
-        "crm_contacts",
-        "crm_leads",
-        "crm_opportunities"
-      ],
+      "referencedRelations": ["crm_accounts", "crm_contacts", "crm_leads", "crm_opportunities"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2949,10 +2717,7 @@
         "unit_price: number",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "tools_equipment",
-        "crm_opportunities"
-      ],
+      "referencedRelations": ["tools_equipment", "crm_opportunities"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -2993,9 +2758,7 @@
         "terms_conditions: string | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3012,9 +2775,7 @@
         "total_amount: number | null",
         "version_number: number"
       ],
-      "referencedRelations": [
-        "crm_proposals"
-      ],
+      "referencedRelations": ["crm_proposals"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3147,12 +2908,7 @@
         "tenant_id: string | null",
         "title: string"
       ],
-      "referencedRelations": [
-        "crm_accounts",
-        "crm_leads",
-        "crm_opportunities",
-        "tenants"
-      ],
+      "referencedRelations": ["crm_accounts", "crm_leads", "crm_opportunities", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3173,9 +2929,7 @@
         "wa_status: string | null",
         "wa_template_id: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3206,9 +2960,7 @@
         "total_value: number | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "customers"
-      ],
+      "referencedRelations": ["customers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3225,9 +2977,7 @@
         "name: string",
         "uploaded_by: string | null"
       ],
-      "referencedRelations": [
-        "customers"
-      ],
+      "referencedRelations": ["customers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3291,10 +3041,7 @@
         "total_hours: number | null",
         "weather_conditions: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3310,10 +3057,7 @@
         "ip_address: unknown",
         "user_id: string | null"
       ],
-      "referencedRelations": [
-        "documents",
-        "document_folders"
-      ],
+      "referencedRelations": ["documents", "document_folders"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3348,9 +3092,7 @@
         "path: string[] | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "document_folders"
-      ],
+      "referencedRelations": ["document_folders"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3391,9 +3133,7 @@
         "variables: Json | null",
         "version_number: number"
       ],
-      "referencedRelations": [
-        "document_templates"
-      ],
+      "referencedRelations": ["document_templates"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3422,9 +3162,7 @@
         "updated_at: string",
         "variables: Json | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3440,9 +3178,7 @@
         "id: string",
         "version: number"
       ],
-      "referencedRelations": [
-        "documents"
-      ],
+      "referencedRelations": ["documents"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3467,9 +3203,7 @@
         "updated_at: string | null",
         "version: number | null"
       ],
-      "referencedRelations": [
-        "document_folders"
-      ],
+      "referencedRelations": ["document_folders"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3518,10 +3252,7 @@
         "updated_at: string",
         "witnesses: string[] | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3541,10 +3272,7 @@
         "status: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3560,10 +3288,7 @@
         "site_id: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3582,9 +3307,7 @@
         "start_date: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "commission_configurations"
-      ],
+      "referencedRelations": ["commission_configurations"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3619,10 +3342,7 @@
         "reason: string | null",
         "site_id: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3639,9 +3359,7 @@
         "name: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "employees"
-      ],
+      "referencedRelations": ["employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3690,9 +3408,7 @@
         "rg_encrypted: string | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees"
-      ],
+      "referencedRelations": ["employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3708,10 +3424,7 @@
         "start_date: string",
         "time_clock_rule_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "time_clock_rules"
-      ],
+      "referencedRelations": ["employees", "time_clock_rules"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3734,9 +3447,7 @@
         "witness_name: string | null",
         "witness_signature_url: string | null"
       ],
-      "referencedRelations": [
-        "employees"
-      ],
+      "referencedRelations": ["employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3757,10 +3468,7 @@
         "total_earnings: number | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3778,11 +3486,7 @@
         "valid_to: string | null",
         "worksite_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "tenants",
-        "worksites"
-      ],
+      "referencedRelations": ["employees", "tenants", "worksites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3925,11 +3629,7 @@
         "work_schedule_id: string | null",
         "work_shift: string | null"
       ],
-      "referencedRelations": [
-        "tenants",
-        "work_schedules",
-        "job_positions"
-      ],
+      "referencedRelations": ["tenants", "work_schedules", "job_positions"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3954,11 +3654,7 @@
         "tool_id: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites",
-        "tools_equipment"
-      ],
+      "referencedRelations": ["employees", "sites", "tools_equipment"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -3981,12 +3677,7 @@
         "updated_at: string",
         "vehicle_id: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites",
-        "tools_equipment",
-        "vehicles"
-      ],
+      "referencedRelations": ["employees", "sites", "tools_equipment", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4013,12 +3704,7 @@
         "updated_at: string",
         "vehicle_id: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites",
-        "tools_equipment",
-        "vehicles"
-      ],
+      "referencedRelations": ["employees", "sites", "tools_equipment", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4048,10 +3734,7 @@
         "status: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "tools_equipment",
-        "sites"
-      ],
+      "referencedRelations": ["tools_equipment", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4072,11 +3755,7 @@
         "tool_id: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites",
-        "tools_equipment"
-      ],
+      "referencedRelations": ["employees", "sites", "tools_equipment"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4120,9 +3799,7 @@
         "vendor_cnpj: string | null",
         "vendor_name: string | null"
       ],
-      "referencedRelations": [
-        "fuel_receipts"
-      ],
+      "referencedRelations": ["fuel_receipts"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4201,13 +3878,7 @@
         "vehicle_id: string",
         "vencimento: string | null"
       ],
-      "referencedRelations": [
-        "cost_centers",
-        "drivers",
-        "accounts_payable",
-        "trips",
-        "vehicles"
-      ],
+      "referencedRelations": ["cost_centers", "drivers", "accounts_payable", "trips", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4235,9 +3906,7 @@
         "valid_from: string",
         "valid_until: string | null"
       ],
-      "referencedRelations": [
-        "time_clock_rules"
-      ],
+      "referencedRelations": ["time_clock_rules"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4281,12 +3950,7 @@
         "valor_total: number",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "cost_centers",
-        "sites",
-        "trips",
-        "vehicles"
-      ],
+      "referencedRelations": ["cost_centers", "sites", "trips", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4318,11 +3982,7 @@
         "updated_at: string | null",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "trips",
-        "vehicles"
-      ],
+      "referencedRelations": ["employees", "trips", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4336,9 +3996,7 @@
         "file_url: string",
         "id: string"
       ],
-      "referencedRelations": [
-        "generated_documents"
-      ],
+      "referencedRelations": ["generated_documents"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4367,11 +4025,7 @@
         "updated_at: string",
         "variable_values: Json | null"
       ],
-      "referencedRelations": [
-        "document_templates",
-        "document_template_versions",
-        "tenants"
-      ],
+      "referencedRelations": ["document_templates", "document_template_versions", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4452,9 +4106,7 @@
         "user_agent: string | null",
         "user_id: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4511,11 +4163,7 @@
         "updated_at: string",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "cost_centers",
-        "maintenance_plans",
-        "vehicles"
-      ],
+      "referencedRelations": ["cost_centers", "maintenance_plans", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4536,9 +4184,7 @@
         "total_cost: number | null",
         "unit_cost: number | null"
       ],
-      "referencedRelations": [
-        "maintenance_records"
-      ],
+      "referencedRelations": ["maintenance_records"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4557,9 +4203,7 @@
         "updated_at: string",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "vehicles"
-      ],
+      "referencedRelations": ["vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4581,9 +4225,7 @@
         "updated_at: string",
         "valor_orcado: number"
       ],
-      "referencedRelations": [
-        "maintenance_orders"
-      ],
+      "referencedRelations": ["maintenance_orders"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4611,9 +4253,7 @@
         "total_cost: number | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "tools_equipment"
-      ],
+      "referencedRelations": ["tools_equipment"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4633,9 +4273,7 @@
         "technician_notes: string | null",
         "time_spent: number | null"
       ],
-      "referencedRelations": [
-        "maintenance_records"
-      ],
+      "referencedRelations": ["maintenance_records"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4655,9 +4293,7 @@
         "status: string",
         "tool_id: string"
       ],
-      "referencedRelations": [
-        "tools_equipment"
-      ],
+      "referencedRelations": ["tools_equipment"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4674,10 +4310,7 @@
         "read_at: string | null",
         "site_id: string | null"
       ],
-      "referencedRelations": [
-        "materials",
-        "sites"
-      ],
+      "referencedRelations": ["materials", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4697,11 +4330,7 @@
         "total_cost: number | null",
         "unit_cost: number | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "materials",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "materials", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4737,9 +4366,7 @@
         "success: boolean",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4828,9 +4455,7 @@
         "status: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "accounts_payable"
-      ],
+      "referencedRelations": ["accounts_payable"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4846,9 +4471,7 @@
         "whatsapp_sent: boolean | null",
         "whatsapp_sent_at: string | null"
       ],
-      "referencedRelations": [
-        "payment_contest_requests"
-      ],
+      "referencedRelations": ["payment_contest_requests"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4870,9 +4493,7 @@
         "status: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "accounts_payable"
-      ],
+      "referencedRelations": ["accounts_payable"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4892,9 +4513,7 @@
         "previous_status: string | null",
         "user_agent: string | null"
       ],
-      "referencedRelations": [
-        "accounts_payable"
-      ],
+      "referencedRelations": ["accounts_payable"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4917,9 +4536,7 @@
         "status: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees"
-      ],
+      "referencedRelations": ["employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4941,9 +4558,7 @@
         "regular_amount_encrypted: string | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "payroll"
-      ],
+      "referencedRelations": ["payroll"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -4998,9 +4613,7 @@
         "tenant_id: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5022,11 +4635,7 @@
         "updated_at: string",
         "variance_percentage: number | null"
       ],
-      "referencedRelations": [
-        "chart_of_accounts",
-        "cost_centers",
-        "sites"
-      ],
+      "referencedRelations": ["chart_of_accounts", "cost_centers", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5072,10 +4681,7 @@
         "updated_at: string",
         "variable_values: Json | null"
       ],
-      "referencedRelations": [
-        "customers",
-        "proposal_templates"
-      ],
+      "referencedRelations": ["customers", "proposal_templates"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5101,9 +4707,7 @@
         "supplier_suggested: string | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "maintenance_records"
-      ],
+      "referencedRelations": ["maintenance_records"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5124,11 +4728,7 @@
         "tenant_id: string",
         "to_worksite_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "worksites",
-        "tenants"
-      ],
+      "referencedRelations": ["employees", "worksites", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5148,10 +4748,7 @@
         "rental_id: string",
         "signature_url: string | null"
       ],
-      "referencedRelations": [
-        "rental_inspection_checklists",
-        "equipment_rentals"
-      ],
+      "referencedRelations": ["rental_inspection_checklists", "equipment_rentals"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5189,10 +4786,7 @@
         "status: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "accounts_receivable",
-        "equipment_rentals"
-      ],
+      "referencedRelations": ["accounts_receivable", "equipment_rentals"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5211,9 +4805,7 @@
         "status: string",
         "title: string"
       ],
-      "referencedRelations": [
-        "equipment_rentals"
-      ],
+      "referencedRelations": ["equipment_rentals"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5283,12 +4875,7 @@
         "site_id: string",
         "tool_id: string | null"
       ],
-      "referencedRelations": [
-        "employees",
-        "materials",
-        "sites",
-        "tools_equipment"
-      ],
+      "referencedRelations": ["employees", "materials", "sites", "tools_equipment"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5306,9 +4893,7 @@
         "status: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "cost_centers"
-      ],
+      "referencedRelations": ["cost_centers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5334,9 +4919,7 @@
         "supplier_id: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "suppliers"
-      ],
+      "referencedRelations": ["suppliers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5359,9 +4942,7 @@
         "supplier_id: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "suppliers"
-      ],
+      "referencedRelations": ["suppliers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5392,9 +4973,7 @@
         "total_value: number | null",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "suppliers"
-      ],
+      "referencedRelations": ["suppliers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5411,9 +4990,7 @@
         "supplier_id: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "suppliers"
-      ],
+      "referencedRelations": ["suppliers"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5481,10 +5058,7 @@
         "progress_date: string",
         "task_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "tasks"
-      ],
+      "referencedRelations": ["employees", "tasks"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5503,10 +5077,7 @@
         "title: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5526,9 +5097,7 @@
         "vehicle_id: string",
         "velocidade: number | null"
       ],
-      "referencedRelations": [
-        "vehicles"
-      ],
+      "referencedRelations": ["vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5546,10 +5115,7 @@
         "tenant_id: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "erp_modules",
-        "tenants"
-      ],
+      "referencedRelations": ["erp_modules", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5665,10 +5231,7 @@
         "total_hours: number | null",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites"
-      ],
+      "referencedRelations": ["employees", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5687,9 +5250,7 @@
         "time_entry_id: string",
         "user_agent: string | null"
       ],
-      "referencedRelations": [
-        "employees"
-      ],
+      "referencedRelations": ["employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5748,10 +5309,7 @@
         "work_date: string",
         "worksite_id: string"
       ],
-      "referencedRelations": [
-        "time_entries",
-        "tenants"
-      ],
+      "referencedRelations": ["time_entries", "tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5769,11 +5327,7 @@
         "site_id: string | null",
         "tool_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "sites",
-        "tools_equipment"
-      ],
+      "referencedRelations": ["employees", "sites", "tools_equipment"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5807,10 +5361,7 @@
         "status: string",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "sites",
-        "employees"
-      ],
+      "referencedRelations": ["sites", "employees"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5827,9 +5378,7 @@
         "tipo: string",
         "trip_id: string"
       ],
-      "referencedRelations": [
-        "trips"
-      ],
+      "referencedRelations": ["trips"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5856,11 +5405,7 @@
         "updated_at: string",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "drivers",
-        "vehicle_reservations",
-        "vehicles"
-      ],
+      "referencedRelations": ["drivers", "vehicle_reservations", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5894,9 +5439,7 @@
         "tenant_id: string",
         "token: string"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -5959,9 +5502,7 @@
         "tenant_id: string",
         "updated_at: string | null"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6022,10 +5563,7 @@
         "updated_at: string | null",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "vehicles"
-      ],
+      "referencedRelations": ["employees", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6047,10 +5585,7 @@
         "updated_at: string",
         "vehicle_id: string"
       ],
-      "referencedRelations": [
-        "drivers",
-        "vehicles"
-      ],
+      "referencedRelations": ["drivers", "vehicles"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6096,11 +5631,7 @@
         "updated_at: string",
         "wbs_item_id: string"
       ],
-      "referencedRelations": [
-        "cost_centers",
-        "suppliers",
-        "wbs_items"
-      ],
+      "referencedRelations": ["cost_centers", "suppliers", "wbs_items"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6128,10 +5659,7 @@
         "updated_at: string",
         "weight: number | null"
       ],
-      "referencedRelations": [
-        "wbs_items",
-        "sites"
-      ],
+      "referencedRelations": ["wbs_items", "sites"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6147,9 +5675,7 @@
         "reported_by: string | null",
         "wbs_item_id: string"
       ],
-      "referencedRelations": [
-        "wbs_items"
-      ],
+      "referencedRelations": ["wbs_items"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6168,10 +5694,7 @@
         "updated_at: string",
         "wbs_item_id: string"
       ],
-      "referencedRelations": [
-        "employees",
-        "wbs_items"
-      ],
+      "referencedRelations": ["employees", "wbs_items"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6201,10 +5724,7 @@
         "time_clock_rule_id: string",
         "work_schedule_id: string"
       ],
-      "referencedRelations": [
-        "time_clock_rules",
-        "work_schedules"
-      ],
+      "referencedRelations": ["time_clock_rules", "work_schedules"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6224,9 +5744,7 @@
         "type: Database[\"public\"][\"Enums\"][\"work_schedule_type\"]",
         "updated_at: string"
       ],
-      "referencedRelations": [
-        "time_clock_rules"
-      ],
+      "referencedRelations": ["time_clock_rules"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
@@ -6242,9 +5760,7 @@
         "radius_m: number",
         "tenant_id: string"
       ],
-      "referencedRelations": [
-        "tenants"
-      ],
+      "referencedRelations": ["tenants"],
       "reviewStatus": "aguarda schema vivo e contagens",
       "kind": "table"
     },
