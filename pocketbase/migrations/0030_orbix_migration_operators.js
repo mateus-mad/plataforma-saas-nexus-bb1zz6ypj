@@ -32,6 +32,7 @@ migrate(
           { name: 'active', type: 'bool' },
           { name: 'can_read', type: 'bool' },
           { name: 'can_upload', type: 'bool' },
+      { name: 'expires_at', type: 'date', required: true },
           { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
           { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
         ],

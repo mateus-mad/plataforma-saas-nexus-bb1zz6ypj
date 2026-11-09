@@ -14,6 +14,8 @@ migrate(
         ' && ' +
         alias +
         '.active ?= true && ' +
+      alias +
+      '.expires_at ?> @now && ' +
         alias +
         '.can_read ?= true' +
         (upload ? ' && ' + alias + '.can_upload ?= true' : '')

@@ -36,7 +36,7 @@ test('batch-scoped migration console with real local PocketBase',async t=>{
     const batchA=await batch('fixture-a'),batchB=await batch('fixture-b')
     const person=async name=>{const record=await create('users',{email:name+'@example.invalid',password,passwordConfirm:password});const client=new PocketBase(url);await client.collection('users').authWithPassword(name+'@example.invalid',password);return {record,client}}
     const a=await person('operator-a'),b=await person('operator-b'),outsider=await person('outsider')
-    const operator=(who,target,extra={})=>create('_orbix_migration_operators',{user_id:who.record.id,batch_id:target.id,active:true,can_read:true,can_upload:true,...extra})
+    const operator=(who,target,extra={})=>create('_orbix_migration_operators',{user_id:who.record.id,batch_id:target.id,active:true,can_read:true,can_upload:true,expires_at:new Date(Date.now()+86400000).toISOString(),...extra})
     assert.equal((await admin.collection('_orbix_migration_operators').getFullList()).length,0,'No operator may be seeded')
     const opA=await operator(a,batchA),opB=await operator(b,batchB)
     const readonlyB=await operator(a,batchB,{can_read:false,can_upload:false})
@@ -134,6 +134,8 @@ test('batch-scoped migration console with real local PocketBase',async t=>{
       await admin.collection('_orbix_migration_operators').update(opB.id,{can_upload:false})
       assert.equal((await b.client.collection('_orbix_import_batches').getFullList()).length,1)
       await denied(()=>b.client.collection('_orbix_source_records').create({...row,batch_id:batchB.id,source_project:batchB.source_project}))
+      await admin.collection('_orbix_migration_operators').update(opB.id,{expires_at:new Date(Date.now()-1000).toISOString()})
+      assert.deepEqual(await b.client.collection('_orbix_import_batches').getFullList(),[])
     })
   } finally {
     if(server && server.exitCode===null){const closed=new Promise(resolve=>server.once('close',resolve));server.kill('SIGTERM');await closed}
