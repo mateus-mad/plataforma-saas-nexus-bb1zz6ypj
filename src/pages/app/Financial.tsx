@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -195,6 +196,18 @@ export default function Financial() {
 
   return (
     <div className="space-y-6">
+      <div
+        role="note"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+      >
+        <p>
+          Esta tela contém valores demonstrativos e registros locais. Os valores não representam o
+          saldo bancário da empresa.
+        </p>
+        <Button asChild variant="outline">
+          <Link to="/app/financeiro/orbix-piloto">Abrir consulta ORBIX por empresa</Link>
+        </Button>
+      </div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -217,7 +230,9 @@ export default function Financial() {
               </Badge>
             )}
           </h2>
-          <p className="text-muted-foreground">Acompanhe receitas, despesas e saldo atual.</p>
+          <p className="text-muted-foreground">
+            Demonstração de receitas, despesas e registros locais.
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

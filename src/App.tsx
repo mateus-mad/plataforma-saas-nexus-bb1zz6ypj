@@ -18,6 +18,7 @@ import Onboarding from '@/pages/public/Onboarding'
 import Dashboard from '@/pages/app/Dashboard'
 import Contatos from '@/pages/app/Contatos'
 import Financial from '@/pages/app/Financial'
+import FinanceOrbixPilot from '@/features/orbix-finance/FinanceOrbixPilot'
 import Settings from '@/pages/app/Settings'
 import WorkShifts from '@/pages/app/WorkShifts'
 import ComingSoon from '@/pages/app/ComingSoon'
@@ -102,6 +103,7 @@ const App = () => (
 
                     <Route path="/app/contatos" element={<Contatos />} />
                     <Route path="/app/contatos/:view" element={<Contatos />} />
+                    <Route path="/app/financeiro/orbix-piloto" element={<ModuleProtectedRoute moduleName="Financeiro"><FinanceOrbixPilot /></ModuleProtectedRoute>} />
                     <Route
                       path="/app/financeiro"
                       element={
