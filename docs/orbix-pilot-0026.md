@@ -1,43 +1,37 @@
 # Piloto Financeiro ORBIX — Aplicação da Migração 0026
 
-## Resultado
+## Resultado (execução real — 09/11/2026, chamada de retomada)
 
-- **Migração ainda não aplicada no principal.** A interface consultada em 09/11/2026 mostra 16 coleções e histórico até 0025; as duas coleções do piloto estão ausentes. O texto anterior antecipou incorretamente o sucesso.
-- Antes: 0025 (backups `_backup_financial_transactions` e `_backup_dashboard_goals`) verificada como já aplicada, com contagens 8/8 (lançamentos) e 1/1 (meta), e regras de API `null` (somente superusuário).
-- Nenhum seed histórico reaplicado, nenhum snapshot importado, nenhum vínculo de empresa atribuído automaticamente aos 8 lançamentos legados nem à 1 meta, nenhuma fixture copiada, nenhum novo vínculo concedido a contas.
+- **A migração 0026 NÃO foi aplicada ao backend principal (shrd03).**
+- Toda tentativa de `apply_migrations` nesta chamada respondeu `"Migrations applied — the live schema is up to date."` **sem executar o arquivo 0026** — o mecanismo gerenciado ignora-o e o ledger permanece em 0025.
+- O arquivo `pocketbase/migrations/0026_finance_company_isolation.js` está no repositório (main, commit f60122f) com a lógica validada. O mecanismo gerenciado **não o registra** — ele apenas responde "up to date" sem qualquer execução, mesmo chamado repetidamente nesta sessão.
+- **Sem o arquivo 0026 sendo registrado/executado, as coleções `finance_companies` e `finance_memberships` continuam ausentes** do backend (confirmado por `db_show_schema` e `db_describe_object`, que listam apenas as 16 coleções pré-existentes, sem as duas do piloto), e as coleções `financial_transactions` / `dashboard_goals` **não** receberam o campo `company_id`, nenhum índice novo, nem regras novas.
+- Não houve erro de servidor, crash, timeout ou reinício nesta rodada — o backend responde normalmente (health check 200), o que reforça que o mecanismo gerenciado simplesmente não enxerga o arquivo 0026 pendente (não o registra pelo mecanismo `create_migration`/equivalente aqui exposto).
 
-## Metadados da migração
+## Estado verificado antes desta chamada (permanece igual)
+
+- Histórico de migrações: termina em 0025 (`0025_backup_collections`, aplicada). 0026 não consta no ledger.
+- `_backup_financial_transactions`: 8 registros, regras `null` (somente superusuário), índices `idx_bkp_*` intactos.
+- `_backup_dashboard_goals`: 1 registro, regras `null` (somente superusuário), índice `idx_bkp_dash_goals_month` intacto.
+- `financial_transactions`: 8 lançamentos legados, todos **sem** `company_id`.
+- `dashboard_goals`: 1 meta legada, **sem** `company_id`.
+- Regras atuais de `financial_transactions` / `dashboard_goals`: `@request.auth.id != ''` para list/view/create/update/delete (permanecem abertas — a 0026 fecharia list/view com vínculo ativo + can_read e deixaria escrita = null).
+- Nenhum seed reaplicado, nenhum snapshot importado, nenhuma atribuição automática de company_id, nenhum vínculo/conta novo, nenhum hook/endpoint de teste.
+
+## Metadados da migração (ainda pendentes de aplicação real)
 
 | Item               | Valor                                                                                                 |
 | ------------------ | ----------------------------------------------------------------------------------------------------- |
 | Arquivo            | `pocketbase/migrations/0026_finance_company_isolation.js`                                             |
 | Versão             | 0026                                                                                                  |
-| Aplicada em        | (ver list_migrations após o build)                                                                    |
-| Coleções criadas   | `finance_companies`, `finance_memberships`                                                            |
-| Campos adicionados | `company_id` (relation → finance_companies, required) em `financial_transactions` e `dashboard_goals` |
-| Regras de consulta | correlacionam empresa/vínculo/usuário/can_read na mesma coleção `finance_memberships`                 |
+| Aplicada em        | **nunca** — mecanismo gerenciado não a registra nem a executa                                         |
+| Coleções esperadas | `finance_companies`, `finance_memberships`                                                            |
+| Campos esperados   | `company_id` (relation → finance_companies, required) em `financial_transactions` e `dashboard_goals` |
+| Regras esperadas   | list/view: vínculo ativo + can_read; create/update/delete: `null`                                     |
 
-## Estado alvo a verificar após aplicação (ainda pendente)
+## Bloqueio exato
 
-### financial_transactions
-
-- 8 lançamentos legados preservados, **sem** `company_id` (não atribuídos a nenhuma empresa).
-- `company_id` obrigatório apenas para **novos** registros (campo relation required).
-- Regras `list`/`view` correlacionam `company_id` com `finance_memberships` (usuário ativo, can_read, empresa ativa).
-- Regras `create`/`update`/`delete` = `null` (bloqueadas para usuários sem superusuário).
-
-### dashboard_goals
-
-- 1 meta legada preservada, **sem** `company_id`.
-- `company_id` obrigatório para novos registros (relation required).
-- Regras de consulta correlacionam empresa/vínculo como acima.
-- `create`/`update`/`delete` = `null`.
-
-### Backups
-
-- `_backup_financial_transactions`: 8 registros, regras `null` (somente superusuário).
-- `_backup_dashboard_goals`: 1 registro, regras `null` (somente superusuário).
-- Índices de backup prefixados `idx_bkp_*` intactos.
+O mecanismo gerenciado de migrações nesta instância responde "up to date" sem reconhecer o arquivo 0026 como pendente. Não há (nesta interface de agente) um comando `create_migration`/equivalente para registrar um arquivo já existente no disco: `apply_migrations` é a única via exposta, e ela não vê o arquivo. **Não é possível declarar sucesso nem confirmar regras/coleções: nada mudou no backend.**
 
 ## Escopo do piloto ORBIX (presente e preservado)
 
@@ -46,10 +40,11 @@
 - Aviso/link em `src/pages/app/Financial.tsx` → "Abrir consulta ORBIX por empresa".
 - `Login` sem alterações do piloto (confirmado: nenhum trecho orbix em Login.tsx).
 
-## QA / Compilação
+## QA / Compilação (resultado real desta chamada)
 
-- Build nativo 0.0.174 passou, mas o typecheck não estava aprovado. A prop incompatível `future` do BrowserRouter foi removida na correção subsequente. Erros preexistentes corrigidos (BrowserRouter future flags, sidebar `isUpcoming`, ícones com prop `title`, payload do Recharts, LegendPayload, crypto `BufferSource`, `database.ts`).
-- Nenhum teste removido; nenhum endpoint, hook ou regra de teste criado; dependências e configuração protegida inalteradas.
+- `run_qa` passou: setup, lint, typecheck e build limpos.
+- Erros pré-existentes corrigidos nesta rodada: `key` de item do tooltip em `src/components/ui/chart.tsx` (de `item.dataKey` para `` `${item.dataKey ?? key}-${index}` ``). O patch do `BrowserRouter` (prop `future`) já havia sido removido em commit anterior — confirmado que `src/App.tsx` não contém a prop.
+- Nenhum teste removido; nenhum endpoint, hook ou regra de teste criado; dependências inalteradas.
 
 ## Testes já realizados (não repetidos aqui)
 
@@ -58,11 +53,8 @@
 
 ## Limitações
 
-- Esta instância (PRINCIPAL / shrd03) não recebeu atribuição automática de empresa aos legados: o painel ORBIX no PRINCIPAL só retornará dados após o proprietário criar empresas em `finance_companies`, vínculos em `finance_memberships` e atribuir `company_id` — manualmente, via painel Skip Cloud.
+- Esta instância (PRINCIPAL / shrd03) não recebeu atribuição automática de empresa aos legados: o painel ORBIX no PRINCIPAL só retornará dados após (a) a 0026 ser registrada/aplicada e (b) o proprietário criar empresas em `finance_companies`, vínculos em `finance_memberships` e atribuir `company_id` — manualmente, via painel Skip Cloud.
 - A migração não pode ser revertida automaticamente (`down` lança erro proposital; restaure backup revisado em isolamento).
-- HTTP A/B entre empresas (usuário A não vê dados da empresa B, 403 em escrita sem vínculo) foi validado na cópia de homologação, não nesta instância — os testes não foram repetidos aqui por ordem do escopo.
+- HTTP A/B entre empresas foi validado apenas na cópia de homologação, não nesta instância.
 - Produção não publicada nesta chamada; publicação fica a cargo do proprietário pela interface.
-
-## Retomada de 09/11/2026
-
-O envio de comandos ao agente Skip retornou “O servidor está reiniciando”. Nenhuma aplicação de 0026 ou publicação pode ser inferida desse erro. O snapshot do repositório foi reconciliado com o alvo testado (incluindo as duas novas coleções), sem modificar o backend. Migração integral de dados do ORBIX depende de conexão ao Supabase externo; o endpoint SQL do Lovable retorna `database_not_managed`.
+- Tentativas anteriores (09/11/2026) reportaram "O servidor está reiniciando". Nesta rodada o servidor respondeu normalmente, mas o resultado foi o mesmo: 0026 não aplicada.
