@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-09T00:43:59.820Z",
+  "generatedAt": "2026-11-09T04:53:17.198Z",
   "collections": [
     {
       "name": "users",
@@ -1063,6 +1063,161 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_dash_goals_month ON dashboard_goals (month)"]
+    },
+    {
+      "name": "_backup_financial_transactions",
+      "type": "base",
+      "apiRules": {
+        "list": null,
+        "view": null,
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "description",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["income", "expense"]
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "due_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "payment_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pending", "paid", "overdue", "cancelled"]
+        },
+        {
+          "name": "relacionamento_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "relacionamentos"
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_bkp_fin_tx_due_date ON _backup_financial_transactions (due_date)",
+        "CREATE INDEX idx_bkp_fin_tx_status ON _backup_financial_transactions (status)",
+        "CREATE INDEX idx_bkp_fin_tx_type ON _backup_financial_transactions (type)"
+      ]
+    },
+    {
+      "name": "_backup_dashboard_goals",
+      "type": "base",
+      "apiRules": {
+        "list": null,
+        "view": null,
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "month",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "target_revenue",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "target_hours",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_bkp_dash_goals_month ON _backup_dashboard_goals (month)"]
     }
   ]
 }
