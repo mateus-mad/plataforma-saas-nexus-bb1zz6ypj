@@ -10,4 +10,4 @@ test('cancelados excluídos de indicadores',()=>{const s=financeSummary([tx('a',
 test('vencimento no dia não é vencido',()=>assert.equal(overdue(tx('a','income','pending',1,today),today),false))
 test('data ISO sem deslocamento UTC',()=>assert.equal(date('2026-11-09T00:00:00.000Z'),'2026-11-09'))
 test('valor NaN ignorado',()=>{const s=financeSummary([tx('a','income','pending',NaN,'2026-11-01')],today);assert.equal(s.receivable,0)})
-test('BRL é formatado',()=>assert.match(brl(1234.5),/1\\.234,50/))
+test('BRL é formatado',()=>assert.match(brl(1234.5),/1\.234,50/))
