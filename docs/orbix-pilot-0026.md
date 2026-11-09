@@ -2,7 +2,7 @@
 
 ## Resultado
 
-- Migração aplicada via mecanismo nativo de migrações PocketBase (arquivo `pocketbase/migrations/0026_finance_company_isolation.js`).
+- **Migração ainda não aplicada no principal.** A interface consultada em 09/11/2026 mostra 16 coleções e histórico até 0025; as duas coleções do piloto estão ausentes. O texto anterior antecipou incorretamente o sucesso.
 - Antes: 0025 (backups `_backup_financial_transactions` e `_backup_dashboard_goals`) verificada como já aplicada, com contagens 8/8 (lançamentos) e 1/1 (meta), e regras de API `null` (somente superusuário).
 - Nenhum seed histórico reaplicado, nenhum snapshot importado, nenhum vínculo de empresa atribuído automaticamente aos 8 lançamentos legados nem à 1 meta, nenhuma fixture copiada, nenhum novo vínculo concedido a contas.
 
@@ -17,7 +17,7 @@
 | Campos adicionados | `company_id` (relation → finance_companies, required) em `financial_transactions` e `dashboard_goals` |
 | Regras de consulta | correlacionam empresa/vínculo/usuário/can_read na mesma coleção `finance_memberships`                 |
 
-## Verificação pós-aplicação
+## Estado alvo a verificar após aplicação (ainda pendente)
 
 ### financial_transactions
 
@@ -48,7 +48,7 @@
 
 ## QA / Compilação
 
-- Lint, typecheck e build executados; erros preexistentes corrigidos (BrowserRouter future flags, sidebar `isUpcoming`, ícones com prop `title`, payload do Recharts, LegendPayload, crypto `BufferSource`, `database.ts`).
+- Build nativo 0.0.174 passou, mas o typecheck não estava aprovado. A prop incompatível `future` do BrowserRouter foi removida na correção subsequente. Erros preexistentes corrigidos (BrowserRouter future flags, sidebar `isUpcoming`, ícones com prop `title`, payload do Recharts, LegendPayload, crypto `BufferSource`, `database.ts`).
 - Nenhum teste removido; nenhum endpoint, hook ou regra de teste criado; dependências e configuração protegida inalteradas.
 
 ## Testes já realizados (não repetidos aqui)
@@ -62,3 +62,7 @@
 - A migração não pode ser revertida automaticamente (`down` lança erro proposital; restaure backup revisado em isolamento).
 - HTTP A/B entre empresas (usuário A não vê dados da empresa B, 403 em escrita sem vínculo) foi validado na cópia de homologação, não nesta instância — os testes não foram repetidos aqui por ordem do escopo.
 - Produção não publicada nesta chamada; publicação fica a cargo do proprietário pela interface.
+
+## Retomada de 09/11/2026
+
+O envio de comandos ao agente Skip retornou “O servidor está reiniciando”. Nenhuma aplicação de 0026 ou publicação pode ser inferida desse erro. O snapshot do repositório foi reconciliado com o alvo testado (incluindo as duas novas coleções), sem modificar o backend. Migração integral de dados do ORBIX depende de conexão ao Supabase externo; o endpoint SQL do Lovable retorna `database_not_managed`.
