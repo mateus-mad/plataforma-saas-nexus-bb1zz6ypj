@@ -1159,5 +1159,5 @@
       ]
     }
   ],
-  "pendingMigration": "0025_finance_company_isolation.js — target schema only; not a live database export"
+  "pendingMigration": "0026_finance_company_isolation.js — target schema only; not a live database export"
 }

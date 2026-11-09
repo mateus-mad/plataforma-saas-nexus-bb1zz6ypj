@@ -36,7 +36,7 @@ test('PocketBase: isolamento financeiro por empresa e bloqueio de escrita', asyn
         app.save(legacy)
       }
     })`)
-    await copyFile(new URL('../pocketbase/migrations/0025_finance_company_isolation.js', import.meta.url), join(migrations, '0025_finance_company_isolation.js'))
+    await copyFile(new URL('../pocketbase/migrations/0026_finance_company_isolation.js', import.meta.url), join(migrations, '0026_finance_company_isolation.js'))
     execFileSync(binary, ['migrate', 'up', ...args], { stdio: 'pipe' })
     const password = randomBytes(24).toString('hex')
     execFileSync(binary, ['superuser', 'upsert', 'local-test@example.invalid', password, ...args], { stdio: 'pipe' })

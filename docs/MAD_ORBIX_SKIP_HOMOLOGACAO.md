@@ -4,7 +4,7 @@
 
 Branch `test/orbix-finance-pilot-mad`; PR #1 em rascunho. O piloto adapta indicadores do ORBIX para o PocketBase do Skip. A etapa atual implementa **consulta isolada por empresa no servidor**. Não é integração completa dos ERPs nem migração financeira homologada.
 
-A migração `0025_finance_company_isolation.js` foi executada somente em banco local descartável com PocketBase **0.26.6** e fixture legada. O PocketBase hospedado no Skip, o Supabase do ORBIX e a produção não foram alterados. A versão do servidor hospedado ainda precisa ser confirmada.
+A migração foi validada em PocketBase local **0.26.6** e aplicada por mecanismo nativo na cópia de homologação do Skip. Também foram concluídos testes HTTP externos com contas comuns contra esse backend hospedado. O Supabase do ORBIX não foi alterado nem teve dados financeiros importados. A produção ainda não recebeu a integração; a preparação do backup das coleções afetadas está em andamento. A versão numérica exata do servidor hospedado não foi confirmada.
 
 ## Alteração de autorização
 
@@ -73,13 +73,13 @@ A opção de processo único habilita renderização SwiftShader para o ambiente
 
 1. Manter esta PR em rascunho. Confirmar versão e diretórios efetivos do PocketBase no Skip.
 2. Gerar backup consistente do banco e arquivos; demonstrar restauração em uma instância isolada antes da aplicação hospedada.
-3. Usar cópia isolada do banco existente, revisar colisões com nomes/campos da nova migração e aplicar a 0025 pelo mecanismo do Skip. Não executar seeds antigos separadamente nem importar o snapshot parcial como substituto de todas as coleções.
+3. Usar cópia isolada do banco existente, revisar colisões com nomes/campos da nova migração e aplicar a 0026 pelo mecanismo do Skip. Não executar seeds antigos separadamente nem importar o snapshot parcial como substituto de todas as coleções.
 4. Por administração confiável do PocketBase, cadastrar duas empresas fictícias ativas e seus vínculos com usuários de teste (`company_id`, `user_id`, `active=true`, `can_read=true`). Não usar superusuário no app.
 5. Cadastrar apenas lançamentos fictícios atribuídos explicitamente à empresa correta. Verificar que legado sem empresa segue oculto. Não usar a migração para deduzir titularidade.
 6. Repetir os testes HTTP na versão efetiva, verificar logins e a rota pelo navegador, incluindo falta de módulo, falta de vínculo, seleção, erros, atualização, celular e troca rápida de empresa.
 7. Conferir impactos nas telas antigas: consultas passam a filtrar por empresa e escritas em `financial_transactions`/`dashboard_goals` passam a ser negadas. A tela antiga `Financial.tsx` ainda usa `financial_v2` e demonstração/localStorage; não é fonte oficial de saldo. O dashboard deve ser homologado para registros ocultos/metas sem vínculo.
 
-Não existe downgrade automático da 0025: retornar regras amplas da 0024 reabriria acesso e apagaria atribuições. Para reversão, restaurar o backup revisado em isolamento e decidir o próximo passo. Não publicar o frontend apontando para o servidor antigo sem a nova migração: o piloto mostrará erro ao consultar empresas inexistentes.
+Não existe downgrade automático da 0026: retornar regras amplas da 0024 reabriria acesso e apagaria atribuições. Para reversão, restaurar o backup revisado em isolamento e decidir o próximo passo. Não publicar o frontend apontando para o servidor antigo sem a nova migração: o piloto mostrará erro ao consultar empresas inexistentes.
 
 ## Pendências para integração completa
 
@@ -97,12 +97,46 @@ Não existe downgrade automático da 0025: retornar regras amplas da 0024 reabri
 A documentação atual pode descrever versões posteriores; os testes locais executaram 0.26.6. A aprovação local não autoriza considerar a produção homologada.
 
 
-## Execução hospedada em andamento — 09/11/2026
+## Homologação hospedada — 09/11/2026
 
-Autenticação do proprietário no workspace Skip confirmada pela interface. Projeto principal identificado: `af44e044-8a93-4b25-a413-19c99ab6e5cd` (Plataforma SaaS Nexus), com o repositório esperado conectado. Foi criada uma cópia nativa, renomeada **MAD — Homologação ORBIX → Skip**, ID `aab3c043-4734-4a5a-add7-34c111dd6a24`, sem publicação.
+Autenticação do proprietário no workspace Skip confirmada pela interface. Projeto principal: `af44e044-8a93-4b25-a413-19c99ab6e5cd` (Plataforma SaaS Nexus), repositório conectado confirmado. Cópia nativa de teste: **MAD — Homologação ORBIX → Skip**, ID `aab3c043-4734-4a5a-add7-34c111dd6a24`, sem publicação pública.
 
-O painel Skip Cloud confirma backend próprio da cópia em `plataforma-saas-copy-49ea6.shrd01.internal.goskip.dev`. O principal usa atualmente `plataforma-saas-bf8b5.shrd03.internal.goskip.dev`, diferente do endereço `shrd00` do `.env` exportado. Preservar a configuração gerenciada de cada projeto.
+O painel confirma backend separado da cópia em `plataforma-saas-copy-49ea6.shrd01.internal.goskip.dev`. O principal usa `plataforma-saas-bf8b5.shrd03.internal.goskip.dev`, diferente do `shrd00` do `.env` exportado; preservar a configuração gerenciada de cada projeto.
 
-Os arquivos do commit `658f905` foram enviados à cópia como JSON `files[path, content]` (o upload de ZIP foi recusado pelo Skip). A interface de execução registrou importação de arquivos e alteração de banco. A homologação ainda não tem resultado final verificado. Não interpretar essa evidência intermediária como aprovação do isolamento hospedado, backup/restauração ou produção. O projeto principal não recebeu a migração nesta execução.
+Os arquivos da branch foram importados por JSON `files[path, content]` (ZIP não é aceito pelo upload do Skip). O complemento inclui aviso e link no Financeiro e login sem credenciais fixas. A cópia reportou QA completo aprovado (lint, typecheck e build) e preview **0.0.2 / `840dd44`**, confirmado pela URL do iframe. Houve correções de tipagem em arquivos legados na cópia; essa versão não deve ser considerada byte a byte idêntica à branch GitHub sem reconciliar o diff. A rota `/app/financeiro/orbix-piloto` foi selecionada no construtor e, sem sessão no aplicativo, exibiu **Acesso ao Nexus**.
+
+### Evidência independente da API real
+
+O primeiro roteiro hospedado tentou HTTP recursivo dentro dos hooks e não produziu aceite. Os hooks temporários `homolog_setup.js` e `homolog_run_tests.js` foram removidos e o backend republicado. O aceite abaixo veio de um processo cliente externo, usando a API PocketBase normal e contas sintéticas, não de consulta SQL nem de chamada administrativa que ignora regras.
+
+Foram criadas duas empresas explicitamente fictícias, duas contas de prova com senhas aleatórias mantidas somente na memória do cliente e dois lançamentos identificados como **HOMOLOGAÇÃO API / FICTÍCIO**. Os vínculos foram cadastrados pelo painel administrativo da cópia, sem alterar regras ou dar poderes administrativos às contas.
+
+| Verificação | Resultado observado |
+| --- | --- |
+| Requisição anônima a lançamentos | HTTP 200, lista vazia |
+| Duas contas autenticadas sem vínculo | HTTP 200, lista vazia para ambas |
+| Conta A lista lançamentos | HTTP 200, exatamente o registro da A |
+| Conta B lista lançamentos | HTTP 200, exatamente o registro da B |
+| Conta A busca por ID da B | HTTP 404 |
+| Conta B busca por ID da A | HTTP 404 |
+| Conta A tenta `PATCH status=paid` no próprio lançamento fictício | HTTP 403 |
+| Conta B tenta `PATCH status=paid` no próprio lançamento fictício | HTTP 403 |
+| Conta A tenta `DELETE` do próprio lançamento fictício | HTTP 403 |
+| Conta B tenta `DELETE` do próprio lançamento fictício | HTTP 403 |
+| Vínculo A desativado, token já emitido reutilizado | A lista vazia; B continua com apenas o próprio registro |
+| Vínculo B desativado ao encerrar | Ambas as contas recebem lista vazia |
+
+Os oito primeiros testes A/B com vínculo ativo passaram; as duas leituras após revogar A e as duas após revogar B também passaram. O processo cliente foi encerrado e descartou o estado de autenticação em memória. Não foram gravados senhas ou tokens em arquivos, chat, código ou relatório. Os dois vínculos de prova terminaram inativos; as empresas/lançamentos fictícios permanecem identificados na cópia, para rastreabilidade, sem atribuição à MAD real.
+
+A matriz completa de testes locais é mais ampla que a amostra HTTP hospedada. Não afirmar que todos os testes locais foram repetidos no servidor. Nenhum pagamento bancário, Pix ou baixa no Mais Controle foi efetuado.
+
+### Aplicação no principal
+
+Pendente: preservar e verificar a reversão das duas coleções afetadas, reconciliar a versão de código a implantar e executar a implantação controlada. O backup lógico dessas coleções, caso usado, não substitui backup integral de banco/arquivos. Manter a PR em rascunho enquanto esse trabalho estiver pendente.
 
 Mapeamento da fonte ORBIX e identificação dos ambientes em `ORBIX_SKIP_MAPEAMENTO_FINANCEIRO.md`.
+
+
+### Numeração da migração no principal
+
+A preparação de backup lógico do principal utiliza o próximo número disponível, **0025**. Por isso, o arquivo de isolamento da branch foi renumerado para **`0026_finance_company_isolation.js`**, com a mesma lógica e regras testadas. O teste descartável aponta para esse novo nome. A cópia de homologação já recebeu a versão nativa de isolamento como 0025; **não reaplicar 0026 nessa cópia sem reconciliar o histórico**, pois a estrutura já existe. No principal, verificar o backup 0025 antes da aplicação do isolamento 0026. Não confundir número de migração com versão de preview.
